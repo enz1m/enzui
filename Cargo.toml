@@ -1,0 +1,233 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/enzui-center-protocol",
+    "crates/enzui-activity",
+    "crates/enzui-agent",
+    "crates/enzui-agent-app",
+    "crates/enzui-clipboard",
+    "crates/enzui-clipboard-runtime",
+    "crates/enzui-core",
+    "crates/enzui-services",
+    "crates/enzui-icons",
+    "crates/enzui-theme",
+    "crates/enzui-security",
+    "crates/enzui-test-support",
+    "crates/enzui-frame-check",
+    "crates/enzui-external-image",
+    "crates/enzui-resources",
+    "crates/enzui-widgets",
+    "crates/enzui-terminal",
+    "crates/enzui-wayland",
+    "crates/enzui-parent-lease",
+]
+# Cargo reads patches only from the consumer workspace root.
+# Applications using accessibility must repeat these overrides; see docs/dependencies.md.
+[patch.crates-io]
+winit = { git = "https://github.com/enz1m/enzim-winit.git", rev = "f6ce16941bf815a438db7e628ab1126ce48e31dd" }
+zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+zbus_macros = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+zbus_names = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+zvariant = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+zvariant_derive = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+zvariant_utils = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+repository = "https://github.com/enz1m/enzui"
+homepage = "https://github.com/enz1m/enzui"
+keywords = ["gui", "iced", "linux", "wayland", "widgets"]
+categories = ["gui"]
+
+# ---------------------------------------------------------------------------
+# Workspace lints
+# ---------------------------------------------------------------------------
+#
+# `unsafe_code = "deny"` is the workspace posture, and `deny` (not `forbid`) is
+# deliberate. This workspace genuinely needs `unsafe` in a bounded, reviewed set
+# of places: production FFI (PipeWire/print portals, libheif runtime load,
+# `getsockopt`/`linkat` syscalls), a security primitive
+# that must not be optimized away (`write_volatile` secret zeroization), and
+# tests that exercise unsafe allocation, rendering, and native platform APIs
+# (`GlobalAlloc`, `image::allocate`, `umask(2)`, GLib calls, and `_exit`).
+# `forbid` would outrank any local suppression attribute
+# and make every one of those unbuildable; `deny` still fails the build on any
+# *unannotated* `unsafe`, which is the property worth enforcing, while allowing a
+# reviewed local suppression attribute — `#[allow(unsafe_code)]` /
+# `#![allow(unsafe_code)]`, or equivalently `#[expect(unsafe_code)]` /
+# `#![expect(unsafe_code)]` — where safety genuinely cannot be expressed
+# otherwise. `expect` suppresses the lint exactly like `allow`, so it is
+# reviewed and inventoried the same way.
+#
+# Every such suppression states its reason, and every `unsafe` block carries a
+# `// SAFETY:` comment (`clippy::undocumented_unsafe_blocks` below).
+#
+[workspace.lints.rust]
+unsafe_code = "deny"
+# docs.rs builds with `--cfg docsrs` to mark feature-gated items.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(docsrs)"] }
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+# Clippy's default groups (correctness, suspicious, style, complexity, perf)
+# stay on and the gate denies their warnings. These add what the defaults
+# leave out; tests may unwrap, expect and print (clippy.toml).
+[workspace.lints.clippy]
+# Panics and leftovers have no place in library code, and stdout belongs to
+# the app. Diagnostics go to stderr (`diagnostics_sink`), so that stays open.
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+print_stdout = "warn"
+mem_forget = "warn"
+undocumented_unsafe_blocks = "warn"
+# A builder whose result is dropped did nothing.
+return_self_not_must_use = "warn"
+# Ownership: shared pointers are cloned visibly, nothing is cloned for no
+# reason, small values travel by copy and big buffers live on the heap.
+clone_on_ref_ptr = "warn"
+redundant_clone = "warn"
+trivially_copy_pass_by_ref = "warn"
+large_stack_arrays = "warn"
+ref_option = "warn"
+implicit_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"
+# Conversions that cannot lose data are `From`, not `as`.
+cast_lossless = "warn"
+# A lock held across a whole `match` deadlocks the arms that take it again.
+significant_drop_in_scrutinee = "warn"
+# Clarity.
+manual_let_else = "warn"
+map_unwrap_or = "warn"
+redundant_closure_for_method_calls = "warn"
+semicolon_if_nothing_returned = "warn"
+uninlined_format_args = "warn"
+unnested_or_patterns = "warn"
+explicit_iter_loop = "warn"
+ignored_unit_patterns = "warn"
+unused_async = "warn"
+# Untrusted input: a byte slice of a str panics off a char boundary, a
+# function that returns Result reports instead of panicking, and hash order is
+# not an order.
+string_slice = "warn"
+unwrap_in_result = "warn"
+panic = "warn"
+iter_over_hash_type = "warn"
+# A lint exception says why. (`#[expect]` is not required: an exception
+# needed under only some feature sets would fail the others.)
+allow_attributes_without_reason = "warn"
+# Public API documents its failures and panics.
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
+missing_assert_message = "warn"
+str_to_string = "warn"
+format_push_string = "warn"
+redundant_type_annotations = "warn"
+
+[workspace.dependencies]
+# The diagnostics facade: framework code logs, applications choose the logger.
+log = { version = "0.4", features = ["std"] }
+enzui-activity = { version = "0.1.0", path = "crates/enzui-activity" }
+# Keep the shared facade baseline backend-neutral so leaf crates can expose
+# backend selection without forking the workspace dependency declaration.
+#
+# Accessibility configures the shared zbus graph for Tokio, while system-theme
+# detection reaches zbus from iced's executor; selecting another default would
+# panic before the first frame. `thread-pool` remains available because focused
+# executor tests name it directly, but iced prefers Tokio when both are present.
+iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev", default-features = false, features = [
+    "wgpu",
+    "tiny-skia",
+    "crisp",
+    "web-colors",
+    "thread-pool",
+    "tokio",
+    "linux-theme-detection",
+    "canvas",
+    "svg",
+    "a11y",
+] }
+iced_core = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+# Renderer-neutral runtime pieces, used by `enzui-theme`'s optional
+# `system-theme` feature so the token crate does not need the full facade.
+iced_runtime = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+iced_futures = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+iced_test = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+# The terminal view draws through its own wgpu pipeline and rasterises with the
+# shared cosmic-text font system.
+iced_graphics = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+iced_tiny_skia = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+iced_wgpu = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev", default-features = false }
+# The `image` feature on `iced_winit` gates clipboard image support
+# (`Kind::Image` / `Content::Image` + `arboard/image-data`) and is independent
+# of the image codec stack. `iced/image-without-codecs` alone does not enable
+# it, so iced_winit is listed here for the widgets crate to enable clipboard
+# images without `image/default`.
+iced_winit = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev", default-features = false }
+enzui-center-protocol = { version = "0.1.0", path = "crates/enzui-center-protocol" }
+enzui-agent = { version = "0.1.0", path = "crates/enzui-agent" }
+enzui-agent-app = { version = "0.1.0", path = "crates/enzui-agent-app" }
+enzui-core = { version = "0.1.0", path = "crates/enzui-core" }
+enzui-services = { version = "0.1.0", path = "crates/enzui-services" }
+enzui-icons = { version = "0.1.0", path = "crates/enzui-icons" }
+enzui-parent-lease = { version = "0.1.0", path = "crates/enzui-parent-lease" }
+enzui-resources = { version = "0.1.0", path = "crates/enzui-resources" }
+enzui-security = { version = "0.1.0", path = "crates/enzui-security" }
+enzui-test-support = { version = "0.1.0", path = "crates/enzui-test-support" }
+enzui-frame-check = { version = "0.1.0", path = "crates/enzui-frame-check" }
+enzui-external-image = { version = "0.1.0", path = "crates/enzui-external-image" }
+enzui-theme = { version = "0.1.0", path = "crates/enzui-theme" }
+enzui-widgets = { version = "0.1.0", path = "crates/enzui-widgets" }
+enzui-terminal = { version = "0.1.0", path = "crates/enzui-terminal" }
+sha2 = "0.10.9"
+# Unicode canonical composition (NFC) for `enzui_core::palette::normalize`,
+# the single fold every framework text match runs through. Lowercasing alone
+# leaves canonically equivalent spellings unequal, so an NFD filename handed
+# over by the filesystem could not be found by the NFC query a keyboard
+# produces. Canonical only -- never NFKC, which would merge compatibility-
+# distinct text. Its only dependency (`tinyvec`) is already in `Cargo.lock`, so
+# this cannot move the vendored iced build.
+unicode-normalization = { version = "0.1", default-features = false, features = ["std"] }
+
+# ---------------------------------------------------------------------------
+# Build profiles
+# ---------------------------------------------------------------------------
+#
+# Incremental compilation keeps the edit loop to seconds instead of rebuilding a
+# crate from scratch. Different compilers, profiles and feature sets keep
+# separate cached variants; inactive variants need periodic collection.
+# `line-tables-only` preserves useful panic/backtrace locations without full
+# DWARF type information in development builds.
+
+[profile.dev]
+incremental = true
+debug = "line-tables-only"
+
+# No debug info in test builds: the widget suites link large executables, and
+# test DWARF dominates their compile memory. Function names stay in binaries.
+[profile.test]
+incremental = true
+debug = 0
+
+# Optimise dependencies only (`package."*"` excludes this workspace's crates,
+# which keep -O0 build speed and clean backtraces). The widget suites rasterise
+# real frames through tiny-skia, which is several times slower unoptimised.
+# `debug_assertions` still fire: opt-level does not affect them.
+[profile.dev.package."*"]
+opt-level = 2
+debug = 0
+incremental = false
+
+[profile.test.package."*"]
+opt-level = 2
+incremental = false
+
+# Opt in for release candidates after measuring the application workload.
+[profile.release-lto]
+inherits = "release"
+lto = "thin"
+codegen-units = 16

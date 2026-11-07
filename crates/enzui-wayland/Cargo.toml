@@ -1,0 +1,56 @@
+[package]
+name = "enzui-wayland"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Runtime-owned Wayland platform integration for enzUI: xdg-foreign portal parent export and compositor glass."
+
+[dependencies]
+# Core supplies the portal parenting/cancellation vocabulary; the exporter
+# depends on neither the iced facade nor `iced_winit`.
+enzui-core.workspace = true
+
+# The lease-lifetime rules every parented adopter obeys. Dependency-free, so it
+# is exercised directly rather than only through this crate.
+enzui-parent-lease.workspace = true
+
+# `wayland-client`/`wayland-protocols`/`wayland-backend` are already in the
+# workspace graph via `iced_winit` -> winit -> `smithay-client-toolkit`, which
+# already enables `wayland-protocols/unstable`, `staging` and `rustix/event`;
+# these entries add no crate node or feature and only expose `xdg::foreign::zv2`,
+# `xdg::system_bell` and `poll(2)`.
+[target.'cfg(target_os = "linux")'.dependencies]
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", default-features = false, features = [
+    "client",
+    "staging",
+    "unstable",
+] }
+rustix = { version = "1", default-features = false, features = ["std", "event"] }
+# Generates the `enzui-material-v1` bindings from `protocols/`; already in the
+# graph through `wayland-client`.
+wayland-scanner = "0.31"
+
+# Test-only: `wayland-server` builds the in-process protocol-fixture compositor
+# the integration test exports against; it never enters a shipped app graph.
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+wayland-server = "0.31"
+wayland-protocols = { version = "0.32", default-features = false, features = [
+    "client",
+    "server",
+    "staging",
+    "unstable",
+] }
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

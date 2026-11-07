@@ -1,0 +1,20 @@
+[package]
+name = "enzui-frame-check"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Frame-by-frame check that animated enzUI views replay exactly what a full redraw draws."
+
+[dependencies]
+iced = { workspace = true, features = ["advanced"] }
+iced_test.workspace = true
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[lints]
+workspace = true

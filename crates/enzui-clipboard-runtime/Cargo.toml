@@ -1,0 +1,51 @@
+[package]
+name = "enzui-clipboard-runtime"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Installs the enzUI Wayland clipboard into an iced application's runtime"
+
+
+[dependencies]
+enzui-clipboard = { version = "0.1.0", path = "../enzui-clipboard" }
+enzui-core.workspace = true
+enzui-security.workspace = true
+# The root workspace table keeps iced_winit defaults off. Backend forwarding
+# here lets downstream clients choose one without forking the shared dependency.
+iced_winit = { workspace = true }
+iced_core = { workspace = true }
+iced_futures = { workspace = true }
+futures = { version = "0.3", default-features = false, features = ["std"] }
+futures-timer = "3"
+
+[dev-dependencies]
+iced_runtime.workspace = true
+enzui-security = { workspace = true, features = ["secret-observer"] }
+futures = { version = "0.3", default-features = false, features = ["std", "executor"] }
+
+[features]
+default = ["wayland"]
+x11 = ["iced_winit/x11"]
+wayland = ["iced_winit/wayland"]
+# Clipboard images travel as encoded PNG between applications while iced hands
+# the program raw RGBA, so the conversion is only compiled where it is wanted.
+image = ["dep:image", "iced_core/image", "iced_winit/image"]
+
+[dependencies.image]
+version = "0.25"
+optional = true
+default-features = false
+features = ["png"]
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

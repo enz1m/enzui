@@ -1,0 +1,28 @@
+[package]
+name = "enzui-external-image"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Draws images another thread or process rendered (DMA-BUF) on the renderer's own GPU device, without a copy through the CPU."
+
+[dependencies]
+iced = { workspace = true, features = ["advanced", "image-without-codecs"] }
+iced_wgpu = { workspace = true, features = ["vulkan"] }
+ash = "0.38"
+libc = "0.2"
+log = "0.4"
+bytemuck = "1"
+
+[dev-dependencies]
+enzui-widgets.workspace = true
+iced_test.workspace = true
+enzui-core.workspace = true
+
+[lints]
+workspace = true

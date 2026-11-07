@@ -1,0 +1,2223 @@
+[
+  {
+    "module": "text",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "token-driven typography primitive; unpinned families and semantic weights follow application defaults. font_role selects a catalog role, weight_rung selects a semantic face policy, and TextShaping selects Auto or explicit Advanced/Basic shaping.",
+    "api": ["enz_text", "EnzText"],
+    "keywords": ["3:1", "ASCII width changes", "advanced shaping", "arbitrary fill", "aria-level", "basic shaping", "bold the matched word", "calendar colour", "caption contrast", "code text shaping", "container text_color does nothing", "danger text", "declared ink never lands", "document outline", "elide", "ellipsis", "emphasis span", "emphasize a range", "error ink", "font role", "group label", "h1 h2 h3", "heading level", "icon contrast", "inherit text colour", "ink does not inherit", "ink on fill", "keep row height fixed", "kerning", "large heading", "large text contrast", "legible ink", "ligatures", "missing end of sentence", "multi line text", "muted contrast", "next heading", "no ligatures", "non-text contrast", "on-fill contrast", "on_accent not applied", "page heading", "screen title", "search match emphasis", "section header", "selected row text", "selected tree row subtitle", "semantic tone contrast", "sentence disappears", "set text colour on container", "shaping", "single line label", "skim by heading", "status text on card", "stop text wrapping", "styled text primitive", "subtle", "success ink", "tag colour", "text color ignored", "text is cut off", "text primitive", "text stays the wrong colour", "text truncated", "text_color no-op", "title that is a heading", "tone ink", "tone on backdrop", "tone_error_fg on elevated", "tone_on", "tone_success_fg on surface_alt", "tone_warning_fg on surface_alt", "truncate label", "type scale", "typography", "typography policy", "warning ink", "weak ink", "word wrap", "wrap text"],
+    "wiring_contract": false
+  },
+  {
+    "module": "label",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "the canonical icon + title (+ optional subtitle) label; enz_label presets the form shape.",
+    "api": ["enz_label", "EnzLabel"],
+    "keywords": ["ASCII width changes", "SwiftUI Label", "advanced shaping", "basic shaping", "bold the matched word", "caption row", "code text shaping", "desktop artwork", "emphasis span", "emphasize a range", "file label", "font role", "handle-based label", "icon and text", "icon label", "icon title subtitle", "kerning", "label style", "leading icon text", "ligatures", "list item label", "no ligatures", "search match emphasis", "shaping", "styled text primitive", "symbol label", "text primitive", "title subtitle", "type scale", "typography", "typography policy"],
+    "wiring_contract": false
+  },
+  {
+    "module": "icon_label",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "the SwiftUI Label-style row **preset** of label: EnzIconLabel is an alias for EnzLabel.",
+    "api": ["enz_icon_label", "EnzIconLabel"],
+    "keywords": ["elide", "ellipsis", "keep row height fixed", "missing end of sentence", "multi line text", "sentence disappears", "single line label", "stop text wrapping", "text is cut off", "text truncated", "truncate label", "word wrap", "wrap text"],
+    "wiring_contract": false
+  },
+  {
+    "module": "labeled_content",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "form \"label | value\" row (or stacked in compact mode).",
+    "api": ["enz_labeled_content", "enz_labeled_content_compact", "EnzLabeledContent"],
+    "keywords": ["LabeledContent", "compact label spacing", "detail row", "field value", "key value row", "label value", "label value gap", "labeled content"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_pair",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "single-line leading text + protected trailing metadata.",
+    "api": ["enz_text_pair", "enz_text_pair_element", "EnzTextPair", "EnzTextPairElement"],
+    "keywords": ["ASCII width changes", "advanced shaping", "basic shaping", "bold the matched word", "code text shaping", "emphasis span", "emphasize a range", "font role", "kerning", "leading trailing text", "ligatures", "metadata row", "metadata that must not wrap", "no ligatures", "no-wrap timestamp", "protected trailing", "search match emphasis", "shaping", "styled text primitive", "text pair", "text primitive", "title with metadata", "trailing badge", "truncating pair", "type scale", "typography", "typography policy"],
+    "wiring_contract": false
+  },
+  {
+    "module": "section_header",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "muted all-caps caption band above a form group or sidebar rail (11 logical pixels at the default scale). For a page-section heading, use card's Flat tone with its HeadingLevel::Section title.",
+    "api": ["enz_section_header", "EnzSectionHeader"],
+    "keywords": ["all caps label", "aria-level", "bold title subtitle", "caps header", "caption band", "document outline", "group heading", "group label", "h1 h2 h3", "header stays in view", "heading level", "large heading", "list header", "next heading", "page heading", "page title text", "pinned list header", "screen title", "section header", "settings header", "sidebar heading", "sidebar title", "skim by heading", "sticky header", "sticky section header", "title aria-level", "title heading", "title heading level", "title that is a heading", "window heading", "window title"],
+    "wiring_contract": false
+  },
+  {
+    "module": "streaming_text",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "wrapping text with a blinking caret while streaming. **Wiring:** the widget owns no clock, so the caret only blinks if the caller flips .caret_visible(..) from an iced::time::every(CARET_HALF_CYCLE) subscription; with no subscription the indicator renders correctly and never blinks.",
+    "api": ["enz_streaming_text", "EnzStreamingText"],
+    "keywords": ["appended text", "formatted text", "incremental text", "live log line", "rich text", "secondary link activation", "spans", "streaming text", "styled text", "token stream", "typewriter text"],
+    "wiring_contract": true
+  },
+  {
+    "module": "markdown",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "a token-aware Markdown document renderer with bounded parse/render nesting, a flat render adapter, and stack-safe destruction for caller-built trees.",
+    "api": ["enz_markdown", "markdown::enz_markdown_blocks", "EnzMarkdown"],
+    "keywords": ["GFM table", "RichEditor", "align text", "alignment control", "article view", "base document font", "bold italic", "borderless document editor", "bulleted list", "canvas text font", "centre a paragraph", "checklist", "clear formatting", "commonmark", "composer editor height", "deep Markdown tree", "document canvas", "document renderer", "editor", "editor only", "fill editor height", "formatted text input", "formatting toolbar", "heading size", "highlight colour", "html editor", "hyperlink in editor", "image in markdown", "image resolver", "insert link", "justify text", "link context menu", "link focus colour", "link hover colour", "link presentation", "link underline policy", "long form", "manual Markdown blocks", "markdown", "markdown checkbox", "markdown image", "markdown table", "md", "mixed inline typography", "nested list", "numbered list", "paragraph alignment", "pending typing size", "preview", "quiet link", "read only rich text", "rich editor font", "rich editor text size", "rich editor typography", "rich text editor", "right-click link", "selected font family", "selected text size", "shared formatting toolbar", "stack-safe Markdown drop", "strikethrough text", "task list", "text background colour", "tick a task", "todo list", "transparent rich editor", "underline text", "wysiwyg"],
+    "composes_with": ["reading_pane", "code_block"],
+    "wiring_contract": false
+  },
+  {
+    "module": "reading_pane",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "long-form document renderer, including an opt-in revision-aware immutable-snapshot path for large chapters.",
+    "api": ["enz_reading_pane", "enz_revisioned_reading_pane", "EnzReadingPane", "EnzReadingParagraph", "EnzRevisionReadingParagraph"],
+    "keywords": ["GFM table", "article view", "checklist", "commonmark", "deep Markdown tree", "document renderer", "formatted text", "heading size", "image in markdown", "image resolver", "link context menu", "link focus colour", "link hover colour", "link presentation", "link underline policy", "long form", "manual Markdown blocks", "markdown", "markdown checkbox", "markdown image", "markdown table", "md", "nested list", "preview", "quiet link", "read only rich text", "reading pane", "rich text", "right-click link", "secondary link activation", "spans", "stack-safe Markdown drop", "styled text", "task list", "tick a task", "todo list"],
+    "wiring_contract": false
+  },
+  {
+    "module": "revision_text",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "identity + monotonic-revision plain text that materializes immutable content only on a cache miss; construct it with the public constructor.",
+    "api": ["enz_revision_text"],
+    "keywords": ["article view", "immutable text snapshot", "large text relayout", "lazy text materialization", "long form", "preview", "read only rich text", "revision text", "rope text"],
+    "wiring_contract": false
+  },
+  {
+    "module": "paged_text_viewer",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "visible-row viewer for very large random-access UTF-8 text, with virtual line numbers and distinct source-byte / partial line-index status; an overlay scrollbar emits bounded source-byte seeks without indexing the whole document; the row window is derived from the widget's actual allocation and PagedTextViewportState publishes it for update-time navigation, and a short terminal frame is bottom-aligned inside the viewer's own body so the host mounts it as one unconditional child.",
+    "api": ["enz_paged_text_viewer", "enz_paged_byte_viewer", "EnzPagedTextViewer"],
+    "keywords": ["ASCII byte preview", "actual allocation", "binary preview", "bottom align the tail", "byte address", "byte seek", "empty space after End", "hex viewer", "huge log viewer", "keyboard navigation stops after End", "large document font", "large file", "large immutable text", "large viewer text size", "lazy text", "line cache", "line index coverage", "paged monospace", "paged scrollbar", "paged text", "paged viewport", "partial line index", "random access text", "read only large document", "source byte range", "spacer above the viewer", "sparse tail", "sparse tail alignment", "viewport state", "virtualised text", "virtualized text", "visible rows"],
+    "wiring_contract": false
+  },
+  {
+    "module": "virtual_text_surface",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "publishes an app's own editor as one editable accessible text node whose contents are served lazily by enzui_core::virtual_text, so an assistive technology can read, select and replace at arbitrary offsets in a document too large to publish eagerly. It wraps the editor and changes no pixels; the widget id it publishes is the id the runtime seam resolves to the real accesskit::NodeId of the tree the window published. Distinct from paged_text_viewer, which renders the visible rows of a large read-only document and announces only those rows.",
+    "api": ["enz_virtual_text_surface"],
+    "keywords": ["AT reads off screen text", "accessibility beyond the viewport", "accessible text editor node", "edit box accessibility", "gigabyte document accessibility", "large editable document screen reader", "lazy virtual text accessibility", "publish an editor to accesskit", "screen reader large document", "virtual text provider"],
+    "wiring_contract": false
+  },
+  {
+    "module": "block_list",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "sequence of prose blocks (heading / paragraph / blockquote / list-item / ordered-item / rule / spacer).",
+    "api": ["enz_block_list", "EnzBlock", "EnzBlockList"],
+    "keywords": ["article view", "block list", "block sequence", "code block font", "formatted text", "long form", "monospace list", "preview", "prose blocks", "read only rich text", "rich text", "secondary link activation", "spans", "styled text", "theme font family"],
+    "wiring_contract": false
+  },
+  {
+    "module": "code_block",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "flat-by-default code-snippet display.",
+    "api": ["enz_code_block", "EnzCodeBlock"],
+    "keywords": ["code block", "code snippet", "fenced code", "formatted text", "rich text", "secondary link activation", "spans", "styled text"],
+    "wiring_contract": false
+  },
+  {
+    "module": "match_ink",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "editor highlighter that resolves readable glyph ink inside a find match, so an accent-filled current match cannot swallow syntax-coloured text.",
+    "api": [],
+    "keywords": ["active match", "block comment", "composited ink", "current match highlight", "editable syntax", "find match ink", "highlight checkpoint", "highlight overrides ink", "highlighted text is unreadable", "markdown fence", "match fill", "match ink", "multi-line syntax", "range ink", "raw string", "search highlight contrast", "selection ink", "syntax ink over a highlight", "triple quoted string"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_grid",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "a single-row dense text grid for TUI-style output.",
+    "api": ["enz_text_grid", "enz_text_grid_shared", "EnzTextGrid"],
+    "keywords": ["CJK two columns", "Nerd Font glyph", "OSC 8", "Powerline icon", "URL click to open", "ZWJ emoji cell", "bar cursor", "beam", "block cursor", "caret", "cell under the pointer", "character grid", "click a cell", "column under the mouse", "combining mark cell", "copy text from a grid", "cursor", "cursor column not char count", "cursor style", "damage tracking", "dense text", "double width column", "drag to select cells", "emoji cell", "error underline", "fast terminal redraw", "flag emoji", "grapheme cluster row", "hover a cell", "line damage", "link under the cursor", "monospace grid", "mouse in a terminal", "oversized terminal icon", "pointer to cell", "private-use glyph", "row revision", "search match marker", "select a line", "select text in a grid", "skip reshaping", "spellcheck underline", "split text into cells", "squiggle", "string to cells", "terminal cursor", "terminal performance", "terminal selection", "terminal text grid", "text grid", "text selection", "text to grid cells", "tui output", "unchanged row", "underline", "underline cursor"],
+    "wiring_contract": false
+  },
+  {
+    "module": "line_number_gutter",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "a line-number gutter that stays aligned under word wrapping. A scrolled wrapped editor must pass the editor-owned first logical line / content-space top through GutterConfig::window, even for a small document: independently shaping the whole prefix and applying a sparse editor offset can put logical line 130 beside label 34/66/77. Pass the same viewport's absolute offset through GutterConfig::scroll_offset, so a responsive re-parent starts at the mapped window instead of zero. The seed applies only to fresh state; the shared .scroll_id(..) continues to drive live scrolling.",
+    "api": ["enz_line_number_gutter"],
+    "keywords": ["code gutter", "editor gutter", "embedded gutter", "embedded surface", "flat gutter", "gutter", "gutter survives resize", "gutter without background", "large document gutter", "line numbers", "logical line gutter", "restore gutter scroll", "transparent gutter", "windowed gutter", "wrapped line numbers"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_measure",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "font-backed wrapped text height, height-derived line counts, and byte break offsets.",
+    "api": ["enz_text_measure", "enz_text_break_offset_with", "enz_text_measure_width", "enz_text_measure_with"],
+    "keywords": ["actual height", "auto size text", "auto-grow text", "break offset", "content height", "correct row estimate", "fit to content", "grow text area", "how many rows", "how tall is this row", "intrinsic height", "intrinsic text size", "list row heights", "measure a row", "measure laid out widget", "measure text", "measured row height", "page break", "pager", "paginate prose", "report my height", "row height", "rows for text", "size text", "text fits page", "text height", "text measure", "variable row height", "wrapped line count"],
+    "wiring_contract": false
+  },
+  {
+    "module": "window_title",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "a bold title with an optional muted subtitle.",
+    "api": ["enz_window_title", "EnzWindowTitle"],
+    "keywords": ["bold title subtitle", "page title text", "sidebar heading", "sidebar title", "title aria-level", "title heading", "title heading level", "window heading", "window title"],
+    "wiring_contract": false
+  },
+  {
+    "module": "wizard",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "a step-by-step assistant: the step list, the current page and Cancel, Back, Next or Finish.",
+    "api": ["wizard::enz_wizard"],
+    "keywords": ["GtkAssistant", "QWizard", "assistant", "multi-step form", "onboarding steps", "step by step setup", "wizard"],
+    "wiring_contract": false
+  },
+  {
+    "module": "selection_scope",
+    "tier": 1,
+    "group": "Text and typography",
+    "summary": "focusable cross-widget read-only text selection with pointer and shaped keyboard range navigation; only the focused scope owns copy/select/context shortcuts.",
+    "api": ["enz_selection_scope", "selection_scope::enz_selection_row", "EnzSelectionScope"],
+    "keywords": ["RenderedRows", "SelectionDocument", "annotate a selection", "bidi selection", "contextual action on selection", "copy text", "copy unmounted rows", "cross widget selection", "drag to select", "duplicate selection regions", "focusable document", "keyboard selection menu", "keyboard text selection", "on selection change", "preserve selection on right click", "read only selection", "render-derived selection document", "rich virtual rows", "right click selected text", "select text", "selectable text", "selected text", "selection across unmounted rows", "selection bounds", "selection change", "selection context invocation", "selection context menu", "selection focus owner", "selection geometry performance", "selection pointer anchor", "selection scope", "selection starts in blank line", "selection to context action", "shift arrow selection", "stable document selection", "text cursor over link", "text selection", "viewport selection anchor", "virtual list selection"],
+    "wiring_contract": false
+  },
+  {
+    "module": "button",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "a styled button component, including enz_filter_chip for compact filters with visible and accessible toggle state.",
+    "api": ["enz_button", "button::enz_button_with", "enz_disabled_button", "enz_filter_chip", "enz_inert_button", "EnzButton"],
+    "keywords": ["accessible description", "action button", "active filter", "anchor", "borderless destructive", "button group radius", "button radius", "choice chip", "chromeless button", "circular button", "circular icon button", "click to copy value", "cta", "describe a button", "destructive text button", "elide path middle", "fab", "filter chip", "filter pill", "flat at rest", "flat at rest brightens on hover", "flat button", "ghost button", "hint on a button", "hover fill no border", "hover text color", "href", "hyperlink", "ink brightens on hover", "keep path suffix", "link button", "middle ellipsis", "multi-select filter", "neutral button", "neutral text action", "no chrome button", "path button", "plain button", "preserve filename", "primary button", "push button", "quiet button", "quiet danger", "round button", "send button", "square button corners", "text button", "text link", "toggle chip", "tooltip for a screen reader", "visible selected state", "what does this button do"],
+    "wiring_contract": false
+  },
+  {
+    "module": "button_group",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "action cluster of joined buttons.",
+    "api": ["enz_button_group", "EnzButtonGroup", "EnzButtonGroupItem"],
+    "keywords": ["button bar", "button group", "button group radius", "button radius", "joined buttons", "segmented buttons", "split button row", "square button corners"],
+    "wiring_contract": false
+  },
+  {
+    "module": "link",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "a styled hyperlink component.",
+    "api": ["enz_link", "EnzLink"],
+    "keywords": ["anchor", "href", "hyperlink", "link button", "text link"],
+    "wiring_contract": false
+  },
+  {
+    "module": "pressable",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "a clickable surface with button-like hover/press/selected behaviour, without being a button.",
+    "api": ["enz_pressable", "enz_pressable_maybe", "EnzPressable"],
+    "keywords": ["AT default action opens", "AT default action opens tile", "Enter opens focused entry", "Enter opens focused tile", "Enter versus Space", "accessible name from content", "accessible name of a button-like surface", "accessory", "action on the active row", "add row centered", "aria label on clickable", "aria label on pressable", "automatic accessible name", "breathing room around list row", "button-like surface", "centered list row", "centered row action", "centre icon and label", "clickable aria label", "clickable row", "collection gutter", "custom row", "derived accessible name", "distinct open action", "grid cell open on Enter", "grid tile", "hover accessory", "hover action", "hover press surface", "hover reveal", "how does a button get its accessible name", "keep row action visible when selected", "keyboard open action", "list gutter", "list item surface", "list outer gutter", "list padding", "list row", "name from content", "name-from-content", "nameless actionable", "nameless button", "nameless_actionable", "on_enter row", "open focused row", "open focused tile", "outer inset", "pressable Enter distinct from Space", "pressable aria label", "pressable context menu", "pressable on_context", "quiet row commands", "reveal on hover", "right click a card", "right click a list item", "right click a pressable", "right click a row", "row Enter open Space select", "row actions", "row align_x", "row content alignment", "row content is centered", "row context menu", "row hover action", "row hover paint reaches pane edge", "row inset", "row text not left aligned", "row with button", "row with custom content", "row with trailing action", "screen reader open row", "search results are centered", "secondary click", "secondary click a pressable", "selectable row", "selectable surface", "selected row action", "shrink content in a full width row", "sidebar row with menu", "synthesised accessible name", "synthesized accessible name", "takes_name_from_content", "tappable surface", "tile Enter opens", "tile on_enter", "trailing on hover", "where does the aria name come from"],
+    "wiring_contract": false
+  },
+  {
+    "module": "clickable",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "wraps arbitrary content as a button (role, focus, Enter/Space, hover, minimum hit target).",
+    "api": ["enz_clickable", "enz_clickable_maybe", "enz_clickable_with_status", "EnzClickable"],
+    "keywords": ["accessible name from content", "accessible name of a button-like surface", "aria label on clickable", "aria label on pressable", "automatic accessible name", "clickable aria label", "clickable content", "content follows hover", "derived accessible name", "hover disc", "how does a button get its accessible name", "make clickable", "name from content", "name-from-content", "nameless actionable", "nameless button", "nameless_actionable", "pressable aria label", "pressed content", "round shutter", "status aware content", "synthesised accessible name", "synthesized accessible name", "takes_name_from_content", "tap wrapper", "where does the aria name come from", "wrap as button"],
+    "wiring_contract": false
+  },
+  {
+    "module": "action_bar",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "an action row that folds whole commands into an overflow menu instead of clipping them. **Wiring:** hold the menu state in the app, pass .overflow_open(..), and use the toggle message only for the trigger. Set .on_dismiss(..) to a distinct message that unconditionally closes the menu; it is published after a row command and for Escape/outside dismissal. For a named Collector::Kebab, call overflow_focus_restore_operation with the prior open state and trigger id when either reducer closes the menu.",
+    "api": ["enz_action_bar", "EnzActionBar"],
+    "keywords": ["More button", "action bar", "adaptive toolbar", "align action bar", "always visible overflow menu", "close kebab menu", "collapse toolbar", "collector accessible name", "collector tooltip", "command overflow", "compact action rung", "dismiss overflow menu", "expanded to compact action", "fold buttons into a menu", "gap before the kebab", "hamburger for titlebar", "icon menu trigger", "inline action limit", "kebab", "kebab at the far end", "kebab menu", "kebab next to a button", "kebab only bar", "light dismiss", "name the overflow trigger", "outside click dismiss", "overflow bar", "overflow toolbar", "overflow-only action", "pin toolbar action", "right align action bar", "right align the More button", "stationary overflow collector", "three dot", "three dot menu", "titlebar actions", "titlebar kebab", "titlebar overflow", "titlebar trailing actions", "toolbar overflow menu", "trailing action bar", "vertical ellipsis"],
+    "wiring_contract": true
+  },
+  {
+    "module": "toolbar_icon",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "circular icon-only button for titlebars / toolbars. .icon_source(..) accepts bundled names (tinted) or application SVG/raster artwork (untinted and contained in the glyph box); .aria_label(..) is required.",
+    "api": ["enz_toolbar_icon", "EnzToolbarIcon"],
+    "keywords": ["announce collapsed", "aria-expanded", "busy button", "button shows progress", "button with menu", "chrome button", "chromeless icon hover", "collapse sidebar button", "disclosure button", "dropdown button", "expand collapse button", "flat menu button", "hamburger", "hamburger button", "hamburger menu", "hamburger sidebar", "icon brightens on hover", "icon button", "icon group titlebar", "icon only action", "icon-only button", "ink-only toolbar icon", "kebab menu button", "kebab trigger", "menu button", "menu trigger button", "more menu", "no hover fill", "overflow menu icon", "quiet menu trigger", "refresh button", "refresh spinner", "reveal a region", "round action leaf", "round icon button", "round window chip", "settings icon in titlebar", "show hide panel button", "show sidebar button", "sidebar toggle", "spinning refresh", "split menu button", "syncing indicator", "three dots menu", "titlebar button", "titlebar icon button", "titlebar icon cluster", "titlebar icons", "titlebar toolbar", "toolbar button", "toolbar icon", "toolbar kebab", "window button"],
+    "composes_with": ["icon"],
+    "wiring_contract": false
+  },
+  {
+    "module": "sidebar_toggle_button",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "circular icon-only chip that toggles the sidebar.",
+    "api": ["enz_sidebar_toggle_button", "EnzSidebarToggleButton"],
+    "keywords": ["announce collapsed", "aria-expanded", "chromeless icon hover", "collapse sidebar button", "disclosure button", "expand collapse button", "hamburger", "hamburger button", "hamburger menu", "hamburger sidebar", "icon brightens on hover", "icon button", "icon only action", "icon-only button", "ink-only toolbar icon", "no hover fill", "reveal a region", "round action leaf", "round icon button", "settings icon in titlebar", "show hide panel button", "show sidebar button", "sidebar toggle", "titlebar button", "titlebar icon button", "toolbar button"],
+    "wiring_contract": false
+  },
+  {
+    "module": "window_control_button",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "icon-only round chip for window chrome.",
+    "api": ["enz_window_control_button", "EnzWindowControlButton"],
+    "keywords": ["announce collapsed", "aria-expanded", "chrome button", "chromeless icon hover", "disclosure button", "expand collapse button", "icon brightens on hover", "icon button", "icon only action", "icon-only button", "ink-only toolbar icon", "no hover fill", "reveal a region", "round action leaf", "round icon button", "round window chip", "settings icon in titlebar", "show hide panel button", "titlebar button", "titlebar icon button", "toolbar button", "window button"],
+    "wiring_contract": false
+  },
+  {
+    "module": "menu_bar",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "a desktop menu bar (File, Edit, View) built from a menu model, with submenus, F10 and arrow-key navigation, and access keys.",
+    "api": ["menu_bar::enz_menu_bar", "menu_bar::EnzMenuBar"],
+    "keywords": ["F10 menu", "File Edit View menus", "accelerator letter", "access key", "alt shortcut on button", "alt underline", "application menu bar", "cascading menu", "keyboard access key", "main menu", "menu bar", "menu with submenus", "menubar", "mnemonic", "submenu", "top menu", "underlined letter"],
+    "wiring_contract": false
+  },
+  {
+    "module": "mnemonic",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "access keys: Alt and an underlined letter activate a control (\"_Save\").",
+    "api": [],
+    "keywords": ["accelerator letter", "access key", "alt shortcut on button", "alt underline", "keyboard access key", "mnemonic", "underlined letter"],
+    "wiring_contract": false
+  },
+  {
+    "module": "menu_button",
+    "tier": 1,
+    "group": "Buttons and actions",
+    "summary": "the controlled menu-button host.",
+    "api": ["enz_menu_button", "enz_kebab_menu_button", "enz_split_menu_button", "EnzMenuButton"],
+    "keywords": ["GtkPopover", "anchored panel", "attached panel", "button with menu", "disabled contrast", "disabled ink", "disabled on backdrop", "disabled_on", "dropdown button", "dropdown surface", "elevated menu", "flat menu button", "floating panel", "kebab menu button", "kebab trigger", "menu button", "menu container", "menu rows", "menu surface", "menu trigger button", "more menu", "overflow menu icon", "panel under a button", "popover", "popover focus", "popup form", "quiet menu trigger", "split menu button", "three dots menu", "toolbar kebab", "transparent disabled control"],
+    "composes_with": ["menu", "menu_row"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_field",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a styled text input component.",
+    "api": ["enz_text_field", "enz_text_field_owned", "EnzTextField"],
+    "keywords": ["cut copy paste menu", "edit a label", "edit in place", "editable value", "entry", "inline edit", "inline rename", "input", "input purpose", "numeric keyboard", "numeric value editor", "on-screen keyboard layout", "quiet field", "rename in place", "right click copy paste", "single line input", "square input corners", "text box", "text context menu", "text field", "text field radius", "text input", "undo in text field"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_area",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "multi-line text editor with a standard auto-hidden overlay scrollbar driven by the editor's real scroll metrics (one scroll owner; wrapping on never shows horizontal chrome, while wrapping off shows it only for real horizontal overflow). **Sizing to content:** for an auto-growing composer call .auto_grow(min_rows, max_rows) - it grows one *wrapped row* at a time and then scrolls; do **not** size a box from Content::line_count, which counts *logical* \\n lines and leaves a wrapped paragraph clipped in a one-row box. To measure rows yourself use .row_count(width), which forwards that area's font, size, line height, advanced shaping, and wrapping policy to text_measure. text_area::row_count_at is the default-font, word-wrapped convenience form. **Slots:** .leading(el) / .trailing(el) reserve an edge slot (trailing bottom-aligned) that shrinks the editor *width* so an inline mic/counter/send never overlaps the text.",
+    "api": ["enz_text_area", "EnzTextArea"],
+    "keywords": ["RichEditor", "add to dictionary", "align text", "alignment control", "app-owned editor chrome", "at mention list", "auto size text", "auto-grow text", "avoid Content::text()", "bare editor", "base document font", "bold italic", "borderless document editor", "bounded document editor", "break offset", "bulk edit", "bulleted list", "caller highlighter", "canvas text font", "caret anchored list", "centre a paragraph", "chunked editor overscan", "clear formatting", "code editor font", "code scrollbar", "completion list", "composer editor height", "content height", "content width excluding padding", "custom copy in editor", "custom syntax parser", "cut copy paste menu", "document canvas", "document snapshot per keystroke", "drag selection callback", "edit delta", "editor", "editor font family", "editor key bindings", "editor only", "editor padding", "editor scrollbar", "editor text size", "enchant", "entry", "fill editor height", "fit to content", "focused paste", "formatted text input", "formatting toolbar", "frameless", "grow text area", "highlight colour", "host owned selection", "how many rows", "html editor", "hunspell", "hyperlink in editor", "incremental editor model", "inline suggestions", "input", "insert link", "intrinsic text size", "justify text", "key_binding", "leading trailing option", "line height", "line number gutter", "line numbers", "list option", "listbox", "logical line scroll", "measure text", "mention popup", "mirror the document", "misspelled word", "mixed inline typography", "monospace editor", "multi line input", "multiline corner style", "multiline input", "numbered list", "on_drag_update", "option list", "padding aware width", "page break", "pager", "paginate prose", "paragraph alignment", "paste hook", "paste image into composer", "pending typing size", "pixel text size", "plain variant", "projected editor", "read only source preview", "red squiggly underline", "replace ranges", "restore wrapped scroll", "rich clipboard paste", "rich editor font", "rich editor text size", "rich editor typography", "rich option row", "rich result row", "rich text editor", "right click copy paste", "rows for text", "scroll a bare text editor", "scrollable editor", "scrollbar for my own editor", "scrollbar over a text_editor", "search index after edit", "search result row", "search results", "selected font family", "selected text size", "shared formatting toolbar", "single line input", "size text", "slash command list", "source preview grammar", "spell check", "spell checker in editor", "spelling", "spelling suggestions", "spotlight", "square editor corners", "strikethrough text", "suggestion list", "suggestion popup", "text area", "text area radius", "text background colour", "text box", "text content width", "text context menu", "text diff after edit", "text editor scroll", "text editor scrollbar", "text fits page", "text height", "text input", "textarea", "three line option", "title subtitle option", "transparent rich editor", "two line row", "two line search result", "underline text", "undo in text field", "undoable replace all", "what changed", "which bytes changed", "wrap width", "wrapped line count", "wysiwyg"],
+    "wiring_contract": true
+  },
+  {
+    "module": "rich_edit",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a rich-text editor with a formatting toolbar; keep a RichEditor and read and write HTML.",
+    "api": ["enz_rich_edit", "enz_rich_edit_builder", "rich_edit::enz_rich_edit_toolbar", "rich_edit::enz_rich_edit_toolbar_builder", "EnzRichEdit", "rich_edit::EnzRichEditToolbar"],
+    "keywords": ["RichEditor", "align text", "alignment control", "base document font", "bold italic", "borderless document editor", "bulleted list", "canvas text font", "centre a paragraph", "clear formatting", "composer editor height", "document canvas", "editor", "editor only", "fill editor height", "formatted text input", "formatting toolbar", "highlight colour", "html editor", "hyperlink in editor", "insert link", "justify text", "mixed inline typography", "numbered list", "paragraph alignment", "pending typing size", "rich editor font", "rich editor text size", "rich editor typography", "rich text editor", "selected font family", "selected text size", "shared formatting toolbar", "strikethrough text", "text background colour", "transparent rich editor", "underline text", "wysiwyg"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_float",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "an element floated in a text_area or rich_edit document, like an image placed against a paragraph: TextFloat sits at the top of a line against the left or right edge, the paragraph flows beside it and continues at the full width below, and it scrolls with the text while the content, caret and undo history stay one document.",
+    "api": [],
+    "keywords": ["exclusion region", "float an image", "float left", "float right", "image beside paragraph", "inline image in editor", "picture in a note", "text flow around picture", "wrap text around image"],
+    "wiring_contract": false
+  },
+  {
+    "module": "composer",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "the chat / prompt input: auto-grow with a row cap, Enter/Shift+Enter, an in-field trailing slot, an action rail, and a send button that swaps to stop on a busy flag. It owns the input **geometry** apps were measuring by hand.",
+    "api": ["enz_composer", "EnzComposer"],
+    "keywords": ["auto grow textarea", "chat composer", "chat input", "chat text box", "composer", "ctrl enter to send", "enter inserts newline", "growing input", "message input", "mic in input", "prompt input", "quick reply", "send button", "send on ctrl+enter", "send stop button"],
+    "wiring_contract": false
+  },
+  {
+    "module": "secure_field",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "masked text input with a trailing reveal/hide toggle.",
+    "api": ["enz_secure_field", "secure_field::enz_secure_field_with", "EnzSecureField"],
+    "keywords": ["dialog form", "field id collision", "focus the first invalid field", "form dialog", "form modal", "form secure field reveal", "input dialog", "masked input", "modal form", "namespace field ids", "password field", "password field corners", "password field in a form", "password input", "reveal password", "secure field", "secure field radius", "secure field reveal", "show password in a dialog", "show password toggle", "two forms at once"],
+    "wiring_contract": false
+  },
+  {
+    "module": "search_field",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "search-flavoured text input. **Focus contract:** .focus_on_mount(true) (preferred) or .id(id) + text_input::focus(id) on the opening transition only; a toggle-shut must not re-focus.",
+    "api": ["enz_search_field", "enz_titlebar_search", "EnzSearchField"],
+    "keywords": ["Ctrl+F", "Ctrl+F opens the collapsed search", "announce match count", "autocomplete", "autocomplete field", "autocomplete radius", "autocomplete search icon", "autofocus search", "bounded fill", "cap a fill width", "caret jumps to end", "collapse search on small screens", "collapse to icon", "collapsible autocomplete", "combo", "combo box radius", "completion", "expanding search box", "field loses focus when results appear", "filter box", "find bar", "find next", "find popover", "find results announcement", "find surface", "find_focused reports None for a collapsed search field", "focus collapsed autocomplete", "focus lost on rebuild", "focus on open", "focus search field", "focus search field id when collapsed", "focus(search_field_id) returns None", "ghost search", "glass search", "highlight matches", "incremental search", "keep a text field focused across a rebuild", "live count", "loses focus on first character", "match count", "narrow search", "omnibox", "preserve caret", "quick find", "responsive autocomplete", "responsive search", "results list", "retain focus", "routed focus to a collapsed search", "search bar", "search bar should hug the window controls", "search box", "search collapses to an icon", "search field", "search field radius", "search floats in the middle of the titlebar", "search icon button", "search in a popover", "search input", "search loses focus after the first letter", "search matches", "search popover", "search popup", "search with results on small screens", "still searching", "suggest", "titlebar search", "transparent search field", "type ahead", "type-ahead", "typeahead"],
+    "wiring_contract": true
+  },
+  {
+    "module": "find_replace_bar",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "responsive inline query/navigation/replacement composition with one close route.",
+    "api": ["enz_find_replace_bar", "find_replace_bar::enz_find_option", "EnzFindReplaceBar"],
+    "keywords": ["announce find replace", "close search", "compact find actions", "find and replace", "find replace bar", "find replace live region", "find replace status", "matching find fields", "regex error announcement", "replace bar", "replace status announcement", "replacement chrome", "replacement field width", "responsive find", "responsive replace"],
+    "wiring_contract": false
+  },
+  {
+    "module": "find_surface",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "anchored query, count and wrapping previous/next navigation over a caller-owned stable-key match set.",
+    "api": ["enz_find_surface", "EnzFindSurface"],
+    "keywords": ["Ctrl+F", "announce match count", "find bar", "find next", "find popover", "find results announcement", "find surface", "highlight matches", "live count", "match count", "search matches", "still searching"],
+    "wiring_contract": false
+  },
+  {
+    "module": "input_otp",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "segmented one-time-code / PIN entry; narrow hosts compress cells and gaps while keeping the complete code visible and retaining field height.",
+    "api": ["enz_input_otp", "EnzInputOtp"],
+    "keywords": ["2fa code", "input otp", "one time code", "otp", "pin entry", "verification code"],
+    "wiring_contract": false
+  },
+  {
+    "module": "stepper",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "bounded integer or decimal spinbox with ± buttons.",
+    "api": ["enz_stepper", "enz_stepper_u32", "EnzStepper"],
+    "keywords": ["12 hour clock", "24 hour clock", "am pm", "caption beside stepper", "click and type a time", "clock input", "decimal spinbox", "decimal stepper", "edit a time", "editable spinbox", "end time", "float stepper", "fractional value", "hh:mm", "increment decrement", "number out of range", "number stepper", "numeric stepper", "plus minus number", "spin button", "spinbox", "start time", "stepper value padding", "time entry", "time input", "time of day", "time picker", "time spinner", "type a number", "type a time", "u32 stepper", "unsigned count", "value touching the button"],
+    "wiring_contract": false
+  },
+  {
+    "module": "chip_input",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a text field that turns typed or pasted text into removable chips (tags, recipients).",
+    "api": ["enz_chip_input", "EnzChipInput"],
+    "keywords": ["chip input", "comma separated input", "keyword entry", "multi value input", "recipients field", "tag input", "tags field", "token field"],
+    "wiring_contract": false
+  },
+  {
+    "module": "emoji_picker",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "an emoji chooser with search by name and shortcode, category tabs and recently used emoji (feature emoji-picker).",
+    "api": ["emoji_picker::enz_emoji_picker", "emoji_picker::EnzEmojiPicker"],
+    "keywords": ["emoji chooser", "emoji keyboard", "emoji picker", "emoji search", "emoji shortcode", "insert emoji", "recent emoji", "smiley picker"],
+    "wiring_contract": false
+  },
+  {
+    "module": "font_chooser",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "the installed font families (each name in its own font), their styles, a size and a live preview.",
+    "api": ["font_chooser::enz_font_chooser", "font_chooser::EnzFontChooser"],
+    "keywords": ["choose a font", "font chooser", "font dialog", "font family list", "font picker", "font selector", "installed fonts", "typeface picker"],
+    "wiring_contract": false
+  },
+  {
+    "module": "text_drag",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "selected text drags out of fields, editors, selection scopes and glyph layers; read-only document selections use Copy. Custom canvases expose selections with offer_read_only_selection. Dropped text goes into fields where it lands (installed by app_setup::run on Wayland).",
+    "api": [],
+    "keywords": ["drag selected text", "drag text between apps", "drop target text field", "drop text into field", "move text by dragging", "text drag and drop"],
+    "wiring_contract": false
+  },
+  {
+    "module": "time_field",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a click-and-type time of day that the arrow keys also step, as one SpinButton node. Text is read and written by enzui_core::time_of_day::TimeFormat, so the hour cycle and day-period labels govern both directions; a caller that needs \"end after start\" owns that rule, because a time of day is cyclic and this field wraps at midnight rather than clamping.",
+    "api": ["enz_time_field", "EnzTimeField"],
+    "keywords": ["12 hour clock", "24 hour clock", "am pm", "appointment time", "click and type a time", "clock input", "date and time picker", "date time picker", "datetime picker", "edit a time", "end time", "event start", "half hour slots", "hh:mm", "pick a time from a list", "start time", "time dropdown", "time entry", "time field", "time input", "time of day", "time picker", "time picker popover", "time spinner", "type a time"],
+    "wiring_contract": false
+  },
+  {
+    "module": "time_picker",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a time field with a list of times to pick from, and a combined date-and-time picker.",
+    "api": ["enz_time_picker", "enz_date_time_picker", "EnzTimePicker"],
+    "keywords": ["appointment time", "date and time picker", "date time picker", "datetime picker", "event start", "half hour slots", "pick a time from a list", "time dropdown", "time picker popover"],
+    "wiring_contract": false
+  },
+  {
+    "module": "slider",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a custom, focusable slider primitive.",
+    "api": ["enz_slider", "EnzSlider"],
+    "keywords": ["discrete slider", "double slider", "dual slider", "hide stop dots", "hover value preview", "min max slider", "price range", "range", "range slider", "scrubber", "seek bar hover time", "slider with two handles", "snap points", "step marks", "stepped slider", "stop indicators", "two thumb slider", "value slider", "value under pointer", "volume slider"],
+    "wiring_contract": false
+  },
+  {
+    "module": "range_slider",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a two-thumb slider choosing a low and high value that never cross.",
+    "api": ["enz_range_slider", "EnzRangeSlider"],
+    "keywords": ["double slider", "dual slider", "min max slider", "price range", "range slider", "slider with two handles", "two thumb slider"],
+    "wiring_contract": false
+  },
+  {
+    "module": "checkbox",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a styled checkbox component.",
+    "api": ["enz_checkbox", "EnzCheckbox"],
+    "keywords": ["boolean checkbox", "check box", "indeterminate checkbox", "mixed checkbox", "partially checked", "select all checkbox", "tick box", "tri-state checkbox"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toggle",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a styled toggle/switch component with an optional in-thumb icon.",
+    "api": ["enz_toggle", "EnzToggle"],
+    "keywords": ["glyph switch", "icon toggle", "icon-bearing switch", "mode switch", "on off switch", "switch", "toggle icon", "toggle switch"],
+    "composes_with": ["switch"],
+    "wiring_contract": false
+  },
+  {
+    "module": "radio_button",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "single, standalone radio button.",
+    "api": ["enz_radio_button", "EnzRadioButton"],
+    "keywords": ["option button", "radio", "radio button", "single radio"],
+    "wiring_contract": false
+  },
+  {
+    "module": "radio_group",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a styled radio button group.",
+    "api": ["enz_radio_group", "enz_radio_group_keyed", "EnzRadioGroup"],
+    "keywords": ["choose an option in preferences", "enum radio group", "inline labelled radio group", "keyed radio choices", "mode switch group", "option button", "option group", "pick a value", "radio", "radio buttons", "radio choice", "radio group", "radio group accessible name", "radio group hide heading", "radio group of values not indices", "segmented control", "settings picker", "settings row with a menu", "single choice", "single radio", "typed radio group", "value button", "week start"],
+    "wiring_contract": false
+  },
+  {
+    "module": "key_capture_chip",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a controlled chip that records a keyboard chord. **Wiring:** armed is an **input** the host owns - activating the chip only publishes KeyCapture::Started, and until the caller feeds .armed(true) back the chip records nothing.",
+    "api": ["enz_key_capture_chip", "EnzKeyCaptureChip"],
+    "keywords": ["capture chord", "edit shortcuts", "editable shortcuts", "hotkey input", "keybinding conflict", "keybinding editor", "keybinding input", "rebind key", "rebind keys", "record shortcut", "reset shortcuts", "shortcut recorder", "shortcut settings", "shortcuts editor"],
+    "wiring_contract": true
+  },
+  {
+    "module": "editable_shortcuts",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a SettingsPage-compatible editable shortcut pane over one authoritative resolved catalog, with capture, readable refusal/save feedback, per-action reset, and a pinned Reset all helper.",
+    "api": ["enz_editable_shortcuts", "EnzEditableShortcuts"],
+    "keywords": ["edit shortcuts", "editable shortcuts", "keybinding conflict", "keybinding editor", "rebind key", "rebind keys", "reset shortcuts", "shortcut settings", "shortcuts editor"],
+    "wiring_contract": false
+  },
+  {
+    "module": "form",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a label-aligned form that **co-measures** its labels into one shared label track (no caller pixel widths) and stacks label-over-field below a breakpoint; the measured counterpart to the spacing-only form_layout.",
+    "api": ["enz_form", "EnzForm"],
+    "keywords": ["QFormLayout", "align labels", "data entry form", "field growth", "form", "form layout", "form measured labels", "form row gap", "label aligned form", "label column", "measured form", "settings form", "shared label track", "spacing only form", "stack label over field", "two column form", "wrap long rows"],
+    "wiring_contract": false
+  },
+  {
+    "module": "form_layout",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "spacing-only vertical stack of opaque form rows; each row owns its own label alignment (reach for form when labels should line up).",
+    "api": ["enz_form_layout", "EnzFormLayout"],
+    "keywords": ["QFormLayout", "align labels", "data entry form", "field growth", "form", "form layout", "form measured labels", "form row gap", "label aligned form", "label column", "measured form", "settings form", "shared label track", "spacing only form", "stack label over field", "two column form", "wrap long rows"],
+    "wiring_contract": false
+  },
+  {
+    "module": "form_dialog",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "a dynamic form presented over EnzModalHost.",
+    "api": ["enz_form_dialog", "EnzFormDialog"],
+    "keywords": ["dialog form", "field id collision", "focus the first invalid field", "form dialog", "form modal", "form secure field reveal", "input dialog", "masked input", "modal form", "namespace field ids", "password field", "password field in a form", "password input", "reveal password", "secure field", "secure field reveal", "show password in a dialog", "show password toggle", "two forms at once"],
+    "wiring_contract": false
+  },
+  {
+    "module": "preferences_group",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "settings group (title + description) card.",
+    "api": ["enz_preferences_group", "EnzPreferencesGroup"],
+    "keywords": ["AdwPreferencesGroup", "choose an option in preferences", "compact preferences group", "pick a value", "preferences card", "preferences group", "settings group", "settings group heading weight", "settings picker", "settings row with a menu", "settings section", "value button", "week start"],
+    "composes_with": ["preferences_row"],
+    "wiring_contract": false
+  },
+  {
+    "module": "preferences_row",
+    "tier": 1,
+    "group": "Text input and forms",
+    "summary": "labelled settings row (Adw-style).",
+    "api": ["enz_preferences_row", "EnzPreferencesRow"],
+    "keywords": ["AdwActionRow", "AdwSwitchRow", "accessible id", "adw row", "choose an option in preferences", "click row to toggle", "field size tier", "owned display text", "pick a value", "preferences row", "preferences row size", "repeated setting identity", "responsive settings row", "restack label over control", "settings field size", "settings picker", "settings row", "settings row with a menu", "settings validation", "stable node identity", "stacked row", "switch row", "value button", "week start"],
+    "wiring_contract": false
+  },
+  {
+    "module": "combo_box",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "enzUI-styled dropdown selector.",
+    "api": ["enz_combo_box", "EnzComboBox"],
+    "keywords": ["autocomplete radius", "choose an option in preferences", "choose one", "combo box", "combo box radius", "combobox", "dropdown", "dropdown separator", "duplicate labels", "keep the right option selected", "option groups", "pick a value", "picker dropdown", "same label twice", "search field radius", "select", "selected option identity", "settings picker", "settings row with a menu", "value button", "week start"],
+    "wiring_contract": false
+  },
+  {
+    "module": "autocomplete_field",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "an editable combo box: a text field the user types into, with a filtered suggestion list underneath it; options can add a second line with AutocompleteOption::subtitle or a three-line result with AutocompleteOption::rich_result.",
+    "api": ["enz_autocomplete_field", "EnzAutocompleteField"],
+    "keywords": ["at mention list", "autocomplete", "autocomplete field", "autocomplete radius", "autocomplete search icon", "caret anchored list", "choose one", "collapsible autocomplete", "combo", "combo box radius", "combobox", "completion", "completion list", "dropdown", "dropdown separator", "duplicate labels", "focus collapsed autocomplete", "inline suggestions", "keep the right option selected", "leading trailing option", "list option", "listbox", "mention popup", "option groups", "option list", "picker dropdown", "responsive autocomplete", "rich option row", "rich result row", "same label twice", "search field radius", "search result row", "search results", "search with results on small screens", "select", "selected option identity", "slash command list", "spotlight", "suggest", "suggestion list", "suggestion popup", "three line option", "title subtitle option", "two line row", "two line search result", "type ahead", "type-ahead", "typeahead"],
+    "wiring_contract": false
+  },
+  {
+    "module": "calendar",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "the reusable month surface.",
+    "api": ["enz_calendar", "EnzCalendar"],
+    "keywords": ["all-day band", "borderless calendar", "busy day", "cell spacing", "circular day cell", "compact day cell", "date grid", "date range", "day context menu", "day hover", "day number baseline", "day state", "days with events", "dense calendar", "event dot", "event marker", "event span", "fill-sized grid", "fill-width calendar", "flat calendar", "grid hairline", "header wraps at narrow width", "highlight a day", "mini calendar", "mini month", "month grid", "month title two lines", "month view", "month year popover", "multi-day", "no card border", "non-square cell", "pill header", "right click a day", "selected day", "sidebar month", "span over my own grid", "spanning event", "today and selected", "today marker"],
+    "wiring_contract": false
+  },
+  {
+    "module": "canvas_view",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "a canvas drawing published to screen readers as a labelled image.",
+    "api": ["canvas_view::enz_canvas", "canvas_view::EnzCanvas"],
+    "keywords": ["accessible canvas", "canvas", "canvas alt text", "custom drawing", "drawing with description"],
+    "wiring_contract": false
+  },
+  {
+    "module": "date_picker",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "a date field that opens a calendar popover.",
+    "api": ["enz_date_picker", "EnzDatePicker"],
+    "keywords": ["12 hour clock", "24 hour clock", "all-day band", "am pm", "appointment time", "borderless calendar", "busy day", "calendar popover", "cell spacing", "circular day cell", "click and type a time", "clock input", "compact day cell", "date and time picker", "date field", "date grid", "date input", "date picker", "date range", "date time picker", "datetime picker", "day context menu", "day hover", "day number baseline", "day state", "days with events", "dense calendar", "edit a time", "end time", "event dot", "event marker", "event span", "event start", "fill-sized grid", "fill-width calendar", "flat calendar", "grid hairline", "half hour slots", "header wraps at narrow width", "hh:mm", "highlight a day", "inline date label", "leading date label", "mini calendar", "mini month", "month grid", "month title two lines", "month view", "month year popover", "multi-day", "no card border", "non-square cell", "pick a time from a list", "pick date", "pill header", "right click a day", "selected day", "sidebar month", "span over my own grid", "spanning event", "start time", "time dropdown", "time entry", "time input", "time of day", "time picker", "time picker popover", "time spinner", "today and selected", "today marker", "type a time"],
+    "composes_with": ["calendar", "date_field"],
+    "wiring_contract": false
+  },
+  {
+    "module": "date_range_picker",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "a field that opens a calendar for a two-click range.",
+    "api": ["enz_date_range_picker", "EnzDateRangePicker"],
+    "keywords": ["date range", "from to date", "range picker", "start end date", "two date range"],
+    "composes_with": ["date_picker", "calendar", "date_field"],
+    "wiring_contract": false
+  },
+  {
+    "module": "color_swatch",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "a clickable coloured square with selection border.",
+    "api": ["enz_color_swatch", "enz_color_swatch_none", "EnzColorSwatch"],
+    "keywords": ["clear colour", "color box", "color chip", "color swatch", "colour square", "no colour", "none swatch", "swatch"],
+    "wiring_contract": false
+  },
+  {
+    "module": "color_swatch_grid",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "wrapping palette-inventory grid of coloured swatches with captions.",
+    "api": ["enz_color_swatch_grid", "EnzColorSwatchGrid", "EnzColorSwatchView"],
+    "keywords": ["choose a palette colour", "colour palette", "fixed palette", "palette grid", "palette inventory", "swatch grid"],
+    "wiring_contract": false
+  },
+  {
+    "module": "color_picker",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "the continuous colour editor: saturation/brightness plane, hue strip, optional alpha, live swatch and hex field.",
+    "api": ["enz_color_picker", "EnzColorPicker"],
+    "keywords": ["alpha slider", "choose colour", "color picker", "color wheel", "colour picker", "continuous colour picker", "eyedropper", "hex field with preview", "hsv picker", "hue strip", "pick an arbitrary colour", "saturation value plane", "sv plane"],
+    "wiring_contract": false
+  },
+  {
+    "module": "workspace_accent_chooser",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "a named radio chooser with configurable columns for picking a workspace tint.",
+    "api": ["enz_workspace_accent_chooser", "EnzWorkspaceAccentChooser"],
+    "keywords": ["circular colour chooser", "compact workspace palette", "folder colour", "multi-row accent chooser", "tab tint", "tint chooser", "workspace accent", "workspace colour", "workspace tag"],
+    "wiring_contract": false
+  },
+  {
+    "module": "command_palette",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "query input + live-filtered command list.",
+    "api": ["enz_command_palette", "EnzCommandPalette"],
+    "keywords": ["Ctrl+F opens the collapsed search", "action search", "collapse search on small screens", "command bar", "command menu", "command palette", "ctrl k", "expanding search box", "find_focused reports None for a collapsed search field", "focus search field id when collapsed", "focus(search_field_id) returns None", "fuzzy command", "narrow search", "quick open", "responsive search", "routed focus to a collapsed search", "search collapses to an icon", "search icon button", "search in a popover", "search popup"],
+    "composes_with": ["search_field"],
+    "wiring_contract": false
+  },
+  {
+    "module": "suggestion_list",
+    "tier": 1,
+    "group": "Selection and pickers",
+    "summary": "a standalone, keyboard-navigable suggestion list: the *list half* of autocomplete_field, for use with a multi-line text_area or any custom input; SuggestionOption::subtitle provides a two-line option and SuggestionOption::rich_result adds protected trailing metadata plus a bounded preview without changing listbox semantics.",
+    "api": ["enz_suggestion_list", "EnzSuggestionList"],
+    "keywords": ["at mention list", "bounded fill", "cap a fill width", "caret anchored list", "collapse to icon", "completion list", "ghost search", "glass search", "incremental search", "inline suggestions", "leading trailing option", "list option", "listbox", "mention popup", "omnibox", "option list", "quick find", "results list", "rich option row", "rich result row", "search bar should hug the window controls", "search floats in the middle of the titlebar", "search popover", "search result row", "search results", "slash command list", "spotlight", "suggestion list", "suggestion popup", "three line option", "title subtitle option", "titlebar search", "transparent search field", "two line row", "two line search result"],
+    "wiring_contract": false
+  },
+  {
+    "module": "app_shell",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the layered application shell: five presets over a rounded background layer; docked sidebar motion continuously reflows retained content like a live window resize, while overlay drawers remain compositor-only.",
+    "api": ["enz_app_shell", "enz_app_shell_sized", "enz_app_shell_with_geometry", "app_shell::enz_content_window_settings", "app_shell::enz_dialog_window_settings", "app_shell::enz_secondary_window_settings", "app_shell::enz_window_settings", "app_shell::enz_window_settings_for", "app_shell::enz_window_settings_with_frame", "EnzAppShell"],
+    "keywords": [".desktop file basename", "AT-SPI application name", "CSD resize", "Escape fullscreen", "F11", "RTL drawer", "RTL layout", "RTL sidebar", "RTL toggle anchor", "ShellWindowEvent", "ShellWindowState", "Wayland app id", "Wayland application id", "adopt resize edges", "animate the sidebar collapse on navigation", "app does not quit", "app frame", "app keeps running", "app scaffold", "app shell", "application id", "application shell", "application-global banner", "application_id", "apply_to_window_settings", "autofocus search", "automatic CSD resize", "bidi shell", "borderless page", "borderless window", "caret jumps to end", "client decoration resize", "close last window", "collapse sidebar button", "content padding", "content size closure", "content width", "content width closure", "content window", "content window identity", "daemon", "dark stripe between panes", "desktop application identity", "desktop entry basename", "desktop-entry basename", "detached window", "dialog window", "divider between sidebar and content", "divider looks bad in dark", "docked sidebar reflow", "drag resize window", "drawer header vs inline header", "durable actionable status", "edge inset", "enter fullscreen", "enz_app_shell width", "exit fullscreen", "field loses focus when results appear", "filter box", "flat page", "floating close button", "floating sidebar look", "floating titlebar over photos", "flush page", "flush sidebar", "focus lost on rebuild", "focus on open", "focus search field", "footer knows the sidebar", "frameless window", "full height rail", "full-bleed content", "full-bleed titlebar background", "fullscreen video", "fullscreen window", "gap around panes", "hairline between panes", "hamburger", "hamburger button", "hamburger menu", "hamburger sidebar", "heading inset", "hide the sidebar on one page", "inset panes", "is the sidebar an overlay right now", "keep a text field focused across a rebuild", "layout direction", "legible titlebar over video", "listen_with", "live width propagation", "loses focus on first character", "mirror sidebar", "modal dialog window", "multi-window", "multiple windows", "native fullscreen", "no card", "no window decorations", "not flush", "notifications band", "notifications slot", "notifications strip", "page inset", "page padding", "page with no sidebar", "pane boundary line", "parent window", "platform_specific.application_id", "portal failure banner", "presentation-sensitive titlebar", "preserve caret", "preview window", "preview window steals resize", "remember window size", "remove the divider", "replace window latest", "resize corner", "resize event", "resize opt-out", "responsive sidebar", "restore window size", "retain focus", "retained responsive width", "reverse-DNS name", "right-to-left sidebar", "rounded sidebar corners", "route without a sidebar", "runtime window id", "seam colour", "seam line", "seam width", "search bar", "search box", "search field", "search input", "search loses focus after the first letter", "second window", "second window retargets titlebar", "secondary titlebar surface", "secondary window", "secondary window identity", "set_app_id", "shell geometry in a closure", "shell notifications band", "shell notifications slot", "shell owned status area", "shell resize adoption", "shell window state", "shell-owned banner", "show sidebar button", "sidebar chrome", "sidebar disappears harshly", "sidebar disclosure tooltip", "sidebar divider", "sidebar gap", "sidebar header", "sidebar mirroring", "sidebar on the right", "sidebar presentation in a slot", "sidebar presentation in the titlebar", "sidebar reflow", "sidebar stutters when busy", "sidebar title and actions", "sidebar titlebar", "sidebar toggle", "sidebar toggle inset", "sidebar touches window edge", "slot closure geometry", "slot geometry", "smooth sidebar under load", "space around sidebar", "stack banners at the top", "taskbar grouping", "taskbar window group", "three pane header", "three panel mail", "titlebar knows the sidebar", "titlebar scrim", "titlebar shade", "toggle fullscreen", "top padding", "track window id", "track window size", "transient for", "transient window", "undecorated window", "which window does the titlebar command", "width-aware shell content", "window exit policy", "window id helper", "window margin", "window opened id", "window resize", "window resize edge", "window shell", "window state subscription", "window width", "window::latest replacement", "xdg_toplevel app id"],
+    "wiring_contract": false
+  },
+  {
+    "module": "navigation_split_view",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the adaptive navigation shell.",
+    "api": ["enz_navigation_split_view", "EnzNavigationSplitView"],
+    "keywords": ["AdwNavigationSplitView", "master detail", "sidebar layout", "split view", "three column", "two pane"],
+    "composes_with": ["sidebar_content", "sidebar_row"],
+    "wiring_contract": false
+  },
+  {
+    "module": "single_instance",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "one instance per user (application-dbus): SingleInstance::start(app_id) owns the application or forwards a later launch's files to it; the owner drains them with the task that raises its window.",
+    "api": [],
+    "keywords": ["DBusActivatable", "already running", "explicit launch intent", "forward files to running instance", "one instance", "open in running app", "profile launch", "raise existing window", "second launch", "single instance", "unique application"],
+    "wiring_contract": false
+  },
+  {
+    "module": "navigation_outlet",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "projects the active route of a route path with a header, back navigation and a transition.",
+    "api": ["enz_navigation_outlet", "EnzNavigationOutlet"],
+    "keywords": ["active route view", "navigation outlet", "navigation stack", "route outlet", "router outlet"],
+    "composes_with": ["header_bar"],
+    "wiring_contract": false
+  },
+  {
+    "module": "view_switcher",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "segmented tab switcher.",
+    "api": ["enz_view_switcher", "enz_view_switcher_unwired", "EnzViewSwitcher"],
+    "keywords": ["AdwViewSwitcher", "Picker segmented", "abrupt tab fill", "animated segmented indicator", "animated selection", "bottom navigation", "busy tab", "button bar", "compact dialog tabs", "compact rung", "compact tabs", "do these tabs fit", "glass selected pill", "icon only tabs", "icons only switcher", "inline mode switch", "inline segmented", "inline tabs", "install in progress tab", "joined buttons", "joined segments", "loading tab", "material selected indicator", "measure tab labels", "mode switch", "moving thumb", "narrow width", "segmented buttons", "segmented control", "segmented control motion", "segmented tabs in content", "selected segment", "selection ease", "settings tabs motion", "sliding indicator", "spinner in a tab", "split button row", "stacked icon", "switcher label size", "switcher label weight", "switcher motion", "tab activity indicator", "tab busy state", "tab strip width", "tab switcher", "toggle group", "translucent selected tab", "view switcher", "which tab is active"],
+    "composes_with": ["tab_pill"],
+    "wiring_contract": false
+  },
+  {
+    "module": "inline_view_switcher",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "segmented view-switcher with tab semantics.",
+    "api": ["enz_inline_view_switcher", "enz_inline_view_switcher_unwired", "EnzInlineViewSwitcher"],
+    "keywords": ["animated segmented indicator", "inline mode switch", "inline segmented", "inline tabs", "joined segments", "segmented control motion", "segmented tabs in content", "tab switcher"],
+    "composes_with": ["tab_pill", "view_switcher"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tab_pill",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "tab-strip primitives: one pill, and the list that joins them.",
+    "api": ["enz_tab_pill", "tab_pill::enz_tab_list_maybe", "tab_pill::enz_tab_panel", "enz_tab_list", "EnzTabList", "EnzTabPill"],
+    "keywords": ["detached tab hover", "filter pills", "icon tab tooltip", "icon-only tab hover name", "joined tab hover", "pill tabs", "round tab hover", "tab list", "tab pill", "tab strip pills", "tab tooltip"],
+    "composes_with": ["horizontal_scroll_view"],
+    "wiring_contract": false
+  },
+  {
+    "module": "document_tab",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "single tab cell for browser / editor tab strips.",
+    "api": ["enz_document_tab", "EnzDocumentTab"],
+    "keywords": ["AdwTabBar", "browser tab in titlebar", "chromeless tab strip", "document tab", "document tab titlebar band", "document tabs", "dynamic tabs", "fold document tabs", "hide tab strip scrollbar", "list all documents", "single tab", "tab bar", "tab cell", "tab centreline", "tab in titlebar", "tab overflow list", "tab strip", "titlebar tab", "variable-width document tabs"],
+    "wiring_contract": false
+  },
+  {
+    "module": "document_tabs",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the widget layer over the keyed document-tab model.",
+    "api": ["enz_document_tabs", "EnzDocumentTabs"],
+    "keywords": ["AdwTabBar", "chromeless tab strip", "document tabs", "dynamic tabs", "hide tab strip scrollbar", "tab bar", "tab strip"],
+    "wiring_contract": false
+  },
+  {
+    "module": "breadcrumb",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "Navigation breadcrumbs with an editable mode whose idle/edit presentations keep one outer field rectangle and chrome.",
+    "api": ["enz_breadcrumb", "EnzBreadcrumb"],
+    "keywords": ["Ctrl+L location", "breadcrumb autocomplete", "breadcrumb changes size when editing", "breadcrumb mode switch", "breadcrumb style changes when editing", "breadcrumbs", "click to edit path", "crumb trail", "directory suggestions", "editable location", "editable path", "location bar", "path bar", "path completion", "path field continuity"],
+    "wiring_contract": false
+  },
+  {
+    "module": "pagination",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "numbered pagination with prev/next chrome and ellipsis collapse, built in O(visible cells) so a million-page pager renders the same handful of buttons. Cells are neutral (Quiet), not accent-inked. **Wiring:** pass a lazy enz_button_with message factory (impl Fn(usize) -> Message); the factory is invoked once per real activation and never at view-build time, so an M-page pager is not M closures deep.",
+    "api": ["enz_pagination", "EnzPagination"],
+    "keywords": ["PDF page picker", "document pager", "first page last page", "go to page", "jump to page", "next previous page", "numbered pager", "numbered pagination", "page 1 of N", "page bar", "page navigation", "page navigator", "page picker", "page selector", "paged document", "pagination", "prev next page", "previous page next page"],
+    "wiring_contract": false
+  },
+  {
+    "module": "sidebar_content",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "a padded vertical column with sidebar-specific defaults.",
+    "api": ["enz_sidebar_content", "EnzSidebarContent"],
+    "keywords": ["favorites and smart mailboxes", "flat sidebar sections", "grouped sidebar rows", "mailbox list", "nav sidebar", "places and devices", "section rhythm", "side panel content", "sidebar body", "sidebar column", "sidebar content", "sidebar section caption", "sidebar section gap", "sidebar section rhythm", "sidebar sections that do not collapse"],
+    "wiring_contract": false
+  },
+  {
+    "module": "sidebar_row",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "sidebar list row. **Wiring:** a rail whose selection follows the current *route* wants .reduced_motion(true), or the row being deselected replays its old highlight for a few frames after navigation.",
+    "api": ["enz_sidebar_row", "enz_sidebar_row_lazy", "EnzSidebarRow"],
+    "keywords": ["AT default action opens tile", "Enter opens focused tile", "IconSource", "SymbolicSvg", "app icon", "app-owned icon", "brand mark", "button-like surface", "custom icon", "deselected row flashes", "disabled contrast", "disabled ink", "disabled on backdrop", "disabled_on", "favicon", "file type icon svg", "glyph", "grid cell open on Enter", "grid tile", "hover accessory", "hover press surface", "hover reveal", "ico icon", "icon", "icon from handle", "icon from image", "icon source", "instant row selection", "logo follows text colour", "lucide", "monochrome logo", "nav row", "navigation item", "open a folder as a workspace", "open focused tile", "open folder", "opened folder", "per row reduced motion", "png icon", "pressable Enter distinct from Space", "pressable context menu", "pressable on_context", "provider logo", "raster icon", "reveal on hover", "right click a card", "right click a pressable", "right click a sidebar row", "root folder", "row hover action", "row selection flash", "secondary click a pressable", "selectable surface", "sidebar item", "sidebar list row", "sidebar row", "sidebar row custom icon", "sidebar row image", "sidebar row reduced motion", "sidebar row with app icon", "sidebar row with brand mark", "sidebar row with favicon", "stale row highlight", "svg icon handle", "symbol", "symbolic svg", "tappable surface", "tile Enter opens", "tile on_enter", "tinted svg", "trailing on hover", "transparent disabled control", "vendor mark", "workspace", "workspace as a place", "workspace favicon", "workspace favicon in sidebar", "workspace root"],
+    "composes_with": ["list_row_surface"],
+    "wiring_contract": false
+  },
+  {
+    "module": "header_bar",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "top-of-window header bar with title + actions.",
+    "api": ["enz_header_bar", "EnzHeaderBar"],
+    "keywords": ["3:1", "AdwHeaderBar", "app header", "arbitrary fill", "calendar colour", "caption contrast", "group label", "header bar", "headerbar", "icon contrast", "ink on fill", "large text contrast", "legible ink", "muted contrast", "non-text contrast", "on-fill contrast", "section header", "selected row text", "selected tree row subtitle", "subtle", "tag colour", "top bar", "weak ink"],
+    "composes_with": ["center_clamp_row", "window_title"],
+    "wiring_contract": false
+  },
+  {
+    "module": "page_header",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "a large-title page header with optional actions.",
+    "api": ["enz_page_header", "EnzPageHeader"],
+    "keywords": ["hero header", "large title", "page header", "page title header", "screen title"],
+    "composes_with": ["view_that_fits", "window_title"],
+    "wiring_contract": false
+  },
+  {
+    "module": "pane_header",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the title-rung header between the section caption and the page hero: a left-aligned ~18 px title with an arbitrary trailing/leading element and an inline subtitle/count.",
+    "api": ["enz_pane_header", "EnzPaneHeader"],
+    "keywords": ["18px header", "header with trailing action", "left aligned title header", "pane header", "pane title", "section band", "section header with action", "title with count"],
+    "wiring_contract": false
+  },
+  {
+    "module": "pane_grid",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "recursive user-resizable tiled panes for terminal splits and editor groups. Build the app's PaneTree, keep EnzPaneGridState beside it, render with enz_pane_grid, and feed EnzPaneGridEvent back through the state. This is not navigation_split_view: that is an adaptive sidebar + content shell that collapses to a drawer, while this preserves a recursive pane tree and exposes splitter/sash interaction.",
+    "api": ["enz_pane_grid", "enz_pane_grid_with_content", "EnzPaneContent", "EnzPaneGrid", "EnzPaneGridState"],
+    "keywords": ["GtkPaned", "draggable pane header", "draggable titlebar", "how big is my pane", "keyed panes", "pane activation", "pane allocation", "pane bounds", "pane drop", "pane gap color", "pane grid", "pane rearrangement", "pane rectangle", "pane restore", "pane size", "pane snapshot", "pane tree", "paned", "pty columns per pane", "resizable panes", "sash", "size content to pane", "split pane", "splitter", "terminal splits", "tiled panes", "two pane splitter"],
+    "wiring_contract": false
+  },
+  {
+    "module": "title_bar",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the client-side-decoration titlebar: ordered slots, drag regions, per-window gestures. **Wiring:** the .actions(..) overflow slot does not own its menu state - pass .overflow_open(..), use the actions message to toggle the trigger, and set .action_dismiss(..) to a distinct idempotent close message for row activation, Escape, and outside press.",
+    "api": ["enz_title_bar", "EnzTitleBar"],
+    "keywords": ["app titlebar", "back button in titlebar", "client side decoration", "close kebab menu", "close minimize maximize", "collapse titlebar buttons", "collapse toolbar", "csd titlebar", "dismiss overflow menu", "double row titlebar", "drag to move window", "drawer titlebar overlap", "hamburger for titlebar", "heading titlebar", "icon group titlebar", "inert titlebar controls", "kebab", "kebab menu", "light dismiss", "maximize button", "min max close", "minimize button", "modal titlebar", "outside click dismiss", "pane header heading", "resize hides titlebar icons", "responsive titlebar", "sidebar header heading", "three dot", "three dot menu", "title bar", "titlebar", "titlebar actions", "titlebar chrome", "titlebar heading", "titlebar height", "titlebar icon cluster", "titlebar icons", "titlebar kebab", "titlebar menu row namespace", "titlebar occupancy", "titlebar overflow", "titlebar overflow model", "titlebar overflow row id", "titlebar padding", "titlebar pattern", "titlebar search in the middle", "titlebar toolbar", "titlebar trailing actions", "titlebar wraps to two rows", "traffic lights", "two close buttons", "vertical ellipsis", "who draws the window controls", "window buttons", "window close button", "window controls", "window drag", "window titlebar"],
+    "composes_with": ["window_controls", "titlebar_icon_group", "toolbar_icon", "titlebar_actions"],
+    "wiring_contract": false
+  },
+  {
+    "module": "titlebar_actions",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the standalone/custom-band preset of the shared measured action-overflow engine: progressive folding, standard toolbar-icon kebab and trailing placement. Inside title_bar::EnzTitleBar, use its budgeted .actions(..) slot instead. **Wiring:** pass the app's open state to .overflow_open(..), use the toggle message for the trigger, and set .on_dismiss(..) to a distinct idempotent close message for activation, Escape, and outside press.",
+    "api": ["enz_titlebar_actions", "EnzTitlebarActions"],
+    "keywords": ["close kebab menu", "collapse toolbar", "dismiss overflow menu", "dropdown surface", "elevated menu", "hamburger for titlebar", "icon group titlebar", "kebab", "kebab menu", "light dismiss", "menu container", "menu rows", "menu surface", "outside click dismiss", "three dot", "three dot menu", "titlebar actions", "titlebar icon cluster", "titlebar icons", "titlebar kebab", "titlebar overflow", "titlebar toolbar", "titlebar trailing actions", "vertical ellipsis"],
+    "composes_with": ["menu"],
+    "wiring_contract": true
+  },
+  {
+    "module": "titlebar_group",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "basic horizontal cluster of titlebar widgets.",
+    "api": ["enz_titlebar_group", "EnzTitlebarGroup"],
+    "keywords": ["title bar cluster", "title bar group", "titlebar cluster", "titlebar group", "titlebar widgets row"],
+    "wiring_contract": false
+  },
+  {
+    "module": "titlebar_icon_group",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the container for a custom titlebar icon cluster: grouping rhythm, centre alignment on a fixed band height, a variant fill/border and a rounded clip mask. Wrap toolbar_icon children - and, outside title_bar::EnzTitleBar, the chrome-free titlebar_actions preset - in this.",
+    "api": ["enz_titlebar_icon_group", "EnzTitlebarIconGroup"],
+    "keywords": ["announce collapsed", "aria-expanded", "chromeless icon hover", "disclosure button", "expand collapse button", "icon brightens on hover", "icon button", "icon group titlebar", "icon only action", "icon-only button", "ink-only toolbar icon", "no hover fill", "reveal a region", "round action leaf", "round icon button", "settings icon in titlebar", "show hide panel button", "title bar group", "titlebar button", "titlebar cluster", "titlebar icon button", "titlebar icon cluster", "titlebar icons", "titlebar toolbar", "titlebar widgets row", "toolbar button"],
+    "composes_with": ["toolbar_icon", "titlebar_actions"],
+    "wiring_contract": false
+  },
+  {
+    "module": "titlebar_tab",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "a variable-width document-tab row with measured legibility folding and a complete-document overflow menu, plus the single-cell titlebar composition that binds document_tab to the neighbouring window_controls height and centreline.",
+    "api": ["enz_titlebar_document_tab", "enz_titlebar_document_tab_fill", "enz_titlebar_document_tab_with", "enz_titlebar_tab_row"],
+    "keywords": ["browser tab in titlebar", "document tab titlebar band", "fold document tabs", "list all documents", "tab centreline", "tab in titlebar", "tab overflow list", "titlebar tab", "variable-width document tabs"],
+    "wiring_contract": false
+  },
+  {
+    "module": "window_controls",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "the trailing close/minimize/maximize chip cluster of a titlebar, with caller-driven order, visibility and enabled state. title_bar builds it for you; reach for it directly only for window chrome outside that band.",
+    "api": ["enz_window_controls", "EnzWindowControls"],
+    "keywords": ["browser tab in titlebar", "chrome button", "close minimize maximize", "document tab titlebar band", "fold document tabs", "list all documents", "maximize button", "min max close", "minimize button", "round window chip", "tab centreline", "tab in titlebar", "tab overflow list", "titlebar tab", "traffic lights", "variable-width document tabs", "window button", "window buttons", "window close button", "window controls"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toolbar_row",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "start / center / end zone toolbar cluster row.",
+    "api": ["enz_toolbar_row", "EnzToolbarRow"],
+    "keywords": ["action row zones", "start center end row", "toolbar", "toolbar cluster", "toolbar row"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toolbar_view",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "header bar + content region shell composite.",
+    "api": ["enz_toolbar_view", "EnzToolbarView"],
+    "keywords": ["header content shell", "header plus content", "toolbar scaffold", "toolbar view"],
+    "composes_with": ["header_bar"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toolbar_divider",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "an inset vertical hairline for toolbar item groups.",
+    "api": ["enz_toolbar_divider", "EnzToolbarDivider"],
+    "keywords": ["toolbar divider", "toolbar rule", "toolbar separator", "vertical hairline"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toolbar_spacer",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "a spacer between toolbar item groups.",
+    "api": ["enz_toolbar_spacer", "EnzToolbarSpacer"],
+    "keywords": ["space between toolbar items", "toolbar gap", "toolbar spacer"],
+    "wiring_contract": false
+  },
+  {
+    "module": "status_bar",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "bottom status strip.",
+    "api": ["enz_status_bar", "enz_status_bar_strip", "EnzStatusBar", "EnzStatusBarStrip"],
+    "keywords": ["active operations", "activity monitor bar", "activity surface", "aligned stat columns", "background task", "bottom bar", "caption over value", "caption over value alignment", "coalesce transfer progress", "compact activity status", "copy progress", "dimensionless progress", "distribute items", "downloading status row", "embedded status bar", "embedded surface", "equal columns", "equal width stat columns", "evenly spaced status items", "file operation progress", "floating status", "footer bar", "fractional completion", "job status", "operation percentage", "operation status", "progress popover", "rate limit progress paint", "rounded status strip", "sidebar footer status", "sidebar progress row", "sidebar status", "stacked stat", "stat cell", "status bar", "status bar action", "status bar button", "status bar inheriting host surface", "status bar item", "status bar radius", "status bar segment", "status bar separator", "status bar stat", "status bar without background", "status strip", "statusbar", "statusbar segment", "summary bar stat", "transfer status", "transparent status bar", "what is running"],
+    "wiring_contract": false
+  },
+  {
+    "module": "content_pane",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "full-bleed pane with padded vertical content layout.",
+    "api": ["enz_content_pane", "EnzContentPane"],
+    "keywords": ["body pane", "content padding", "content pane", "content region", "heading inset", "main content pane", "padded pane", "page inset", "page padding", "top padding"],
+    "wiring_contract": false
+  },
+  {
+    "module": "band_stack",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "transparent full-bleed vertical stack of self-styled edge-to-edge bands (toolbar + body + status), the opposite shape of content_pane.",
+    "api": ["enz_band_stack", "EnzBandStack"],
+    "keywords": ["band layout", "band stack", "edge to edge bands", "full bleed stack", "stacked bands"],
+    "wiring_contract": false
+  },
+  {
+    "module": "window_lifecycle",
+    "tier": 1,
+    "group": "Navigation and app shell",
+    "summary": "**not a widget**: the iced::Task binding for the multi-window exit policy. A daemon - the only way to have two windows - does not stop when its last window closes, so closing the main window must produce an explicit iced::exit() or the process survives invisibly. Pair with its WindowLedger, and read app_shell's # A second window section first.",
+    "api": [],
+    "keywords": ["app does not quit", "app keeps running", "borderless window", "close last window", "content window", "daemon", "detached window", "dialog window", "floating close button", "frameless window", "listen_with", "modal dialog window", "multi-window", "multiple windows", "no window decorations", "parent window", "preview window", "remember window size", "resize event", "restore window size", "second window", "secondary window", "track window size", "transient for", "transient window", "undecorated window", "window exit policy", "window lifecycle", "window resize", "window width"],
+    "wiring_contract": false
+  },
+  {
+    "module": "adaptive_row",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "horizontal row with configurable spacing.",
+    "api": ["enz_adaptive_row", "EnzAdaptiveRow", "EnzAdaptiveRowWidget"],
+    "keywords": ["adaptive row", "h stack row", "hbox", "horizontal row", "row with spacing"],
+    "wiring_contract": false
+  },
+  {
+    "module": "aspect_ratio",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "a frame that keeps a fixed width-over-height ratio, deriving height from the resolved width.",
+    "api": ["enz_aspect_ratio", "EnzAspectRatio"],
+    "keywords": ["16 9 frame", "aspect ratio", "fixed ratio", "keep ratio"],
+    "wiring_contract": false
+  },
+  {
+    "module": "center",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "thin axis-specific centring recipes (both axes, vertical only, horizontal only).",
+    "api": ["enz_center", "enz_hcenter", "enz_vcenter"],
+    "keywords": ["center content", "centre", "horizontally center", "vertically center"],
+    "wiring_contract": false
+  },
+  {
+    "module": "clamp",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "cap child width to a readable-width max, centre in the parent.",
+    "api": ["enz_clamp", "EnzClamp"],
+    "keywords": ["constrain width", "limit width", "max width", "readable width"],
+    "wiring_contract": false
+  },
+  {
+    "module": "flow",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "flex-wrap container.",
+    "api": ["enz_flow", "EnzFlow"],
+    "keywords": ["Pinterest layout", "badge inventory", "chip flow", "chip inventory", "fixed cell wrap", "flex wrap", "masonry", "masonry grid", "ragged grid", "staggered grid", "tag cloud", "tag flow", "variable height tile grid", "waterfall layout", "wrap layout"],
+    "wiring_contract": false
+  },
+  {
+    "module": "flow_item",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "fixed-height child for a flow / wrap layout.",
+    "api": ["enz_flow_item", "EnzFlowItem"],
+    "keywords": ["flow cell", "flow child", "flow item", "wrap item"],
+    "wiring_contract": false
+  },
+  {
+    "module": "grid",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "fixed-column grid layout.",
+    "api": ["enz_grid", "grid::enz_keyed_grid", "EnzGrid"],
+    "keywords": ["LazyVGrid", "column grid", "fixed grid", "grid layout"],
+    "wiring_contract": false
+  },
+  {
+    "module": "responsive_grid",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "own-width responsive grid with size-class column ramp.",
+    "api": ["enz_responsive_grid", "responsive_grid::enz_responsive_grid_keyed", "EnzResponsiveGrid"],
+    "keywords": ["LazyVGrid", "Pinterest layout", "adaptive grid", "auto columns", "category grid", "category tiles", "column grid", "fixed grid", "grid layout", "masonry", "masonry grid", "ragged grid", "responsive columns", "responsive grid", "size class grid", "staggered grid", "tile grid", "variable height tile grid", "waterfall layout"],
+    "wiring_contract": false
+  },
+  {
+    "module": "responsive_grid_item",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "fixed-width, fixed-height cell host for a responsive grid.",
+    "api": ["enz_responsive_grid_item", "EnzResponsiveGridItem"],
+    "keywords": ["grid item host", "responsive grid cell"],
+    "wiring_contract": false
+  },
+  {
+    "module": "stack",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "tokenized vertical / horizontal stack primitives.",
+    "api": ["enz_hstack", "enz_vstack", "EnzHStack", "EnzVStack"],
+    "keywords": ["column stack", "hstack", "vertical stack", "vstack"],
+    "wiring_contract": false
+  },
+  {
+    "module": "spacer",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "fill-both-axes invisible spacer.",
+    "api": ["enz_spacer_gap", "EnzSpacerGap"],
+    "keywords": ["expanding gap", "filler", "flexible space", "push apart"],
+    "wiring_contract": false
+  },
+  {
+    "module": "wrap",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "model-driven, fixed-cell badge/chip inventory.",
+    "api": ["enz_wrap", "EnzBadgeView", "EnzWrap"],
+    "keywords": ["Pinterest layout", "badge inventory", "chip flow", "chip inventory", "fixed cell wrap", "flex wrap", "masonry", "masonry grid", "ragged grid", "staggered grid", "tag cloud", "tag flow", "variable height tile grid", "waterfall layout", "wrap layout"],
+    "wiring_contract": false
+  },
+  {
+    "module": "cached_subtree",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "identity-backed retained subtree boundary: an unchanged pane is not rebuilt, not diffed and not laid out again.",
+    "api": ["enz_cached_subtree", "EnzCachedSubtree"],
+    "keywords": ["cached subtree", "dirty subtree", "do not rebuild an unchanged pane", "invalidation token", "lazy pane", "memoize a pane", "one label rebuilds the whole window", "retained pane", "retained subtree", "revision", "skip rebuild", "subtree cache"],
+    "wiring_contract": false
+  },
+  {
+    "module": "responsive",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "cached width-aware container; runs its closure at most once per distinct width per frame.",
+    "api": ["enz_responsive", "EnzResponsive"],
+    "keywords": ["cached responsive", "cached subtree", "cached width container", "dirty subtree", "do not rebuild an unchanged pane", "enz_responsive", "invalidation token", "lazy pane", "memoize a pane", "one label rebuilds the whole window", "responsive cached", "retained pane", "retained subtree", "revision", "skip rebuild", "subtree cache"],
+    "wiring_contract": false
+  },
+  {
+    "module": "view_that_fits",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "renders the first candidate layout that fits, with the losers absent from the tree.",
+    "api": ["enz_view_that_fits", "EnzFitProbe", "EnzFitReport"],
+    "keywords": ["ViewThatFits", "adaptive layout choice", "pick first that fits", "responsive fallback"],
+    "wiring_contract": false
+  },
+  {
+    "module": "overflow_row",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "a horizontal bar with fixed leading + scrollable content band + pinned trailing slot.",
+    "api": ["enz_overflow_row", "enz_overflow_row_content_only", "EnzOverflowRow"],
+    "keywords": ["overflow row", "overflow scroll row", "pinned ends row", "scrolling toolbar"],
+    "wiring_contract": false
+  },
+  {
+    "module": "surface",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "tokenized visual surface with no imposed inner layout.",
+    "api": ["enz_surface", "EnzSurface"],
+    "keywords": ["acrylic", "backdrop blur", "background blur", "base container", "blur behind", "blur the background", "corner style", "frosted glass", "glass", "glass panel", "lens", "liquid glass", "material", "material surface", "panel background", "protected inset", "reduced transparency", "refraction", "see through panel", "square corners", "styled container", "surface", "theme radius", "translucent panel", "vibrancy"],
+    "wiring_contract": false
+  },
+  {
+    "module": "desktop_glass",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "glass over the desktop and the windows behind the app, painted by the compositor.",
+    "api": ["enz_desktop_glass", "EnzDesktopGlass"],
+    "keywords": ["backdrop blur frame", "blur behind the window", "compositor glass", "desktop glass", "frosted shell", "frosted window frame", "glass over the desktop", "glass sidebar", "glass window frame", "see the wallpaper", "transparent window glass", "window backdrop"],
+    "wiring_contract": false
+  },
+  {
+    "module": "glass",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "puts any widget on liquid glass of its own size and radius; what sits inside defaults to glass.",
+    "api": ["enz_glass", "EnzGlass"],
+    "keywords": ["adaptive glass", "adaptive tone glass", "clear glass shape", "controls on glass", "controls over video", "fixed glass ink", "flat backdrop blur", "flat frosted", "flat glass", "flat tinted backdrop blur", "flat tinted blur", "frosted glass shape", "frosted panel", "glass button", "glass clock", "glass control", "glass digits", "glass glyphs", "glass in any shape", "glass menu", "glass numerals", "glass on any widget", "glass over dark wallpaper", "glass pill shape", "glass silhouette", "glass text outline", "glass title bar", "glass toolbar", "idle backdrop update", "lock screen clock", "login clock glass", "make a widget glass", "non-refracting material", "tinted glass", "titlebar island"],
+    "wiring_contract": false
+  },
+  {
+    "module": "grain",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "lays a paper-like speckle (built-in noise or any SVG) on a surface, a shell pane or any element.",
+    "api": ["grain::enz_grain", "grain::EnzGrain"],
+    "keywords": ["feTurbulence", "film grain", "grain", "grainy dialog", "grainy sidebar", "grainy surface", "halftone", "noise", "noise texture", "paper texture", "print look", "speckle", "svg texture", "texture overlay"],
+    "wiring_contract": false
+  },
+  {
+    "module": "adaptive_glass",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "fills any shape, such as clock numerals or a pill, with liquid glass whose tone adapts to the backdrop.",
+    "api": ["adaptive_glass::enz_adaptive_glass", "adaptive_glass::EnzAdaptiveGlass"],
+    "keywords": ["adaptive tone glass", "clear glass shape", "frosted glass shape", "glass clock", "glass digits", "glass glyphs", "glass in any shape", "glass numerals", "glass over dark wallpaper", "glass pill shape", "glass silhouette", "glass text outline", "lock screen clock", "login clock glass"],
+    "wiring_contract": false
+  },
+  {
+    "module": "surface_stack",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "a surface with a built-in vertical stack.",
+    "api": ["enz_surface_stack", "EnzSurfaceStack"],
+    "keywords": ["container column", "panel with column", "surface stack", "surface with stack"],
+    "wiring_contract": false
+  },
+  {
+    "module": "svg_image",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "an SVG picture that can follow the theme's ink and has an accessible label.",
+    "api": ["svg_image::enz_svg", "svg_image::EnzSvg"],
+    "keywords": ["accessible svg", "illustration", "svg", "svg alt text", "svg image", "symbolic picture", "themed svg"],
+    "wiring_contract": false
+  },
+  {
+    "module": "surface_hints",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "tell the compositor a window's content type and whether it may tear.",
+    "api": [],
+    "keywords": ["HDR", "allow tearing", "color management", "colour space", "content type", "game mode", "low latency presentation", "tearing", "video playback window"],
+    "wiring_contract": false
+  },
+  {
+    "module": "system_bell",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "ring the desktop's alert sound or flash for a window.",
+    "api": [],
+    "keywords": ["alert sound", "beep", "error bell", "system bell", "visual bell", "xdg_system_bell"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tab_overview",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "all open tabs as a grid of preview cards to pick, close or add one.",
+    "api": ["tab_overview::enz_tab_overview"],
+    "keywords": ["AdwTabOverview", "all tabs", "tab grid", "tab overview", "tab previews", "tab switcher grid"],
+    "wiring_contract": false
+  },
+  {
+    "module": "hover_group",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "a container that tints its background while the pointer is anywhere inside it (draw-time group hover, composes with a nested row's own hover).",
+    "api": ["enz_hover_group", "enz_hover_group_with", "EnzHoverGroup"],
+    "keywords": ["group hover", "hover a set of rows", "hover group", "hover over the whole control", "hover scope", "hover the whole section", "nested hover", "pointer inside group", "section hover", "tint a group of rows"],
+    "wiring_contract": false
+  },
+  {
+    "module": "activity_pulse",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "rate-limited pointer-activity reports for auto-hiding chrome; no layout, paint or semantics of its own.",
+    "api": ["enz_activity_pulse", "EnzActivityPulse"],
+    "keywords": ["activity pulse", "auto hide controls", "fade chrome over video", "hide chrome when idle", "hide titlebar at rest", "idle pointer", "idle timer", "immersive viewer chrome", "mouse moved", "pointer activity", "show controls on move", "throttle pointer moves"],
+    "wiring_contract": false
+  },
+  {
+    "module": "card",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "a styled container/card surface.",
+    "api": ["enz_card", "EnzCard"],
+    "keywords": ["acrylic", "backdrop blur", "background blur", "base container", "blur behind", "blur the background", "card", "card text scale", "card typography", "content card", "corner style", "featured", "featured app", "featured card", "featured tile", "frosted glass", "glass", "glass panel", "group content", "hero", "hero card", "lens", "liquid glass", "material", "material surface", "page section", "page section heading", "panel", "panel background", "panel card", "promoted card", "protected inset", "reduced transparency", "refraction", "section title", "see through panel", "spotlight card", "square corners", "stacked sections", "styled container", "surface", "theme radius", "tile", "translucent panel", "vibrancy", "visual grouping"],
+    "composes_with": ["section_header", "preferences_group"],
+    "wiring_contract": false
+  },
+  {
+    "module": "pane",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "content-clipping pane.",
+    "api": ["enz_pane", "EnzPane"],
+    "keywords": ["clip container", "clipping pane", "content clip"],
+    "wiring_contract": false
+  },
+  {
+    "module": "group_box",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "a titled sunken content grouping.",
+    "api": ["enz_group_box", "EnzGroupBox"],
+    "keywords": ["GroupBox", "fieldset", "frame with title", "group box", "group content", "page section", "titled group", "visual grouping"],
+    "composes_with": ["card"],
+    "wiring_contract": false
+  },
+  {
+    "module": "expander",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "flat/card/plain disclosure section.",
+    "api": ["enz_expander", "EnzExpander"],
+    "keywords": ["AdwExpanderRow", "FAQ list", "IconSource", "SymbolicSvg", "accordion", "accordion group", "app icon", "app-owned icon", "brand mark", "channel group", "collapsible section", "collapsible sidebar section", "collapsible sidebar sections", "content below moves while collapsing", "custom icon", "disclosure section", "exclusive accordion", "expander brand mark", "expander custom icon", "expander favicon", "expander with app icon", "explorer section", "favicon", "file type icon svg", "finder tag group", "folder header", "glyph", "grouped sidebar", "header with new button", "ico icon", "icon", "icon from handle", "icon from image", "icon source", "logo follows text colour", "lucide", "monochrome logo", "next section follows the collapse", "one open at a time", "only one section open", "open a folder as a workspace", "open folder", "opened folder", "png icon", "provider logo", "raster icon", "reveal section", "root folder", "sidebar group", "sidebar section", "sidebar with sections", "svg icon handle", "symbol", "symbolic svg", "tinted svg", "vendor mark", "workspace", "workspace as a place", "workspace favicon", "workspace root", "workspace section"],
+    "composes_with": ["toggle"],
+    "wiring_contract": false
+  },
+  {
+    "module": "disclosure",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "expand/collapse toggle row.",
+    "api": ["enz_disclosure", "EnzDisclosure"],
+    "keywords": ["DisclosureGroup", "chevron toggle", "disclosure", "expand collapse", "show more"],
+    "wiring_contract": false
+  },
+  {
+    "module": "divider",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "a styled divider/separator.",
+    "api": ["enz_divider", "EnzDivider"],
+    "keywords": ["dark stripe between panes", "divider between sidebar and content", "divider looks bad in dark", "fade divider ends", "faded divider", "hairline between panes", "horizontal line", "hr", "pane boundary line", "remove the divider", "rule", "seam colour", "seam line", "seam width", "separator", "sidebar divider"],
+    "wiring_contract": false
+  },
+  {
+    "module": "icon_slot",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "fixed-dimension bounding box that centres an icon.",
+    "api": ["enz_icon_slot", "EnzIconSlot"],
+    "keywords": ["artwork slot", "fixed icon area", "icon bounding box", "icon box", "icon slot"],
+    "wiring_contract": false
+  },
+  {
+    "module": "scroll_view",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "general single-child scrollable region; all default and virtual surfaces inherit the tokenized minimum thumb length with exact endpoint mapping.",
+    "api": ["enz_scroll_view", "enz_scrollable", "EnzScrollView"],
+    "keywords": ["Rc provider", "alternate screen wheel", "caller-owned offset", "column change scroll", "document jumps when the sidebar animates", "file grid", "filtered list rows", "grid page up", "home end", "icon grid virtualised", "independent scroll track padding", "infinite scroll", "keep item visible", "keep the page in view while the content reflows", "keyboard scrolling", "keyed anchor", "large folder", "large list", "last row reveal", "measured viewport", "minimum scrollbar thumb", "offset scrollbar", "overlay scrollbar", "owned provider", "owned row provider", "page up", "paint a scrollbar over a virtualised body", "photo grid", "preserve scroll position on resize", "projected list rows", "reflow anchor", "report the wheel do not apply it", "retained geometry", "retained variable heights", "reuse prefix sums", "rounded pane scrollbar", "rows built in view", "scroll", "scroll anchor", "scroll area", "scroll chrome clearance", "scroll container", "scroll thumb over canvas", "scroll under titlebar", "scroll view", "scrollable", "scrollbar chrome over an offset the caller owns", "scrollbar contrast on custom canvas", "scrollbar corner clipping", "scrollbar grab length", "scrollbar over app-painted backdrop", "scrollbar over caller offset", "scrollbar over custom background", "scrollbar safe area", "scrollbar track inset", "scrollbar without a gutter", "terminal scrollbar", "thousands of files", "thumbnail grid", "track layout bounds", "transcript scrollbar", "usable scrollbar thumb", "veto the wheel", "view-local rows", "viewport bounds", "virtual grid", "virtual grid keyboard", "virtual list", "virtual list keyboard", "virtualisation", "virtualised list", "virtualization", "virtualized file list", "virtualized list", "windowed list"],
+    "wiring_contract": false
+  },
+  {
+    "module": "scroll_column",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "top-anchored scrollable vertical stack. .complete_rows(row_height) retains the parent's actual allocation while limiting paint/input to its largest whole-row inner viewport; .free_form_viewport() keeps the ordinary unquantized allocation, and neither policy snaps pixel scroll offsets.",
+    "api": ["enz_scroll_column", "EnzScrollColumn"],
+    "keywords": ["scroll column", "scrolling column", "top anchored scroll", "vertical scroll stack"],
+    "wiring_contract": false
+  },
+  {
+    "module": "scroll_card",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "flat scrolling surface with optional border.",
+    "api": ["enz_scroll_card", "EnzScrollCard"],
+    "keywords": ["bordered scroll", "scroll card", "scroll inside card", "scrolling card"],
+    "wiring_contract": false
+  },
+  {
+    "module": "horizontal_scroll_view",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "fixed-height horizontal scrolling strip.",
+    "api": ["enz_horizontal_scroll_view", "EnzHorizontalScrollView"],
+    "keywords": ["carousel scroll strip", "horizontal scroll", "scroll strip", "side scroll"],
+    "wiring_contract": false
+  },
+  {
+    "module": "offset_scrollbar",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "overlay scrollbar chrome painted over a child whose scroll offset the caller owns; layout-transparent, wheel reported not applied, thumb ink resolved against a caller-supplied backdrop.",
+    "api": ["enz_offset_scrollbar", "EnzOffsetScrollbar"],
+    "keywords": ["alternate screen wheel", "app-owned editor chrome", "bare editor", "caller-owned offset", "chunked editor overscan", "code scrollbar", "editor scrollbar", "frameless", "logical line scroll", "offset scrollbar", "overlay scrollbar", "paint a scrollbar over a virtualised body", "plain variant", "report the wheel do not apply it", "restore wrapped scroll", "scroll a bare text editor", "scroll thumb over canvas", "scrollbar chrome over an offset the caller owns", "scrollbar for my own editor", "scrollbar over a text_editor", "scrollbar over caller offset", "scrollbar without a gutter", "terminal scrollbar", "text editor scrollbar", "transcript scrollbar", "veto the wheel"],
+    "wiring_contract": false
+  },
+  {
+    "module": "editor_scrollbar",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "enz_editor_scrollbar paints the same auto-hidden overlay thumb over a caller-owned, internally-scrolling iced::widget::text_editor whose scroll offset the *editor* owns. Reach for it when an app owns its own editor chrome - a distinct font-size ladder, a line-number gutter, a bespoke frame - so it cannot adopt text_area without reshaping its text, yet still needs a scrollbar. It reads the editor's real scroll_metrics() and drives an absolute Action::ScrollTo through the caller's own reducer, so the editor stays the sole scroll owner; for the standard fully-chromed field use text_area, which builds this adapter for you, and when the *caller* owns the offset use offset_scrollbar instead.",
+    "api": ["enz_editor_scrollbar", "EnzEditorScrollbar"],
+    "keywords": ["app-owned editor chrome", "bare editor", "chunked editor overscan", "code scrollbar", "editor scrollbar", "frameless", "logical line scroll", "plain variant", "restore wrapped scroll", "scroll a bare text editor", "scrollbar for my own editor", "scrollbar over a text_editor", "text editor scrollbar"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tail_follow",
+    "tier": 1,
+    "group": "Containers, surfaces and scrolling",
+    "summary": "opens a scroll region at the newest content and follows appends, releasing while the reader is scrolled up.",
+    "api": ["enz_tail_follow"],
+    "keywords": ["auto scroll to newest", "follow tail", "jump to latest", "log tail", "open at newest message", "pin to newest message", "scroll to bottom", "stick to bottom", "tail follow", "unread count"],
+    "wiring_contract": false
+  },
+  {
+    "module": "table",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a bounded 2D virtualised data grid; Length::Fill realization uses the actual allocation, fixed-height bodies reserve only complete row slots, and TableViewportState publishes the effective viewport for update-time navigation. .on_row_activate(..) makes hover, press and selection one rounded row surface instead of one transient highlight per cell. It requires the default unfrozen layout because split panes cannot honestly expose one row action.",
+    "api": ["enz_table", "EnzTable"],
+    "keywords": ["DataTable", "actual allocation", "chrome budget", "clickable table row", "column priority", "column resize handle", "column width", "complete table row", "data grid", "data table", "expandable row", "fit column to contents", "fixed-height table rows", "fold columns", "hide columns on narrow screens", "partial row clip", "resizable columns", "resize column", "responsive allocation", "responsive table", "rounded table row", "row activation", "row detail", "row selection", "selectable table", "selected table row", "spreadsheet", "table scrollbar", "table viewport", "virtualised table", "virtualized table", "whole row viewport"],
+    "wiring_contract": false
+  },
+  {
+    "module": "table_header_cell",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "sortable column-header cell.",
+    "api": ["enz_table_header_cell", "EnzTableHeaderCell"],
+    "keywords": ["column header", "sortable header", "table header"],
+    "wiring_contract": false
+  },
+  {
+    "module": "table_text_cell",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "single-line text cell for a data table.",
+    "api": ["enz_table_text_cell", "EnzTableTextCell"],
+    "keywords": ["data cell", "table cell", "text cell"],
+    "wiring_contract": false
+  },
+  {
+    "module": "virtual_list",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a scrolling list that realises only the visible items. Use .self_scrolling(..) to synchronize idle scrolling without application messages, or feed .on_scroll(..) back through .scroll_offset(..); without either, realization stays at the supplied offset.",
+    "api": ["enz_virtual_list", "enz_virtual_list_variable", "enz_virtual_list_with_geometry", "EnzVirtualList"],
+    "keywords": ["Rc provider", "anchor scroll to content", "cached subtree", "correct estimated row heights", "dirty subtree", "do not rebuild an unchanged pane", "filtered list rows", "home end", "infinite scroll", "invalidation token", "jump to item", "jump to start", "keep scroll position after prepend", "keyboard scrolling", "large list", "last row reveal", "lazy pane", "measured row heights", "measured viewport", "memoize a pane", "one label rebuilds the whole window", "owned provider", "owned row provider", "page up", "projected list rows", "restore scroll after insert", "retained geometry", "retained pane", "retained subtree", "retained variable heights", "reuse prefix sums", "reveal a row", "revision", "rows built in view", "scroll into view", "scroll to index", "scroll to item", "scroll to row", "skip rebuild", "subtree cache", "track layout bounds", "view-local rows", "viewport bounds", "virtual list", "virtual list keyboard", "virtualisation", "virtualised list", "virtualization", "virtualized list", "windowed list"],
+    "wiring_contract": true
+  },
+  {
+    "module": "virtual_grid",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a model-backed virtual spatial grid for photo, icon and file-thumbnail collections. Use .self_scrolling(..) for message-free synchronization, or feed .on_scroll(..) back through .scroll_offset(..); without either, realization stays at the supplied offset.",
+    "api": ["enz_virtual_grid", "EnzVirtualGrid"],
+    "keywords": ["column change scroll", "file grid", "grid page up", "icon grid virtualised", "keep item visible", "keyed anchor", "photo grid", "reflow anchor", "thumbnail grid", "virtual grid", "virtual grid keyboard"],
+    "wiring_contract": true
+  },
+  {
+    "module": "file_browser",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a host-owned listing with per-type icons and natural sort. file_browser::FileMetadataColumn adds fixed-width host cells to its responsive prefix; file_browser::EnzFileBrowser::header_radius rounds only the header.",
+    "api": ["enz_file_browser", "EnzFileBrowser"],
+    "keywords": ["Git status column", "KB MB GB", "browse files", "byte size", "bytes to string", "df -h", "directory listing", "download size", "file browser", "file browser header corners", "file context menu", "file explorer", "file list", "file manager", "file metadata cell", "file picker pane", "file size", "folder browser", "format bytes", "human readable size", "humanise bytes", "large folder", "right click a file", "size string", "storage total", "thousands of files", "virtualized file list"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tree_view",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a keyboard-navigable, scrolling tree of pre-flattened rows.",
+    "api": ["enz_tree_view", "EnzTreeItem", "EnzTreeView"],
+    "keywords": ["3:1", "OutlineGroup", "arbitrary fill", "calendar colour", "caption contrast", "custom row content", "custom sidebar row", "directory tree", "embedded tree", "expandable rows", "file tree", "flat tree", "folder tree", "folder tree in sidebar", "group label", "hierarchical rows", "hierarchy", "hover accessory", "hover reveal", "icon contrast", "ink on fill", "keep sidebar scroll", "large text contrast", "legible ink", "muted contrast", "nested list", "no card border", "non-text contrast", "on-fill contrast", "open a folder as a workspace", "open folder", "opened folder", "outline", "restore tree scroll on reopen", "reveal on hover", "root folder", "roving sidebar", "row hover action", "scroll survives collapse", "section header", "seed tree scroll offset", "selected row text", "selected tree row subtitle", "sidebar row with avatar", "sidebar row with badge", "sidebar row with status dot", "sidebar scrolled up on reopen", "sidebar tree without card", "stable tree scrollable id", "subtle", "tag colour", "title subtitle row", "trailing on hover", "transparent panel", "tree", "tree scroll offset persists across collapse", "tree view", "tree without panel fill", "two line sidebar row", "weak ink", "workspace", "workspace as a place", "workspace root"],
+    "composes_with": ["tree_disclosure"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tree_disclosure",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "expand/collapse chevron for tree rows.",
+    "api": ["enz_tree_disclosure", "tree_disclosure::enz_tree_disclosure_lazy", "EnzTreeDisclosure"],
+    "keywords": ["expand tree row", "tree chevron", "tree disclosure", "tree toggle"],
+    "wiring_contract": false
+  },
+  {
+    "module": "list_row_surface",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a focusable, keyboard-activatable row surface with hover / pressed / selected / disabled states. Its trailing action can be revealed on hover/focus, or on hover/focus/selection, without ever leaving the layout or the accessibility tree.",
+    "api": ["enz_list_row_surface", "list_row_surface::enz_list_row_surface_lazy", "EnzListRowSurface"],
+    "keywords": ["AT default action opens", "AT default action opens tile", "Enter opens focused entry", "Enter opens focused tile", "Enter versus Space", "OutlineGroup", "accessory", "action on the active row", "add row centered", "breathing room around list row", "button-like surface", "centered list row", "centered row action", "centre icon and label", "clickable row", "collection gutter", "composite reorder row", "custom row", "custom row content", "custom sidebar row", "directory tree", "distinct open action", "drag a clickable row", "drag a group by its header", "drag handle", "drag interactive rows", "drag to reorder", "drag to reorder tiles", "drag versus click", "embedded tree", "expandable rows", "file tree", "flat tree", "folder tree", "folder tree in sidebar", "grid cell open on Enter", "grid tile", "group hover", "hierarchical rows", "hierarchy", "hover a set of rows", "hover accessory", "hover action", "hover group", "hover over the whole control", "hover press surface", "hover reveal", "hover scope", "hover the whole section", "keep row action visible when selected", "keep sidebar scroll", "keyboard open action", "list gutter", "list item surface", "list outer gutter", "list padding", "list row", "move rows", "nested hover", "nested list", "no card border", "on_enter row", "open focused row", "open focused tile", "outer inset", "outline", "page sorter", "pointer inside group", "pressable Enter distinct from Space", "pressable context menu", "pressable on_context", "quiet row commands", "reorder grid", "reorder grip", "reorder groups", "reorder list", "reorder pinned items", "reorder rows that are buttons", "reorderable list", "reorderable sidebar", "restore tree scroll on reopen", "reveal on hover", "right click a card", "right click a list item", "right click a pressable", "right click a row", "roving sidebar", "row Enter open Space select", "row actions", "row align_x", "row content alignment", "row content is centered", "row context menu", "row hover action", "row hover paint reaches pane edge", "row inset", "row text not left aligned", "row with button", "row with custom content", "row with trailing action", "screen reader open row", "scroll survives collapse", "search results are centered", "secondary click", "secondary click a pressable", "section hover", "seed tree scroll offset", "selectable row", "selectable surface", "selected row action", "shrink content in a full width row", "sidebar row with avatar", "sidebar row with badge", "sidebar row with menu", "sidebar row with status dot", "sidebar scrolled up on reopen", "sidebar tree without card", "sortable grid", "sortable list", "stable tree scrollable id", "tappable surface", "tile Enter opens", "tile on_enter", "tint a group of rows", "title subtitle row", "trailing on hover", "transparent panel", "tree", "tree scroll offset persists across collapse", "tree without panel fill", "two line sidebar row", "wrapped reorder"],
+    "wiring_contract": false
+  },
+  {
+    "module": "preview_row",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "title + trailing + excerpt + footer list row.",
+    "api": ["enz_preview_row", "EnzPreviewRow"],
+    "keywords": ["excerpt row", "mail row", "message row", "preview row", "title excerpt footer row"],
+    "composes_with": ["text_pair"],
+    "wiring_contract": false
+  },
+  {
+    "module": "print_pdf",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "lay out headings, paragraphs and images on pages and write them as a vector PDF for printing or export.",
+    "api": [],
+    "keywords": ["PDF export", "page layout for printing", "print", "print preview document", "render pages to PDF", "save as PDF"],
+    "wiring_contract": false
+  },
+  {
+    "module": "keyed_column",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a column reconciled by key, so a row keeps its state when rows are inserted or removed above it. **Wiring:** .animate_moves() slides the rows a change moves, instead of jumping.",
+    "api": [],
+    "keywords": ["FLIP", "animate insertion", "animate item placement", "animate list insertion", "animate removal", "animate reorder", "animateItemPlacement", "inserted row pushes the others", "layout transition", "list layout transition", "rows jump when a row is inserted", "slide rows into place"],
+    "wiring_contract": false
+  },
+  {
+    "module": "reorder_list",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a keyed list with drag-to-reorder. **Wiring:** rows that are themselves clickable need .drag_through_children(true), or the child captures every press and nothing is draggable.",
+    "api": ["enz_reorder_list", "EnzReorderList"],
+    "keywords": ["composite reorder row", "drag a clickable row", "drag a group by its header", "drag handle", "drag interactive rows", "drag to reorder", "drag to reorder tiles", "drag versus click", "move rows", "page sorter", "reorder grid", "reorder grip", "reorder groups", "reorder list", "reorder pinned items", "reorder rows that are buttons", "reorderable list", "reorderable sidebar", "sortable grid", "sortable list", "wrapped reorder"],
+    "wiring_contract": false
+  },
+  {
+    "module": "download_list",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "the view over the core download model.",
+    "api": ["enz_download_list", "enz_download_list_provider", "EnzDownloadList"],
+    "keywords": ["aligned progress column", "attachment icon", "desktop icon theme", "device icon", "document icon", "download list", "download manager", "download queue", "download row", "download row provider", "downloads", "downloads panel", "drive icon", "file extension icon", "file type icon", "folder icon", "icon for a file", "icon theme", "mime icon", "mimetype icon", "places icon", "show in folder", "themed file icon", "transfers list", "virtualized download history", "windowed download history"],
+    "composes_with": ["progress_bar"],
+    "wiring_contract": false
+  },
+  {
+    "module": "shortcut_list",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "sectioned list of keyboard-shortcut rows.",
+    "api": ["enz_shortcut_list", "EnzShortcutList"],
+    "keywords": ["alias badge", "help entry", "hotkey list", "keybindings list", "keyboard shortcuts", "shortcut catalog rows", "shortcut dialog rows", "shortcut help", "shortcut list", "shortcuts list"],
+    "composes_with": ["key_badge"],
+    "wiring_contract": false
+  },
+  {
+    "module": "chat_list",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "provider-backed, variable-height virtual chat transcript. **Wiring:** the realised window follows .scroll_offset(..), **not** the inner scrollbar, and this widget has no self-scrolling mode - plumb .on_scroll(..) back through update into .scroll_offset(..) or the same first window is realised forever (measured: messages 0..=9 at every offset). That is the *realisation window*; the **scroll position** is separate and needs no wiring - tail_follow opens the list at the newest message and follows appended ones by default. **Variable heights:** a height table built from an estimator is a permanent guess - pass .on_measure(..) and feed the reported RowMeasurements to reconcile_measurements, which corrects the table AND the scroll offset.",
+    "api": ["enz_chat_list", "EnzChatList"],
+    "keywords": ["actual height", "anchor scroll to content", "auto scroll to newest", "chat", "chat bubble", "chat list", "conversation transcript", "correct estimated row heights", "correct row estimate", "delivery state", "edited marker", "follow tail", "how tall is this row", "intrinsic height", "jump to item", "jump to latest", "jump to start", "keep scroll position after prepend", "list row heights", "log tail", "measure a row", "measure laid out widget", "measured row height", "measured row heights", "message bubble", "message footer", "message list", "message metadata", "message timestamp", "model name on a message", "open at newest message", "per message actions", "pin to newest message", "read receipt", "report my height", "restore scroll after insert", "retry a message", "reveal a row", "row height", "scroll into view", "scroll to bottom", "scroll to index", "scroll to item", "scroll to row", "sent receipt", "speech bubble", "stick to bottom", "tail follow", "timestamp under a message", "token count on a message", "unread count", "variable row height", "virtual chat"],
+    "composes_with": ["chat_bubble", "tail_follow"],
+    "wiring_contract": true
+  },
+  {
+    "module": "row_measure",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "report a virtualised row's **intrinsic** height so a variable-height list can correct its guess. This is the producer VariableHeightModel::apply_measurements was waiting for; iced::widget::Sensor::on_resize reports the *imposed* slot instead, which in a virtual list is the estimate being corrected.",
+    "api": ["enz_row_measure", "EnzRowMeasure"],
+    "keywords": ["actual height", "correct row estimate", "how tall is this row", "intrinsic height", "list row heights", "measure a row", "measure laid out widget", "measured row height", "report my height", "row height", "row measure", "variable row height"],
+    "wiring_contract": false
+  },
+  {
+    "module": "chat_transcript",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "scrolling surface for chat bubbles.",
+    "api": ["enz_chat_transcript", "EnzChatTranscript"],
+    "keywords": ["auto scroll to newest", "bubbles surface", "chat scroll", "chat transcript", "conversation view", "follow tail", "jump to latest", "log tail", "open at newest message", "pin to newest message", "scroll to bottom", "stick to bottom", "tail follow", "unread count"],
+    "composes_with": ["chat_bubble", "tail_follow"],
+    "wiring_contract": false
+  },
+  {
+    "module": "chat_bubble",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "a rounded chat message bubble.",
+    "api": ["enz_chat_bubble", "EnzChatBubble"],
+    "keywords": ["chat bubble", "delivery state", "edited marker", "message bubble", "message footer", "message metadata", "message timestamp", "model name on a message", "per message actions", "read receipt", "retry a message", "sent receipt", "speech bubble", "timestamp under a message", "token count on a message"],
+    "composes_with": ["block_list", "streaming_text"],
+    "wiring_contract": false
+  },
+  {
+    "module": "schedule",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "the day/week time-grid surface.",
+    "api": ["enz_schedule", "EnzSchedule"],
+    "keywords": ["agenda", "all-day band", "calendar view", "column emphasis", "date range", "day grid", "drag selection preview", "drag to create an event", "event span", "full width event", "grid lines outside working hours", "half hour lines", "highlight a column", "hour label clipping", "lone event width", "multi-day", "name the second ruler", "schedule gutter width", "secondary ruler label", "secondary timezone label", "selected column", "selected day column", "selected event ring", "spanning event", "time grid", "time range preview", "timezone ruler header", "week grid", "week view"],
+    "wiring_contract": false
+  },
+  {
+    "module": "carousel",
+    "tier": 1,
+    "group": "Lists, tables and virtualisation",
+    "summary": "accessible keyed paging with indicators, prev/next chrome, keyboard paging and optional swipe.",
+    "api": ["enz_carousel", "EnzCarousel"],
+    "keywords": ["banner carousel", "carousel", "carousel arrows cover cards", "carousel body slot", "carousel chrome overlaps content", "carousel page height", "carousel vertical chrome", "content under carousel arrows", "gallery", "image gallery", "inset carousel body", "page slot", "pager", "promoted items strip", "rotating promoted items", "screenshot gallery", "screenshot strip", "slideshow", "stage body height", "thumbnail strip"],
+    "wiring_contract": false
+  },
+  {
+    "module": "area_chart",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a Canvas-based Cartesian area chart host; it sits on the host surface with horizontal grid lines only, and .plot_background(true) / .y_axis_line(true) add a plot panel and the left vertical rule.",
+    "api": ["enz_area_chart", "EnzAreaChart"],
+    "keywords": ["animated chart", "area chart", "area chart axis unit", "area graph", "area tick formatter", "area y axis label", "axis gutter", "axis label", "axis unit label", "chart without background", "clipped tick label", "continuously scrolling chart", "curved line chart", "easing chart", "filled line chart", "gradient area chart", "gutter", "hide vertical axis", "horizontal grid only", "interpolate chart", "live chart", "monotone curve", "real-time history", "rounded peaks", "scrolling time window", "smooth chart", "smooth curve without overshoot", "smooth spline", "tick label width", "transparent chart", "tween chart", "wide axis label", "y axis label", "y axis unit", "y gutter"],
+    "wiring_contract": false
+  },
+  {
+    "module": "bar_chart",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a Canvas-based vertical bar chart host.",
+    "api": ["enz_bar_chart", "EnzBarChart"],
+    "keywords": ["animated sparkline", "area sparkline", "bar axis gutter", "bar axis label", "bar chart", "bar chart axis unit", "bar graph", "bar tick formatter", "bar y axis label", "bar y gutter", "column chart", "history strip", "inline chart", "interpolate sparkline", "micro chart", "mini chart", "mini graph", "mini history", "smooth sparkline", "sparkline", "tiny chart", "trend", "trend line mini"],
+    "wiring_contract": false
+  },
+  {
+    "module": "cartesian_chart",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "the shared continuous-Cartesian host with line, area and point mark policies.",
+    "api": ["enz_cartesian_chart", "EnzCartesianChart"],
+    "keywords": ["cartesian chart", "chart layers", "chart mark policy", "continuous chart", "mixed line area point chart"],
+    "wiring_contract": false
+  },
+  {
+    "module": "line_chart",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a Canvas-based Cartesian line chart host.",
+    "api": ["enz_line_chart", "EnzLineChart"],
+    "keywords": ["animated sparkline", "area sparkline", "axis gutter", "axis label", "axis unit", "gutter", "history strip", "inline chart", "interpolate sparkline", "line chart", "line graph", "line tick formatter", "micro chart", "mini chart", "mini graph", "mini history", "smooth sparkline", "sparkline", "tick formatter", "tick label width", "time series chart", "tiny chart", "trend", "trend line", "trend line mini", "y axis label", "y axis unit", "y gutter"],
+    "wiring_contract": false
+  },
+  {
+    "module": "pie_chart",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "an accessible, bounded pie / donut chart.",
+    "api": ["enz_pie_chart", "EnzPieChart"],
+    "keywords": ["donut chart", "pie chart", "ring chart"],
+    "wiring_contract": false
+  },
+  {
+    "module": "scatter_chart",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a Canvas-based Cartesian scatter chart host.",
+    "api": ["enz_scatter_chart", "EnzScatterChart"],
+    "keywords": ["point cloud chart", "scatter axis gutter", "scatter axis unit", "scatter chart", "scatter plot", "scatter tick formatter", "scatter y axis label", "scatter y gutter", "xy plot"],
+    "wiring_contract": false
+  },
+  {
+    "module": "sparkline",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a frameless, axis-less mini trend chart (sparkline).",
+    "api": ["enz_sparkline", "EnzSparkline"],
+    "keywords": ["animated sparkline", "area sparkline", "history strip", "inline chart", "interpolate sparkline", "micro chart", "mini chart", "mini graph", "mini history", "smooth sparkline", "sparkline", "tiny chart", "trend", "trend line mini"],
+    "wiring_contract": false
+  },
+  {
+    "module": "chart_legend",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a chart legend - a row of coloured swatch + label pairs.",
+    "api": ["enz_chart_legend", "EnzChartLegend"],
+    "keywords": ["chart key", "chart legend", "legend", "series legend"],
+    "wiring_contract": false
+  },
+  {
+    "module": "chart_tooltip",
+    "tier": 1,
+    "group": "Charts and data visualisation",
+    "summary": "a floating tooltip for chart data points.",
+    "api": ["enz_chart_tooltip", "enz_chart_tooltip_rows", "EnzChartTooltip"],
+    "keywords": ["chart tooltip", "data point tooltip", "hover value"],
+    "wiring_contract": false
+  },
+  {
+    "module": "image",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "raster image with fit, radius, and placeholder background.",
+    "api": ["enz_image", "enz_image_handle", "EnzImage"],
+    "keywords": ["animated gif", "animated image", "animated webp", "apng", "gif", "image", "image widget", "img", "loading animation", "no letterbox", "photo", "picture", "play an animation", "preview at its own shape", "round the picture not the box", "sticker", "thumbnail aspect ratio"],
+    "wiring_contract": false
+  },
+  {
+    "module": "animated_image",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a GIF, APNG or animated WebP that plays, pausing when hidden and holding its first frame under reduced motion.",
+    "api": ["enz_animated_image", "EnzAnimatedImage"],
+    "keywords": ["animated gif", "animated image", "animated webp", "apng", "gif", "loading animation", "play an animation", "sticker"],
+    "wiring_contract": false
+  },
+  {
+    "module": "animated_svg",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "an SVG playing its SMIL and CSS animations, drawing and waking only when the picture changes.",
+    "api": ["enz_animated_svg", "EnzAnimatedSvg"],
+    "keywords": ["animate", "animateMotion", "animateTransform", "animated icon", "animated svg", "css keyframes svg", "loading spinner svg", "lottie-like icon", "smil", "svg animation", "svg spinner", "svgz"],
+    "wiring_contract": false
+  },
+  {
+    "module": "async_image",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "renders the lifecycle of an async image request - loading skeleton, decoded image, or failure stamp.",
+    "api": ["enz_async_image_view", "EnzAsyncImageView"],
+    "keywords": ["async image", "image", "img", "lazy image", "loading image", "network image", "no letterbox", "photo", "picture", "preview at its own shape", "remote image", "round the picture not the box", "thumbnail aspect ratio"],
+    "wiring_contract": false
+  },
+  {
+    "module": "image_viewer",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "an inspectable image region with a controlled transform.",
+    "api": ["enz_image_viewer", "EnzImageViewer"],
+    "keywords": ["image inspector", "image viewer", "pan zoom image", "zoomable image"],
+    "wiring_contract": false
+  },
+  {
+    "module": "image_cropper",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a controlled crop selection over the image viewer.",
+    "api": ["enz_image_cropper", "EnzImageCropper"],
+    "keywords": ["avatar cropper", "crop handles", "fixed aspect crop", "image cropper", "profile picture crop"],
+    "wiring_contract": false
+  },
+  {
+    "module": "video",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a video surface plus transport, driven by a media snapshot and a decoded frame.",
+    "api": ["enz_video", "video::enz_video_awaiting", "EnzVideo"],
+    "keywords": ["black flash between frames", "bounded frame uploads", "frame presenter", "image allocate", "latest-frame upload", "movie", "player", "show decoded frames", "streaming frames", "video frame flicker", "video player", "video surface"],
+    "composes_with": ["media_controls", "aspect_ratio", "skeleton"],
+    "wiring_contract": false
+  },
+  {
+    "module": "media_controls",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a transport-control bar driven by a media snapshot.",
+    "api": ["enz_media_controls", "EnzMediaControls"],
+    "keywords": ["elapsed total time", "hide time labels", "live badge", "media controls", "next track", "play pause bar", "playback controls", "player controls", "playlist transport", "previous track", "repeat mode", "shuffle", "transport controls"],
+    "composes_with": ["slider"],
+    "wiring_contract": false
+  },
+  {
+    "module": "avatar",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a styled avatar/user-icon component.",
+    "api": ["enz_avatar", "EnzAvatar"],
+    "keywords": ["AdwAvatar", "gravatar", "initials circle", "profile picture", "user icon"],
+    "wiring_contract": false
+  },
+  {
+    "module": "icon",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "bundled Lucide icon widget.",
+    "api": ["enz_icon", "icon::enz_icon_for_direction", "enz_icon_from_handle", "enz_icon_from_image", "EnzIcon"],
+    "keywords": ["Ctrl+F opens the collapsed search", "IconSource", "SymbolicSvg", "accessible svg", "announce collapsed", "app icon", "app-owned icon", "aria-expanded", "brand mark", "chromeless icon hover", "collapse search on small screens", "container text_color does nothing", "custom icon", "declared ink never lands", "disclosure button", "expand collapse button", "expanding search box", "favicon", "file type icon svg", "find_focused reports None for a collapsed search field", "focus search field id when collapsed", "focus(search_field_id) returns None", "glyph", "ico icon", "icon", "icon brightens on hover", "icon button", "icon from handle", "icon from image", "icon only action", "icon source", "icon-only button", "illustration", "inherit text colour", "ink does not inherit", "ink-only toolbar icon", "logo follows text colour", "lucide", "monochrome logo", "narrow search", "no hover fill", "on_accent not applied", "png icon", "provider logo", "raster icon", "responsive search", "reveal a region", "round action leaf", "round icon button", "routed focus to a collapsed search", "search collapses to an icon", "search icon button", "search in a popover", "search popup", "set text colour on container", "settings icon in titlebar", "show hide panel button", "svg", "svg alt text", "svg icon handle", "svg image", "symbol", "symbolic picture", "symbolic svg", "text color ignored", "text stays the wrong colour", "text_color no-op", "themed svg", "tinted svg", "titlebar button", "titlebar icon button", "toolbar button", "vendor mark", "workspace favicon"],
+    "wiring_contract": false
+  },
+  {
+    "module": "file_icon",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a file's icon from the desktop icon theme, with the bundled glyph as fallback.",
+    "api": ["enz_file_icon", "EnzFileIcon"],
+    "keywords": ["attachment icon", "desktop icon theme", "device icon", "document icon", "drive icon", "file extension icon", "file type icon", "folder icon", "icon for a file", "icon theme", "mime icon", "mimetype icon", "places icon", "themed file icon"],
+    "wiring_contract": false
+  },
+  {
+    "module": "qr",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a themed QR code widget.",
+    "api": ["enz_qr", "EnzQr", "EnzQrData"],
+    "keywords": ["barcode qr", "qr", "qr code"],
+    "wiring_contract": false
+  },
+  {
+    "module": "annotation_overlay",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "a reusable annotation surface over a picture - draw, preview, commit, hit-test.",
+    "api": ["enz_annotation_overlay", "EnzAnnotationOverlay"],
+    "keywords": ["annotate", "annotation overlay", "draw on image", "drawing surface", "markup overlay"],
+    "wiring_contract": false
+  },
+  {
+    "module": "glyph_selection",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "text selection over a page raster's glyph boxes.",
+    "api": ["enz_glyph_selection", "EnzGlyphSelection"],
+    "keywords": ["double click word on page", "glyph selection", "ocr selection", "page text selection", "pdf text selection", "rotated page selection", "select text in a PDF", "select text on a rotated PDF", "select text on an image", "select words on a page"],
+    "wiring_contract": false
+  },
+  {
+    "module": "marquee_area",
+    "tier": 1,
+    "group": "Media and imagery",
+    "summary": "rubber-band drag selection over positioned content.",
+    "api": ["enz_marquee_area", "EnzMarqueeArea"],
+    "keywords": ["band rectangle", "box select", "crop region", "double click word on page", "drag select", "glyph selection", "marquee area", "marquee selection", "ocr selection", "page text selection", "pdf text selection", "region select", "rotated page selection", "rubber band", "rubber band select", "select text in a PDF", "select text on a rotated PDF", "select text on an image", "select words on a page", "selection rectangle", "zoom to rect"],
+    "wiring_contract": false
+  },
+  {
+    "module": "modal_host",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the layer that owns modality and exit motion - scrim, background inertness, Escape, dismissal routing, and visual retention until settlement. **Several dialogs:** DialogStack<Key> keeps an app's open dialogs and their focus - Escape closes the topmost, closing one closes those over it, hand_off replaces one with the next - and renders them over the page with every host level kept mounted. **Exit wiring:** store modal data in ModalPresentation, keep rebuilding its retained value, pass is_open() to EnzModalHost::presentation_open, and route on_exit_settled_with back to finish_exit(key). The exiting subtree is paint-only: no focus stop, dialog role, Escape capture or background inertness. **Focus wiring:** prefer the owned lifecycle ModalFocusLifecycle - ModalFocusLifecycle::open(scope_key, invoker) captures the invoker and returns the initial-focus operation, bind the host to it with EnzModalHost::scoped_to(&lifecycle) so the surface scope has one source and cannot drift from the traversal target, and reduce(event) answers every ModalHostEvent with framework-owned focus work: Tab traversal **scoped to this presentation** (never the unscoped app traversal that leaks focus behind the scrim), invoker restoration at *logical* dismissal (not after exit), and close_for_host() for a host-driven/model-unavailable close that must not steal focus. The low-level initial_focus_operation(scope) / scoped_focus_operation(event, scope) / restore_focus_operation(event, invoker) stay public as an escape hatch for a custom host; a host wired with none of them presents a dialog with focus nowhere (measured: zero focused nodes after build).",
+    "api": ["enz_modal_host", "EnzModalHost"],
+    "keywords": ["ModalFocusLifecycle", "animate dialog close", "busy dialog ignores escape", "close dialog from a button", "dialog cancel returns focus", "dialog exit", "dialog hand off", "dialog host", "dialog over dialog", "dialog stack", "modal", "modal animation", "modal focus set", "modal host", "modal layer", "nested dialogs", "overlay host", "present dialog", "replace dialog with another", "retain dismissed dialog", "scoped_to", "several dialogs open", "stacked dialogs", "which dialog is on top"],
+    "composes_with": ["modal_surface"],
+    "wiring_contract": true
+  },
+  {
+    "module": "modal_surface",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "flat modal container surface.",
+    "api": ["enz_modal_surface", "EnzModalSurface"],
+    "keywords": ["action row", "buttons scroll away", "dialog", "dialog actions", "dialog body", "dialog buttons that scroll away", "dialog footer", "dialog surface", "modal box", "modal container", "modal surface", "pinned actions", "pinned footer"],
+    "composes_with": ["capped_dialog_body"],
+    "wiring_contract": false
+  },
+  {
+    "module": "capped_dialog_body",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "pinned header/action chrome around one scrolling dialog body; derives the body cap from measured chrome.",
+    "api": ["enz_capped_dialog_body"],
+    "keywords": ["action row", "buttons scroll away", "dialog", "dialog actions", "dialog body", "dialog buttons that scroll away", "dialog footer", "dialog form", "field id collision", "focus the first invalid field", "form dialog", "form modal", "form secure field reveal", "input dialog", "modal form", "namespace field ids", "password field in a form", "pinned actions", "pinned footer", "show password in a dialog", "two forms at once"],
+    "wiring_contract": false
+  },
+  {
+    "module": "confirm_dialog",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the canonical \"are you sure?\" preset over EnzModalHost.",
+    "api": ["enz_confirm_dialog", "EnzConfirmDialog"],
+    "keywords": ["AlertDialog", "are you sure", "confirm delete", "confirm dialog", "confirmation", "yes no dialog"],
+    "wiring_contract": false
+  },
+  {
+    "module": "save_changes_dialog",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the three-action \"Save changes before closing?\" preset over EnzModalHost.",
+    "api": ["enz_save_changes_dialog", "EnzSaveChangesDialog"],
+    "keywords": ["close with unsaved changes", "discard changes prompt", "save all discard", "save before closing", "save changes", "save discard cancel", "three action dialog", "unsaved changes dialog"],
+    "wiring_contract": false
+  },
+  {
+    "module": "popover",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "a floating panel attached to a control or a window-space rectangle, holding any content; dismissed by an outside press or Escape.",
+    "api": ["enz_popover", "EnzPopover"],
+    "keywords": ["GtkPopover", "anchored panel", "attached panel", "floating panel", "panel under a button", "popover", "popover focus", "popup form"],
+    "wiring_contract": false
+  },
+  {
+    "module": "about_dialog",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the application's About dialog: icon, name, version, developer, website and issue links, release notes, credits and legal text, localized.",
+    "api": ["about_dialog::enz_about_dialog", "about_dialog::EnzAboutDialog"],
+    "keywords": ["about box", "about dialog", "about window", "application info", "credits", "license dialog", "release notes", "report an issue", "version dialog", "what's new"],
+    "wiring_contract": false
+  },
+  {
+    "module": "accordion",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "sections of which at most one is open.",
+    "api": ["accordion::enz_accordion"],
+    "keywords": ["FAQ list", "accordion group", "exclusive accordion", "one open at a time", "only one section open"],
+    "wiring_contract": false
+  },
+  {
+    "module": "shortcuts_dialog",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "keyboard-shortcut help as fill-size content, a card surface, or a hosted modal.",
+    "api": ["enz_shortcuts_dialog", "EnzShortcutsDialog"],
+    "keywords": ["help shortcuts", "keyboard shortcuts dialog", "keyboard shortcuts settings page", "shortcuts dialog", "shortcuts page", "shortcuts window"],
+    "composes_with": ["shortcut_list", "capped_dialog_body"],
+    "wiring_contract": false
+  },
+  {
+    "module": "settings_dialog",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the Settings preset over EnzModalHost: dialog → tabs → preference rows, arbitrary pane bodies.",
+    "api": ["enz_settings_dialog", "enz_settings_presentation_for", "enz_settings_sheet_height", "EnzSettingsDialog"],
+    "keywords": ["adaptive settings", "compact settings", "dialog action bar", "hidden settings page rebuild", "lazy settings page", "pinned dialog actions", "preferences dialog", "preferences sidebar", "preferences window", "reset button in settings", "save button in settings", "settings bottom sheet", "settings dialog", "settings footer buttons", "settings page factory", "settings page owns scroll", "settings page scroll", "settings pages", "settings presentation", "settings screen", "settings sheet", "settings sidebar", "settings tabs", "settings title typography", "settings window", "small preferences dialog", "tiling settings"],
+    "wiring_contract": false
+  },
+  {
+    "module": "sheet",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "SheetPresenter composes detents, signed drag, viewport/insets, accessible grabber, scroll handoff, and theme-motion settling; route its events through SheetPresenter::update. enz_sheet remains the static low-level surface presented over EnzModalHost.",
+    "api": ["enz_sheet", "enz_resizable_sheet", "EnzSheet"],
+    "keywords": ["Sheet", "bottom sheet", "detent sheet", "drawer sheet", "grabber", "resizable sheet", "scroll to expand", "snap points", "swipe to resize"],
+    "wiring_contract": true
+  },
+  {
+    "module": "full_screen_overlay",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "dimming scrim + centred content + close button, hosted over EnzModalHost.",
+    "api": ["enz_full_screen_overlay", "EnzFullScreenOverlay"],
+    "keywords": ["dimmed overlay", "full screen", "full screen modal", "fullscreen dialog", "lightbox", "takeover"],
+    "wiring_contract": false
+  },
+  {
+    "module": "menu",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "elevated menu-surface container.",
+    "api": ["enz_menu", "EnzMenu", "EnzMenuItem"],
+    "keywords": ["IconSource", "SymbolicSvg", "app icon", "app-owned icon", "brand mark", "custom icon", "dropdown surface", "elevated menu", "favicon", "file type icon svg", "glyph", "ico icon", "icon", "icon from handle", "icon from image", "icon source", "logo follows text colour", "lucide", "menu container", "menu rows", "menu surface", "monochrome logo", "png icon", "provider logo", "raster icon", "svg icon handle", "symbol", "symbolic svg", "tinted svg", "vendor mark", "workspace favicon"],
+    "wiring_contract": false
+  },
+  {
+    "module": "menu_row",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "a single row in a menu / dropdown popup.",
+    "api": ["enz_menu_row", "menu_row::enz_menu_row_maybe", "menu_row::enz_menu_row_maybe_with", "enz_menu_separator", "menu_row::enz_menu_separator_builder", "EnzMenuRow"],
+    "keywords": ["dropdown item", "menu entry", "menu item", "menu item brand mark", "menu item custom icon", "menu item favicon", "menu item with app icon", "menu row", "menu row icon source"],
+    "wiring_contract": false
+  },
+  {
+    "module": "context_menu_host",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "turns a right-click invocation into a positioned, navigable, dismissible menu. ContextMenu<Target, Command> is the usual way in: open it on a row with typed ContextMenuItem<Command>s, mount it with host(page, ..), and update hands back (target, command) with focus returned to the row.",
+    "api": ["enz_context_menu_host", "enz_optional_point_context_menu_host", "enz_point_context_menu_host", "EnzContextMenuHost"],
+    "keywords": ["AT default action opens", "AT default action opens tile", "Enter opens focused entry", "Enter opens focused tile", "Enter versus Space", "accessory", "action on the active row", "add row centered", "all-day band", "bare overlay", "borderless calendar", "breathing room around list row", "busy day", "button-like surface", "cell spacing", "centered list row", "centered row action", "centre icon and label", "circular day cell", "click position", "clickable row", "collection gutter", "compact day cell", "context capture", "context menu", "context menu accessory", "context menu command enum", "context menu header", "context menu target", "custom row", "date grid", "date range", "day context menu", "day hover", "day number baseline", "day state", "days with events", "dense calendar", "distinct open action", "dropdown surface", "elevated menu", "event dot", "event marker", "event span", "fill-sized grid", "fill-width calendar", "flat calendar", "floating surface", "grid cell open on Enter", "grid hairline", "grid tile", "header wraps at narrow width", "highlight a day", "hover accessory", "hover action", "hover press surface", "hover reveal", "interactive menu header", "keep row action visible when selected", "keyboard open action", "list gutter", "list item surface", "list outer gutter", "list padding", "list row", "live menu rows", "menu at cursor", "menu container", "menu host only while open", "menu returns command", "menu rows", "menu surface", "mini calendar", "mini month", "month grid", "month title two lines", "month view", "month year popover", "mount the menu host unconditionally", "multi-day", "no card border", "no string menu ids", "non menu popup", "non-square cell", "on_enter row", "open focused row", "open focused tile", "outer inset", "pill header", "pinned to a point", "popup at point", "positioned surface", "pressable Enter distinct from Space", "pressable context menu", "pressable on_context", "quiet row commands", "reaction menu", "restore context menu focus", "reveal on hover", "right click a card", "right click a day", "right click a list item", "right click a pressable", "right click a row", "right click menu", "right click surface", "row Enter open Space select", "row actions", "row align_x", "row content alignment", "row content is centered", "row context menu", "row hover action", "row hover paint reaches pane edge", "row inset", "row menu", "row text not left aligned", "row with button", "row with custom content", "row with trailing action", "screen reader open row", "scroll jumps to top on right click", "search results are centered", "secondary click", "secondary click a pressable", "secondary click target", "selectable row", "selectable surface", "selected day", "selected row action", "shrink content in a full width row", "sidebar month", "sidebar row with menu", "span over my own grid", "spanning event", "stable menu row key", "tappable surface", "tile Enter opens", "tile on_enter", "today and selected", "today marker", "trailing on hover", "tree row context focus", "typed context menu", "update an open menu", "which row was right clicked"],
+    "composes_with": ["menu", "context_menu_action"],
+    "wiring_contract": false
+  },
+  {
+    "module": "context_target",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "right-click capture surface for context menus.",
+    "api": ["enz_context_target", "context_target::enz_context_target_msg", "EnzContextTarget"],
+    "keywords": ["AT default action opens", "AT default action opens tile", "Enter opens focused entry", "Enter opens focused tile", "Enter versus Space", "accessory", "action on the active row", "add row centered", "breathing room around list row", "button-like surface", "centered list row", "centered row action", "centre icon and label", "clickable row", "collection gutter", "context capture", "context target", "custom row", "deselected row flashes", "distinct open action", "grid cell open on Enter", "grid tile", "hover accessory", "hover action", "hover press surface", "hover reveal", "instant row selection", "keep row action visible when selected", "keyboard open action", "list gutter", "list item surface", "list outer gutter", "list padding", "list row", "nav row", "navigation item", "on_enter row", "open focused row", "open focused tile", "outer inset", "per row reduced motion", "pressable Enter distinct from Space", "pressable context menu", "pressable on_context", "quiet row commands", "reveal on hover", "right click a card", "right click a list item", "right click a pressable", "right click a row", "right click a sidebar row", "right click surface", "row Enter open Space select", "row actions", "row align_x", "row content alignment", "row content is centered", "row context menu", "row hover action", "row hover paint reaches pane edge", "row inset", "row selection flash", "row text not left aligned", "row with button", "row with custom content", "row with trailing action", "screen reader open row", "search results are centered", "secondary click", "secondary click a pressable", "secondary click target", "selectable row", "selectable surface", "selected row action", "shrink content in a full width row", "sidebar item", "sidebar list row", "sidebar row custom icon", "sidebar row image", "sidebar row reduced motion", "sidebar row with app icon", "sidebar row with brand mark", "sidebar row with favicon", "sidebar row with menu", "stale row highlight", "tappable surface", "tile Enter opens", "tile on_enter", "trailing on hover", "workspace favicon in sidebar"],
+    "composes_with": ["context_menu_action"],
+    "wiring_contract": false
+  },
+  {
+    "module": "crash_notice",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the start-up banner saying the app crashed last time and a report was saved.",
+    "api": ["crash_notice::enz_crash_notice"],
+    "keywords": ["crash notice", "crash report banner", "crashed last time", "quit unexpectedly", "show crash report"],
+    "wiring_contract": false
+  },
+  {
+    "module": "positioned_overlay",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "places a surface at an app-supplied point, clamped to the viewport, reporting caused outside-press or Escape dismissal without making the page inert.",
+    "api": ["enz_positioned_overlay", "enz_positioned_overlay_with_cause", "EnzPositionedOverlay"],
+    "keywords": ["bare overlay", "floating surface", "non menu popup", "pinned to a point", "positioned overlay", "positioned surface"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tooltip",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "a styled tooltip wrapper.",
+    "api": ["enz_tooltip", "enz_fade_tooltip", "tooltip::enz_tooltip_bubble", "enz_tooltip_bubble_opacity", "enz_tooltip_with_delay", "enz_tooltip_with_tokens"],
+    "keywords": ["accessible description", "action button", "active filter", "add tooltip to element", "borderless destructive", "choice chip", "chromeless button", "circular button", "circular icon button", "click to copy value", "cta", "default tooltip delay", "describe a button", "destructive text button", "dwell time", "elide path middle", "fab", "filter chip", "filter pill", "flat at rest", "flat at rest brightens on hover", "flat button", "ghost button", "hint on a button", "hover delay", "hover fill no border", "hover hint", "hover text color", "hover tooltip", "ink brightens on hover", "keep path suffix", "middle ellipsis", "multi-select filter", "neutral button", "neutral text action", "no chrome button", "path button", "plain button", "preserve filename", "primary button", "push button", "quiet button", "quiet danger", "round button", "send button", "text button", "themed iced::widget::tooltip", "title attribute", "toggle chip", "tooltip", "tooltip delay", "tooltip for a screen reader", "visible selected state", "what does this button do", "wrap with tooltip"],
+    "wiring_contract": false
+  },
+  {
+    "module": "file_chooser",
+    "tier": 1,
+    "group": "Overlays, menus and dialogs",
+    "summary": "the (portal-dbus-gated) seam to the XDG Desktop Portal file chooser, with an opt-in in-app fallback for hosts without one. **Wiring:** FileRequest::start only *opens* the request - the caller must also return completion_subscription from App::subscription and call pump when it wakes, or the chooser is presented and its outcome never arrives. That subscription is **event-driven and pending-gated**: it wakes once per portal event, so do not drive pump from window::frames() or an iced::time::every tick - a frame-sourced portal tick asks for work on every compositor frame while a dialog is open, which is the settled-redraw defect class.",
+    "api": [],
+    "keywords": ["browse files", "cancel file chooser", "chooser cancellation", "chooser session", "close file dialog", "directory listing", "export file", "fallback file dialog", "file browser", "file chooser", "file chooser without portal", "file context menu", "file explorer", "file list", "file manager", "file picker pane", "folder browser", "in-app file chooser", "native file dialog", "no xdg-desktop-portal", "open file dialog", "portal file chooser", "portal seam", "right click a file", "save as dialog", "wlroots file dialog", "xdg file dialog"],
+    "wiring_contract": true
+  },
+  {
+    "module": "banner",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "inline status banner (title + body + tone + optional action + optional dismiss). The default leading glyph is the filled tone chip - the look every existing caller already ships. EnzBanner::badge_style(BannerBadgeStyle::Bare) opts into a tone-inked glyph on the banner's own surface, for a banner whose surroundings already carry the tone (for example, mounted through EnzAppShell::notifications). Durable actionable status belongs in EnzAppShell::notifications rather than hand-mounted in an app's content column.",
+    "api": ["enz_banner", "EnzBanner"],
+    "keywords": ["AdwBanner", "AdwStatusPage", "InlineMessage", "PlaceholderMessage", "action emphasis", "alert bar", "banner badge style", "banner carousel", "banner without background chip", "bare badge", "bare tone glyph", "call to action", "carousel", "carousel arrows cover cards", "carousel body slot", "carousel chrome overlaps content", "carousel page height", "carousel vertical chrome", "chip badge", "content under carousel arrows", "empty state", "gallery", "image gallery", "inline banner", "inline message", "inset carousel body", "no filled tone chip", "no results", "nothing here", "notification strip", "page slot", "pager", "placeholder", "promoted items strip", "rotating promoted items", "screenshot gallery", "screenshot strip", "slideshow", "stage body height", "status page", "suggested action", "thumbnail strip"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toast",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "transient toast surface (a single toast's chrome; the dismissal story lives in its host, toast_host).",
+    "api": ["enz_toast", "EnzToast"],
+    "keywords": ["Sonner", "active operations", "activity surface", "background task", "coalesce transfer progress", "compact activity status", "copy progress", "dimensionless progress", "downloading status row", "file operation progress", "floating status", "fractional completion", "job status", "operation percentage", "operation status", "progress popover", "rate limit progress paint", "sidebar footer status", "sidebar progress row", "sidebar status", "snackbar", "toast", "toast notification", "transfer status", "transient notification", "what is running"],
+    "wiring_contract": false
+  },
+  {
+    "module": "toast_host",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "the app-facing controller a toast is queued through: auto-dismiss timers, stacking, coalescing, the overflow/waiting budget, and the one live region that announces the message it is showing. You drive ToastHost from update the way you drive file_chooser; its element-producing entry point is enz_toast_layer, which places the mounted host bottom-centre over the presentation without re-parenting it with an optional bottom inset for an app whose own chrome occupies that edge.",
+    "api": ["enz_toast_layer", "enz_toast_overlay"],
+    "keywords": ["Sonner", "announce status", "app status notice", "auto-dismiss", "banner above the title bar", "bottom inset", "bottom right notification", "coalesce toasts", "compact toast", "dismiss toast", "dismissable error", "error notice in the corner", "error notification", "float a toast", "how to dismiss a toast", "live status", "notice stack", "notice that stays", "notification stack", "operation failed notice", "page rebuilt when a toast appears", "persistent notice", "retry notice", "safe area toast", "screen reader status", "snackbar", "snackbar host", "snackbar queue", "speak a status message", "speak one notice", "stacking", "state notice", "status announcement", "sticky toast", "sync failed notice", "toast", "toast above tab bar", "toast clears mini player", "toast covers navigation", "toast host", "toast layer", "toast notification", "toast over bottom nav", "toast overlay", "toast placement", "toast presentation", "toast queue", "toast resets scroll", "toast that does not expire", "toast timeout", "toast typography", "transient notification", "transient notification stack", "where does the toast go"],
+    "wiring_contract": false
+  },
+  {
+    "module": "notice_stack",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "notices about the app's own condition that stay while their cause holds, as a column of toasts that speaks once.",
+    "api": ["enz_notice_stack", "EnzNotice", "EnzNoticeStack"],
+    "keywords": ["app status notice", "error notice in the corner", "notice stack", "notice that stays", "persistent notice", "retry notice", "speak one notice", "state notice", "sticky toast", "toast that does not expire"],
+    "wiring_contract": false
+  },
+  {
+    "module": "notification_inbox",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "the in-app list of past notifications, unread marked, dismissible, with Clear All.",
+    "api": ["notification_inbox::enz_notification_inbox"],
+    "keywords": ["bell menu", "notification center", "notification history", "notification inbox", "past notifications", "unread notifications"],
+    "wiring_contract": false
+  },
+  {
+    "module": "activity_surface",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "the persistent operation-activity status: what the app is doing right now, contributed by every provider into one enzui_core::operation_activity::ActivityCenter and placed by the shell (EnzAppShell::activity) at the sidebar's bottom, as one compact status row by default, or, with the sidebar closed, bottom-left over the content as the detailed panel. Dimensionless fractional completion is shown and announced as an operation percentage; finite input clamps to 0–100%, non-finite input becomes indeterminate, homogeneous fractional operations aggregate with equal operation weight, and mixed units never fabricate a total. Its keyboard/AT-reachable +N more action receives an ActivityOverflowTarget derived from the actual hidden rows, so mixed providers cannot silently route to one provider's panel. A toast leaves; this stays while the work does.",
+    "api": ["enz_activity_surface", "EnzActivitySurface"],
+    "keywords": ["active operations", "activity surface", "background task", "coalesce transfer progress", "compact activity status", "copy progress", "dimensionless progress", "downloading status row", "file operation progress", "floating status", "fractional completion", "job status", "operation percentage", "operation status", "progress popover", "rate limit progress paint", "sidebar footer status", "sidebar progress row", "sidebar status", "transfer status", "what is running"],
+    "wiring_contract": false
+  },
+  {
+    "module": "status_dot",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "compact semantic status indicator.",
+    "api": ["enz_status_dot", "EnzStatusDot"],
+    "keywords": ["online dot", "presence dot", "status dot", "status indicator", "status light"],
+    "wiring_contract": false
+  },
+  {
+    "module": "status_page",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "centred empty-state hero view.",
+    "api": ["enz_status_page", "EnzStatusPage"],
+    "keywords": ["AdwStatusPage", "PlaceholderMessage", "action emphasis", "call to action", "empty state", "no results", "nothing here", "placeholder", "status page", "suggested action"],
+    "wiring_contract": false
+  },
+  {
+    "module": "spinner",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "rotating 8-dot indeterminate loader.",
+    "api": ["enz_spinner", "EnzSpinner"],
+    "keywords": ["activity indicator", "animate", "animate text", "animate without rebuilding the view", "animation clock", "animation without a tick", "breathing", "busy indicator", "elapsed seconds", "frame clock", "frame timer", "in progress label", "indeterminate loader", "loading spinner", "no subscription animation", "per frame phase", "pulse", "pulsing label", "self animating", "self-animating", "shimmer any widget", "shimmer text", "still alive", "throb", "working label"],
+    "wiring_contract": false
+  },
+  {
+    "module": "skeleton",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "shimmering loading placeholder.",
+    "api": ["enz_skeleton", "EnzSkeleton"],
+    "keywords": ["activity indicator", "busy indicator", "content placeholder", "ghost loading", "indeterminate loader", "loading placeholder", "loading spinner", "shimmer", "skeleton"],
+    "wiring_contract": false
+  },
+  {
+    "module": "progress_text",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "moving ink over one shaped, accessible status label.",
+    "api": ["enz_progress_text", "EnzProgressText"],
+    "keywords": ["progress text", "responding text", "shimmer label", "single accessible progress label", "status text", "text wave", "working text"],
+    "wiring_contract": false
+  },
+  {
+    "module": "frame_clock",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "wrap any element so it self-animates from frame timestamps, with no app-side tick and no per-frame view() rebuild.",
+    "api": ["enz_frame_clock", "EnzFrameClock"],
+    "keywords": ["animate", "animate text", "animate without rebuilding the view", "animation clock", "animation without a tick", "breathing", "elapsed seconds", "frame clock", "frame timer", "in progress label", "no subscription animation", "per frame phase", "pulse", "pulsing label", "self animating", "self-animating", "shimmer any widget", "shimmer text", "still alive", "throb", "working label"],
+    "wiring_contract": false
+  },
+  {
+    "module": "progress_bar",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "a styled progress indicator.",
+    "api": ["enz_progress_bar", "enz_progress_bar_sampled", "EnzProgressBar"],
+    "keywords": ["ProgressView", "bar axis gutter", "bar axis label", "bar chart", "bar chart axis unit", "bar graph", "bar per star", "bar tick formatter", "bar y axis label", "bar y gutter", "column chart", "determinate progress", "histogram", "loading bar", "per-star bars", "progress", "progress bar", "progress indicator", "rating", "rating breakdown", "rating histogram", "review histogram", "review score", "score", "star distribution", "star rating", "stars"],
+    "wiring_contract": false
+  },
+  {
+    "module": "gauge",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "a circular, token-driven gauge showing a value within a range.",
+    "api": ["enz_gauge", "enz_gauge_sampled", "EnzGauge"],
+    "keywords": ["Gauge", "dial", "gauge", "level meter", "radial meter"],
+    "wiring_contract": false
+  },
+  {
+    "module": "rating",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "a fractional star-rating **display** primitive (aggregate review score). For a histogram of rating counts use a column! of progress_bar; the row above records why.",
+    "api": ["enz_rating", "EnzRating"],
+    "keywords": ["bar per star", "editable rating", "give stars", "histogram", "per-star bars", "rate this", "rating", "rating breakdown", "rating histogram", "rating input", "review histogram", "review score", "review stars input", "score", "star distribution", "star input", "star rating", "stars"],
+    "wiring_contract": false
+  },
+  {
+    "module": "rating_input",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "a star rating the user sets; pressing the current star clears it.",
+    "api": ["rating_input::enz_rating_input"],
+    "keywords": ["editable rating", "give stars", "rate this", "rating input", "review stars input", "star input"],
+    "wiring_contract": false
+  },
+  {
+    "module": "badge",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "a styled badge/tag/pill component.",
+    "api": ["enz_badge", "EnzBadge"],
+    "keywords": ["Badge", "badge", "count badge", "label chip", "pill", "tag"],
+    "wiring_contract": false
+  },
+  {
+    "module": "key_badge",
+    "tier": 1,
+    "group": "Feedback and progress",
+    "summary": "a monospace keyboard-shortcut chip.",
+    "api": ["enz_key_badge", "EnzKeyBadge"],
+    "keywords": ["kbd", "key badge", "key chip", "keycap", "shortcut key"],
+    "wiring_contract": false
+  },
+  {
+    "module": "drag_drop_host",
+    "tier": 1,
+    "group": "Drag and drop",
+    "summary": "the host that owns one drag session across collections, paints source and target feedback confined to the registering surface in an explicit overlay layer above child/sidebar content, and publishes the grab/grabbing pointer shape a deferred collection cannot.",
+    "api": ["enz_drag_drop_host", "EnzDragDropHost"],
+    "keywords": ["breadcrumb drop target", "cross list drag", "directional drop highlight", "dnd", "drag and drop", "drag preview", "draggable", "drop highlight bounds", "drop onto breadcrumb", "drop target", "drop target by widget id", "drop-only region", "file row drag", "folder drop target", "grab cursor", "grabbing cursor", "selection drag ownership", "virtual grid drag"],
+    "wiring_contract": false
+  },
+  {
+    "module": "drag_item_surface",
+    "tier": 1,
+    "group": "Drag and drop",
+    "summary": "bounded keyed virtual row/grid registration for onto-item and current-location drops.",
+    "api": ["enz_drag_item_surface", "EnzDragItemSurface"],
+    "keywords": ["breadcrumb drop target", "cross list drag", "directional drop highlight", "dnd", "drag and drop", "drag preview", "draggable", "drop highlight bounds", "drop onto breadcrumb", "drop target", "drop target by widget id", "drop-only region", "file row drag", "folder drop target", "grab cursor", "grabbing cursor", "selection drag ownership", "virtual grid drag"],
+    "wiring_contract": false
+  },
+  {
+    "module": "drag_autoscroll_host",
+    "tier": 1,
+    "group": "Drag and drop",
+    "summary": "wires auto-scrolling into a real drag path.",
+    "api": ["enz_drag_autoscroll_host", "EnzDragAutoScrollHost"],
+    "keywords": ["autoscroll on drag", "edge scroll drag", "scroll while dragging"],
+    "wiring_contract": false
+  },
+  {
+    "module": "file_drag",
+    "tier": 1,
+    "group": "Drag and drop",
+    "summary": "reusable native file and MIME-data sources for rows, thumbnails and attachments; stable ownership keys, bounded selections, pointer/touch thresholds, optional previews and destination completion callbacks.",
+    "api": ["file_drag::enz_data_drag_source", "file_drag::enz_file_drag_source", "file_drag::enz_file_drag_source_with", "file_drag::EnzFileDragSource"],
+    "keywords": ["custom MIME source", "drag attachment", "drag data out", "drag files out", "drag photos", "export drag", "file source", "file thumbnail drag", "native row reorder"],
+    "wiring_contract": false
+  },
+  {
+    "module": "file_drop",
+    "tier": 1,
+    "group": "Drag and drop",
+    "summary": "MIME-aware drop regions with hover feedback and deferred completion; enz_data_drop_target receives caller-selected MIME data. Files dragged in from a file manager or another app: wrap a region in enz_file_drop_target(content, on_drop) and the dropped paths arrive as one message, through the native drag service app_setup::run installs. Text fields keep taking dropped text.",
+    "api": ["file_drop::enz_data_drop_target", "file_drop::enz_file_drop_target", "file_drop::enz_file_drop_target_with_receipt", "file_drop::EnzFileDropTarget"],
+    "keywords": ["FileDropped", "accept dropped files", "drag files in", "drag from file manager", "drop files", "drop files onto window", "drop generation", "drop receipt", "drop target", "drop target replaced", "dropped paths", "file drop", "finish drop after copy", "native file drop", "refuse a drop", "stale drop"],
+    "wiring_contract": false
+  },
+  {
+    "module": "zoom_wheel",
+    "tier": 1,
+    "group": "Drag and drop",
+    "summary": "Ctrl+wheel zooms the wrapped view instead of scrolling it: one step per notch, touchpad deltas accumulated, at most one step per event.",
+    "api": ["enz_zoom_wheel", "EnzZoomWheel"],
+    "keywords": ["Ctrl+scroll zoom", "Ctrl+wheel zoom", "wheel zoom instead of scroll", "zoom a grid", "zoom wheel", "zoom with the mouse wheel"],
+    "wiring_contract": false
+  },
+  {
+    "module": "elevation",
+    "tier": 1,
+    "group": "Decoration and effects",
+    "summary": "semantic elevation wrapper with 0-5 shadow levels.",
+    "api": ["enz_elevation", "EnzElevation"],
+    "keywords": ["drop shadow", "elevation", "raise", "shadow", "z depth"],
+    "wiring_contract": false
+  },
+  {
+    "module": "glow",
+    "tier": 1,
+    "group": "Decoration and effects",
+    "summary": "coloured glow (halo) around content.",
+    "api": ["enz_glow", "EnzGlow"],
+    "keywords": ["aura", "coloured glow", "glow", "halo"],
+    "wiring_contract": false
+  },
+  {
+    "module": "gradient_background",
+    "tier": 1,
+    "group": "Decoration and effects",
+    "summary": "configurable linear-gradient surface.",
+    "api": ["enz_gradient_background", "EnzGradientBackground"],
+    "keywords": ["gradient", "gradient background", "gradient fill", "gradient surface", "linear gradient"],
+    "wiring_contract": false
+  },
+  {
+    "module": "motion",
+    "tier": 1,
+    "group": "Item-level capabilities",
+    "summary": "item-level capability `motion::animated` (a `reexport`) in module `motion`; the keyword row lands here for programmatic resolution.",
+    "api": [],
+    "path": "motion::animated",
+    "item": "animated",
+    "kind": "reexport",
+    "keywords": ["SpringAnimation in app state", "SwiftUI animation modifier", "animate offset", "animate opacity", "animate position", "animate to a new place", "animate without frame messages", "animated offset", "implicit animation", "move on a spring", "per-frame message", "spring position", "window::frames", "withAnimation"],
+    "wiring_contract": false
+  },
+  {
+    "module": "tokens",
+    "tier": 1,
+    "group": "Item-level capabilities",
+    "summary": "item-level capability `tokens::annotation_glyph_ink` (a `fn`) in module `tokens`; the keyword row lands here for programmatic resolution.",
+    "api": [],
+    "path": "tokens::annotation_glyph_ink",
+    "item": "annotation_glyph_ink",
+    "kind": "fn",
+    "keywords": ["Editor highlight ink", "Span::highlight ink", "Text highlight ink", "annotation ink", "annotation on paper", "composited highlight", "highlight marker ink", "highlight over paper", "highlighter pen", "persisted highlight", "reading highlight", "translucent highlight fill", "yellow marker"],
+    "wiring_contract": false
+  }
+]

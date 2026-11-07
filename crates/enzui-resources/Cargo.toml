@@ -1,0 +1,85 @@
+[package]
+name = "enzui-resources"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Application-owned, cancellable remote resource loading for enzUI."
+
+[features]
+default = ["curl-transport"]
+# Real HTTP(S) transport. Optional so pure service/decode users do not need the
+# system libcurl/OpenSSL stack; enabled by default for the workspace product.
+curl-transport = ["dep:curl"]
+# Runtime-loaded libheif HEIC decoding. Off by default: applications opt into
+# the native decoder and its licensing/attack-surface tradeoff explicitly.
+heif = ["dep:libloading"]
+
+local-images = []
+
+# Explicit GIF/APNG posters; static and remote decoding remain strict.
+first-frame-previews = ["image/gif"]
+
+derived-previews = []
+
+image-ops = ["dep:kamadak-exif"]
+
+[dependencies]
+enzui-core.workspace = true
+# `service_download` runs extractors through the bounded subprocess transport.
+enzui-services.workspace = true
+enzui-security.workspace = true
+iced_core.workspace = true
+sha2.workspace = true
+kamadak-exif = { version = "0.6", optional = true }
+# The colour engine `image` already builds; converts embedded ICC profiles to sRGB.
+moxcms = "0.8"
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "webp",
+    "bmp",
+] }
+# Dynamic system libcurl + platform OpenSSL on Linux. No bundled C build, HTTP/2,
+# compression, cookies, auth or proxy features are enabled.
+curl = { version = "0.4.50", default-features = false, features = ["ssl"], optional = true }
+# Loaded explicitly rather than linked: a host without libheif must start and
+# report `DecodeError::Unsupported`, not fail in the ELF loader before `main`.
+libloading = { version = "0.8", optional = true }
+
+[dev-dependencies]
+png = "0.18"
+enzui-test-support = { workspace = true }
+# Turns on the shared staging owner's fault switch for THIS crate's tests only.
+# `http_cache::write_atomically` stages through `tempstage::RootTempStage`, and
+# its write / pre-publication `fsync` / `renameat` cannot be made to fail by a
+# real filesystem on demand. A dev-dependency feature never reaches the normal
+# (`--lib`) build any downstream crate links against, so a product build still
+# compiles those seams to exactly `write_all` / `sync_all` / `rename_entry`.
+enzui-security = { workspace = true, features = ["fault-injection"] }
+
+[lints]
+workspace = true
+
+[[test]]
+name = "local_images"
+path = "tests/local_images.rs"
+required-features = ["local-images"]
+
+[[test]]
+name = "derived_previews"
+path = "tests/derived_previews.rs"
+required-features = ["derived-previews"]
+
+[[test]]
+name = "first_frame_previews"
+required-features = ["first-frame-previews"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

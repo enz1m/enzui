@@ -1,0 +1,253 @@
+[package]
+autoexamples = false
+name = "enzui-widgets"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+# Framework code is MIT; the emoji search keywords bundled in
+# `src/emoji_picker/` are Unicode CLDR data under the Unicode License V3,
+# whose text ships beside them.
+license = "MIT AND Unicode-3.0"
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "enzUI widget library: styled components built on iced."
+
+[features]
+default = ["wayland", "desktop-portal"]
+x11 = ["iced/x11", "enzui-clipboard-runtime/x11"]
+wayland = ["iced/wayland", "enzui-clipboard-runtime/wayland"]
+# Forwards `enzui-core/portal-dbus` so an app enabling this feature on
+# the *widgets* crate gets the real D-Bus backend (`DbusBackend`) and the file
+# chooser re-exports below become drivable, WITHOUT the app taking a direct
+# `enzui-core` dependency just to reach the portal.
+#
+# Off by default on purpose. `DbusBackend::new` spawns a `tokio::runtime::Runtime`
+# (`enzui-core::portal::dbus_backend`), so a default-on portal dependency
+# would put a background runtime in every app that just links this crate — and
+# it would make `cargo test` require a session bus. Apps opt in.
+portal-dbus = ["enzui-core/portal-dbus"]
+# Follow the desktop's settings over the Settings portal: accent colour,
+# contrast, text size, window buttons, input preferences and the UI font. On
+# by default: the readers run on their own thread only once an application
+# starts them, and quietly do nothing without a session bus.
+desktop-portal = ["enzui-core/desktop-settings-portal", "enzui-core/desktop-font-portal"]
+# Forwards `enzui-core/application-dbus`: single-instance launching and
+# D-Bus activation (`enzui_core::activation::dbus::ApplicationService`)
+# without a direct `enzui-core` dependency. Off by default: it connects to the
+# session bus once an application asks.
+application-dbus = ["enzui-core/application-dbus", "enzui-core/activation-native-iced"]
+# The emoji chooser (`emoji_picker`), with the Unicode emoji names and
+# shortcodes it searches. Off by default: it carries the emoji data.
+emoji-picker = ["dep:emojis"]
+# Forwards `enzui-core/locale-formatters`: currency, percent, relative-time
+# and duration formatting on `Locale`.
+locale-formatters = ["enzui-core/locale-formatters"]
+# Forwards `enzui-core/shell-integration`: a tray icon with a menu
+# (`enzui_core::tray`) and the launcher count and urgent mark
+# (`enzui_core::launcher_badge`). Off by default.
+shell-integration = ["enzui-core/shell-integration"]
+# Compiles the private test-only pause seams the `text_baseline_shape_race`
+# integration target uses to drive an in-flight shape across a real font
+# load. Off by default so shipped builds never expose a `pub` mutation hook
+# into the metric cache; the target below is skipped without this feature.
+internal-test-seams = []
+
+[dependencies]
+# PDF content streams, for print_pdf.
+flate2 = "1.1"
+emojis = { version = "0.9", optional = true }
+log.workspace = true
+# `image-without-codecs`, NOT `image`: iced's `image` feature is
+# `image-without-codecs` + `image/default`, and `image/default` turns on EVERY
+# codec — including `avif` (rav1e/ravif) and `exr` (pulp), which pulled the
+# unmaintained `paste` proc-macro (RUSTSEC-2024-0436) into the default widget
+# graph. A separate route remains through core's off-by-default `gstreamer`
+# feature; where an app enables it, `paste` runs only as a build-time
+# proc-macro. We never encode AVIF or read OpenEXR; `EnzImage` only
+# *decodes* from disk (`Handle::from_path`). So we take the codec-free hook and
+# select a deliberate codec subset via the direct `image` dependency below. It is the
+# same `image` crate node iced's `dep:image`/`arboard` use (workspace patch +
+# version), so Cargo feature-unifies these codecs onto iced's image decoder.
+iced = { workspace = true, features = ["image-without-codecs", "advanced", "markdown", "qr_code"] }
+# `enz_qr` builds the module matrix ourselves (as a public `Vec<bool>` grid)
+# so tests can round-trip / assert on it — iced's `qr_code::Data` keeps its
+# `contents` and `width` private. Enabling `qr_code` above already pulls this
+# crate into the graph via `iced_widget`, so naming it directly here adds no
+# new node and moves no lockfile: same version, same default-off codecs.
+qrcode = { version = "0.13", default-features = false }
+# Adaptive glass: a custom primitive on the renderer's material shader, and
+# SVG silhouettes rasterised once for its distance field.
+iced_wgpu.workspace = true
+resvg = { version = "0.45", default-features = false, features = ["text", "system-fonts"] }
+# Animated SVG: the document model, stylesheets, path math and `.svgz`,
+# all already in the graph through `resvg` (`flate2` is listed below).
+roxmltree = "0.20"
+simplecss = "0.2"
+svgtypes = "0.15"
+kurbo = "0.11"
+bytemuck = "1"
+# iced's `image-without-codecs` deliberately skips `iced_winit/image`,
+# which gates clipboard image support (`Kind::Image` /
+# `Content::Image` + `arboard/image-data`).  That chain does NOT pull in
+# `image/default` (the codec blast) — it is an independent term in the
+# aggregate `iced/image` alias.  Enabling it here restores clipboard image
+# round-tripping without `paste`/`exr`/`rav1e`.
+iced_winit = { workspace = true, features = ["image"] }
+iced_core.workspace = true
+# Portal window parenting: the platform crate is where a real
+# window handle is turned into an XDG Desktop Portal `parent_window` string.
+# `raw-window-handle 0.6` is ALREADY in the graph (a transitive dep of
+# `iced_core`/`winit`, resolved at 0.6.2); naming it here so `portal_parent` can
+# match `RawWindowHandle::{Xlib,Xcb,Wayland}` adds NO new crate and does NOT move
+# `Cargo.lock` (verified: the resolver unifies onto the existing 0.6.2 node,
+# same as `pulldown-cmark`/`image` above). Core stays winit-/rwh-free by design;
+# this conversion lives in the winit-owning crate that already holds the handle.
+raw-window-handle = "0.6"
+pulldown-cmark = { version = "0.12", default-features = false }
+# Codec subset for `EnzImage::from_path`. Chosen for a desktop UI
+# toolkit; every entry is a raster format a UI actually loads, and none pulls
+# `paste` through the image graph (the optional GStreamer lock path is separate):
+#   png  — required: docs/tests load `.png`, the default asset format.
+#   jpeg — required: photographic UI assets (pure-Rust zune decoder).
+#   gif  — common simple/animated raster asset.
+#   webp — modern web-standard UI asset format (pure-Rust image-webp).
+#   bmp  — trivial (`bmp = []`, zero extra deps); common clipboard/asset format.
+# Deliberately OMITTED: avif (rav1e/ravif -> paste, huge/slow, encode-oriented;
+# one route to `paste`, not the only one — see the note above),
+# exr (pulp -> paste, HDR film compositing), and the niche hdr/dds/tiff/tga/
+# pnm/qoi/ico/ff formats a UI toolkit does not load. `default-features = false`
+# drops `image/default` (which is `rayon` + all codecs) entirely.
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "gif",
+    "webp",
+    "bmp",
+] }
+enzui-core.workspace = true
+enzui-clipboard-runtime = { version = "0.1.0", path = "../enzui-clipboard-runtime", default-features = false, features = ["image"] }
+enzui-clipboard = { version = "0.1.0", path = "../enzui-clipboard" }
+enzui-icons.workspace = true
+enzui-theme.workspace = true
+# EnzTextGrid: one grapheme per cell (extended clusters, ZWJ emoji, VS16) and
+# East-Asian double-width detection for the monospace cell grid.
+unicode-segmentation = "1.13"
+unicode-width = "0.2"
+# text_measure pagination: UAX#14 line-break opportunities for the default
+# break rule, so Thai/Lao/Khmer never split mid-grapheme. Already in the lockfile (0.1.5, pulled
+# transitively by cosmic-text), so this is a direct-dep declaration, not a new
+# resolution — vendored iced does not rebuild.
+unicode-linebreak = "0.1"
+
+[dev-dependencies]
+wayland-client = "0.31.14"
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+serde_json = "1"
+futures-timer = "3"
+# The `operate_chained` helper that follows `Outcome::Chain` exactly as
+# the real iced runtime does. Already a workspace member, adds no crate.
+enzui-test-support.workspace = true
+enzui-clipboard = { version = "0.1.0", path = "../enzui-clipboard" }
+enzui-services = { workspace = true, features = ["spell-check"] }
+emojis = "0.9"
+# `one_async_runtime` only, to ask the one question that decides whether the
+# shipped facade can drive zbus: is a Tokio reactor current inside the
+# executor's `enter`. Test-only, and tokio 1.53.1 is already in `Cargo.lock`
+# via the a11y and portal graphs, so this adds no crate and moves no lockfile.
+tokio = { version = "1", default-features = false, features = ["rt"] }
+# Behavioral interaction harness (iced_test::Simulator) so the widget tests are
+# real event-driven runs against the widgets, not builder-field assertions.
+iced_test.workspace = true
+# Replay-versus-draw checks of animated views, frame by frame.
+enzui-frame-check.workspace = true
+# The software renderer's layers and damage, replayed frame by frame the way
+# its window compositor presents them into aged buffers.
+iced_tiny_skia.workspace = true
+iced_graphics.workspace = true
+tiny-skia = { version = "0.11", default-features = false, features = ["std"] }
+bytemuck = "1"
+# The action-advertisement tests assert the *AccessKit* node a widget
+# publishes (`supports_action(Action::Click)`), not the `Semantics` field that
+# feeds it. The two genuinely differ: `enz_button` sets
+# `supports_default_action` unconditionally and `Semantics::to_accesskit_node`
+# drops every action on a disabled node (`semantics.rs`), so a field-level
+# assertion would report "advertises Click" for a control AT cannot invoke.
+# Test-only; the widget library itself stays renderer- and platform-neutral.
+# The same feature and pinned version other workspace members enable, so no
+# new crate enters the graph.
+# `test-frame` is the sanctioned shared headless collection frame
+# (`enzui_core::collect::collect_frame`), used by the chat tail-follow
+# gates to assert which message is actually VISIBLE in the rendered frame
+# rather than round-tripping a scroll-offset field. `iced_test` is already a
+# dev-dependency of this crate (see above), so this enables an existing
+# optional dep rather than adding a crate to the graph.
+enzui-core = { workspace = true, features = ["accesskit", "test-frame", "secret-observer", "activation-native-iced"] }
+accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.24" }
+# The *resolved Linux adapter*, so a test can assert what an AT-SPI client
+# (Orca) actually receives rather than what our collector produced. The two can
+# disagree — a property the collector sets can still be dropped on the way to
+# AT-SPI — so a test at that seam re-asserts the policy against itself.
+#
+# This is the SAME node the graph already builds -- `accesskit_winit` ->
+# `accesskit_unix` -> `accesskit_atspi_common` 0.19.1 is already in `Cargo.lock`
+# and already compiled in `target/debug/deps`, so naming it here adds no crate
+# and rebuilds nothing. `Adapter::new` takes an `AppContext` + a callback and
+# needs no D-Bus connection, which is what makes the real adapter drivable
+# headlessly in a unit test.
+#
+# Named by path, not by version: `accesskit_unix` reaches the patched
+# snapshot in the enzICED checkout by relative path, and only the same path
+# resolves the one instance the product path publishes through. A version
+# requirement would resolve a second, unpatched registry copy, so these tests
+# would assert against code no window ever uses.
+accesskit_atspi_common = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.19.1" }
+# The AT-SPI interface names a registration reports (already in the lock
+# through `accesskit_atspi_common`).
+atspi-common = "0.13"
+
+# The shape-race target needs the private pause seams gated behind
+# `internal-test-seams`; without the feature cargo skips it rather than
+# failing to compile against absent seams.
+[[test]]
+name = "text_drag_gesture"
+path = "tests/text_drag_gesture.rs"
+
+[[test]]
+name = "emoji_picker"
+path = "tests/emoji_picker.rs"
+required-features = ["emoji-picker"]
+
+[[test]]
+name = "text_baseline_shape_race"
+path = "tests/text_baseline_shape_race.rs"
+required-features = ["internal-test-seams"]
+
+[[test]]
+name = "app_setup_clipboard"
+path = "tests/app_setup_clipboard.rs"
+harness = false
+
+[lints]
+workspace = true
+# The Wayland xdg-foreign parent exporter and the lease-lifetime rules the
+# parented portal task obeys. Linux-only, like the parenting they serve.
+[target.'cfg(target_os = "linux")'.dependencies]
+enzui-wayland = { version = "0.1.0", path = "../enzui-wayland" }
+enzui-parent-lease.workspace = true
+
+[[example]]
+name = "app"
+path = "examples/app.rs"
+
+[[example]]
+name = "gallery"
+path = "examples/gallery/main.rs"
+required-features = ["emoji-picker"]
+test = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

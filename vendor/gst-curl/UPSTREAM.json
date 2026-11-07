@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/GStreamer/gstreamer",
+  "commit": "727ceb91886862d200f423baf36cde2bb7ce5b4d",
+  "release": "1.28.5",
+  "path": "subprojects/gst-plugins-bad/ext/curl",
+  "sha256": {
+    "gstcurlhttpsrc.c": "af55af726819068b88bfde7b13d98f392e0e09914a8504b1828c7bbc0bef6e41",
+    "gstcurlhttpsrc.h": "06d88982dd0420619468e824872b7f71fa5613dd9a1f9ab669f1aa1824fc6713",
+    "gstcurlqueue.c": "34c26a441e0cfe5a7c8d78cd9a77db99369300443433ebed4cabda1d0d277a10",
+    "gstcurlqueue.h": "a583fa513678ace738b0d0274c459d993a9b2ff7b00e7c4db13f9474e716ede4",
+    "gstcurldefaults.h": "289c4a0fecbe1d9036c07bcc4ee37261ebdb116c3d554b57c9dedba156c3f4c7",
+    "curltask.h": "0ed8d1a120f9815fdbb3226d1aa6ad7a8fbe1857ad55d275b96651fb7d4358e8"
+  }
+}

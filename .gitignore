@@ -1,0 +1,18 @@
+# Cargo output
+/target/
+/target-clippy/
+/target-docs/
+/target-pgo/
+Cargo.lock.bak
+**/*.rs.bk
+
+# Local tools and editor state
+__pycache__/
+*.pyc
+/.claude/
+/AGENTS.local.md
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

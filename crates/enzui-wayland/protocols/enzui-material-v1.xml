@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="enzui_material_v1">
+  <copyright>
+    Copyright 2026 enzUI contributors. SPDX-License-Identifier: MIT
+  </copyright>
+
+  <description summary="liquid glass over what lies behind a surface">
+    A client asks the compositor to paint enzUI's sampled-backdrop material
+    (liquid glass) in parts of a surface. The compositor samples whatever it
+    has drawn below the surface (the wallpaper, other windows, panels),
+    blurs, refracts, tints and contrast-protects it exactly as enzUI-ICED
+    does inside an application, and then draws the surface's own content on
+    top. The surface itself should be transparent where its glass is.
+
+    The material is the framework's: each region carries the same tokens
+    `enzui_theme::MaterialTokens` holds, so a theme or a style change is
+    the client's to make and the compositor never guesses an appearance.
+  </description>
+
+  <interface name="enzui_material_manager_v1" version="3">
+    <request name="destroy" type="destructor">
+      <description summary="unbind the manager">
+        Existing surface materials are unaffected.
+      </description>
+    </request>
+
+    <request name="get_surface_material">
+      <description summary="the material object of one surface">
+        At most one per wl_surface at a time.
+      </description>
+      <arg name="id" type="new_id" interface="enzui_surface_material_v1"/>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+
+    <enum name="error">
+      <entry name="already_constructed" value="0" summary="the surface already has a material object"/>
+    </enum>
+  </interface>
+
+  <interface name="enzui_surface_material_v1" version="3">
+    <request name="destroy" type="destructor">
+      <description summary="stop painting glass">
+        The regions are removed on the surface's next commit.
+      </description>
+    </request>
+
+    <request name="set_regions">
+      <description summary="replace the glass regions">
+        Double-buffered: applied on the next wl_surface.commit. An empty
+        array removes every region.
+
+        Each region is 25 little-endian 32-bit floats:
+          0-3   x, y, width, height of its rounded rectangle, in
+                surface-local logical pixels;
+          4     corner radius, logical pixels;
+          5-20  the material tokens in MaterialTokens order: blur_sigma,
+                refraction, bevel_width, index_of_refraction, dispersion,
+                color_diffusion, color_reach, optical_depth, tint_opacity,
+                saturation, highlight, brightness, light_angle (degrees),
+                profile_curvature, contrast_protection, protected_inset;
+          21-24 the tint colour, sRGB-encoded red, green, blue, and alpha.
+
+        At most 32 regions. A non-finite value, a negative size or more
+        regions than allowed is a protocol error.
+      </description>
+      <arg name="regions" type="array"/>
+    </request>
+
+    <request name="set_shadow">
+      <description summary="a soft shadow outside every region">
+        Double-buffered like set_regions. The compositor draws it around the
+        glass, after sampling the backdrop, so the glass never sees its own
+        shadow. A surface cannot draw this itself: its own shadow would lie
+        under the transparent glass too. Zero opacity removes it.
+      </description>
+      <arg name="blur" type="fixed" summary="Gaussian reach, logical pixels"/>
+      <arg name="offset_y" type="fixed" summary="downward offset, logical pixels"/>
+      <arg name="opacity" type="fixed" summary="black at this opacity next to the edge, 0 to 1"/>
+    </request>
+
+    <request name="set_measure_only" since="2">
+      <description summary="measure the backdrop without painting glass">
+        Double-buffered like set_regions. While nonzero, the compositor
+        measures the backdrop behind every region (see the luminance event)
+        but paints neither the glass nor its shadow: a surface whose ink
+        follows its backdrop learns its ink before its glass appears.
+      </description>
+      <arg name="measure_only" type="uint" summary="0 paints, nonzero only measures"/>
+    </request>
+
+    <event name="luminance" since="2">
+      <description summary="the backdrop's brightness behind a region">
+        The average brightness of what lies behind region `region` (its index
+        in the last set_regions), from 0 to 1 in perceptual (sRGB-encoded)
+        terms, measured as the framework's renderer measures it: over the
+        inner 80% of the filtered backdrop, clear of the rim. Sent when a
+        region is first measured and whenever the value moves by 1/128 or
+        more; it describes a frame or two ago.
+      </description>
+      <arg name="region" type="uint"/>
+      <arg name="value" type="fixed"/>
+    </event>
+
+    <request name="set_cutouts" since="3">
+      <description summary="where the surface covers its glass">
+        Double-buffered like set_regions. Rounded rectangles where the
+        surface draws opaque content over its glass, such as the panes of a
+        window whose frame is glass: the compositor neither filters the
+        backdrop for, nor paints, the glass inside them, so glass behind
+        opaque content costs nothing. The corners outside a cutout's radius
+        still show glass.
+
+        Each cutout is 5 little-endian 32-bit floats: x, y, width and height
+        in surface-local logical pixels, and the corner radius. At most 32;
+        an empty array removes them. A non-finite value or a negative size is
+        a protocol error.
+      </description>
+      <arg name="cutouts" type="array"/>
+    </request>
+
+    <enum name="error">
+      <entry name="invalid_regions" value="0" summary="the array is not a whole number of valid regions"/>
+      <entry name="surface_gone" value="1" summary="the wl_surface was destroyed first"/>
+      <entry name="invalid_cutouts" value="2" summary="the array is not a whole number of valid cutouts"/>
+    </enum>
+  </interface>
+</protocol>

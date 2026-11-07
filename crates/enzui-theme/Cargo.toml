@@ -1,0 +1,45 @@
+[package]
+name = "enzui-theme"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "enzUI design tokens and theme system (the enzUI Nebula family, dark + light modes)."
+
+[features]
+default = ["system-theme", "system-reduced-motion", "desktop-fonts", "desktop-materials"]
+# Operating-system colour-scheme tasks and subscriptions.
+system-theme = ["dep:iced_runtime", "dep:iced_futures"]
+
+# Process-wide material preset overrides, read when views resolve style tokens.
+material-tuning = []
+
+# Operating-system reduced-motion tasks and subscriptions.
+system-reduced-motion = ["system-theme"]
+
+# Desktop font preference feed; pure precedence types remain available without it.
+desktop-fonts = ["system-theme"]
+
+# Desktop material preference feed; policy types and the store remain available
+# without it. Returned tasks invalidate windows in the host runtime.
+desktop-materials = ["system-theme"]
+
+[dependencies]
+# Direct core types keep renderer and windowing backends out of the token layer.
+iced_core.workspace = true
+
+# Optional tasks and subscriptions shared by the enabled preference feeds.
+iced_runtime = { workspace = true, optional = true }
+iced_futures = { workspace = true, optional = true }
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

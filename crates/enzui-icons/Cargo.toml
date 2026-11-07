@@ -1,0 +1,39 @@
+[package]
+name = "enzui-icons"
+description = "Bundled Lucide icon assets and registry for enzUI."
+edition.workspace = true
+rust-version.workspace = true
+# Framework code is MIT (matches the workspace license); bundled Lucide
+# assets are ISC; the Feather-derived subset is MIT. All three license
+# texts ship under LICENSES/.
+license = "MIT AND ISC"
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+version = "0.1.0"
+publish = false
+include = [
+    "build.rs",
+    "src/**",
+    "assets/**",
+    "icon-manifest.toml",
+    "THIRD_PARTY.md",
+    "LICENSES/**",
+]
+
+[dependencies]
+
+# Test-only: `payload_digest_matches_pinned_source` hashes the bundled Lucide
+# payload against the reviewed digest in `icon-manifest.toml`. Kept out of
+# `[dependencies]` so the production build embeds no hashing code, and already
+# in `Cargo.lock` via the workspace, so this adds no new package source.
+[dev-dependencies]
+sha2.workspace = true
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

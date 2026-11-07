@@ -1,0 +1,67 @@
+[package]
+name = "enzui-security"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Small shared secure-file, secret, runtime-directory, and cancellation primitives for enzUI."
+
+[features]
+# Test-only fault injection for durability, staged publication, and sibling
+# quarantine. OFF by default so a product build compiles every seam to the bare
+# syscall with no hook. The seams behind this switch are:
+#
+#   * `durable::sync_parent_dir`  -> plain `dir.sync_all()`
+#   * `quarantine` races/failures -> plain link, identity check, no-clobber rename, and sync
+#   * `tempstage` staged write    -> plain `write_all`
+#   * `tempstage` pre-commit sync -> plain `sync_all`
+#   * `tempstage` publication     -> descriptor-relative `renameat`
+#   * `tempstage::fault::arm_parent_open` -> descriptor-relative parent open
+#   * `tempstage::fault::arm_after_sync` -> nothing at all; it injects a hostile
+#     substitution between the durability barrier and the rename
+#   * `tempstage::fault::arm_root_identity_failure` -> plain `fstat`; it injects
+#     substitution plus descriptor-identity failure immediately after create
+#   * `tempstage::fault::arm_directory_cleanup` -> nothing at all; it injects a
+#     replacement after a directory identity is retained and before traversal
+#
+# Consuming crates (enzui-core, enzui-agent, enzui-resources)
+# enable it ONLY in their `[dev-dependencies]`, so their tests can force a
+# parent-directory fsync failure, a staged-write/sync/rename failure, or a name
+# substitution, and prove each atomic writer (core's `atomic_state`, resources'
+# `http_cache`) surfaces it as a typed error with the old destination intact.
+# An ordinary write/sync/rename failure additionally leaves no staging artefact
+# behind; a name substitution or descriptor-identity failure instead proves the
+# *foreign* name is preserved — identity-bound cleanup fails closed and may
+# leave the owner-only staged inode rather than unlink an entry it no longer
+# owns.
+fault-injection = []
+# Test-only observation of secret allocation identity and the post-wipe byte
+# count. Consumers enable this only in dev builds to verify last-owner
+# lifecycle behavior without reading freed memory.
+secret-observer = []
+
+[target.'cfg(unix)'.dependencies]
+# `secure_dir::SecureRoot` needs `openat`/`renameat`/`unlinkat`/`fstat`
+# to bind cache operations to a verified root descriptor. The workspace forbids
+# raw `unsafe`, so we cannot call libc directly — rustix wraps these syscalls
+# in a `#[deny(unsafe_code)]`-clean safe API. Version 1.1 is already in
+# `Cargo.lock` via the winit graph, so this adds no new resolved package.
+# This list is what the crate requests, not what it gets: Cargo unifies features
+# per package, so the rustix that compiles is the union over every dependent --
+# `process` and `event` arrive from enzui-core, and `net`, `mm`, `shm` and
+# `system` from the wayland/x11 presentation and zbus stacks.
+# `default-features = false` keeps the request narrow if rustix's defaults ever
+# widen; in 1.1 they are `std` alone, which this line already re-adds.
+rustix = { version = "1.1", default-features = false, features = ["fs", "std"] }
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

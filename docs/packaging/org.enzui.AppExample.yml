@@ -1,0 +1,42 @@
+# Flatpak manifest for the complete app example, built from this
+# repository. Build and run it with:
+#
+#   flatpak-builder --user --install --force-clean build-dir docs/packaging/org.enzui.AppExample.yml
+#   flatpak run org.enzui.AppExample
+#
+# See docs/packaging.md. The cargo network access below is for local
+# builds; Flathub builds offline from generated cargo sources instead.
+id: org.enzui.AppExample
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: app
+finish-args:
+  # The default example is Wayland-only.
+  - --socket=wayland
+  # GPU rendering.
+  - --device=dri
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/app-example/cargo
+    CARGO_TERM_COLOR: never
+  build-args:
+    - --share=network
+modules:
+  - name: app-example
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --locked --example app
+      - install -Dm755 target/release/examples/app /app/bin/app
+      # The desktop entry, metainfo and icon come from the same identity the
+      # window carries (see `fn package` in the example).
+      - /app/bin/app --write-package-files / /app
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - target
+          - .git

@@ -1,0 +1,128 @@
+[package]
+name = "enzui-services"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Platform and app-domain services for enzUI apps: media backends, process transport and activation, credential store, document preview, Git status, OAuth, DNS and mail transport."
+
+[features]
+default = []
+# The GStreamer audio and video services, and the libcurl redirect probe that
+# pins remote streams to the address the remote gate screened. Off by default:
+# the media model in `enzui-core` needs no backend, and a framework
+# should not force a GStreamer link on every consumer.
+gstreamer = ["dep:gstreamer", "dep:gstreamer-app", "dep:gstreamer-video", "dep:curl"]
+# The app-scoped MPRIS adapter. Off by default: a framework should not claim an
+# `org.mpris.MediaPlayer2.*` bus name in every app.
+mpris = ["dep:zbus", "dep:tokio"]
+# PDF page rendering through pdfium, bound at run time to the system library.
+pdf-preview = ["dep:pdfium-render"]
+# The Secret Service backend of the credential store.
+secret-service = ["dep:zbus", "dep:tokio", "dep:futures-util"]
+# The Secret portal backend of the credential store, for sandboxed (Flatpak)
+# applications: a per-application master secret from
+# `org.freedesktop.portal.Secret` encrypts a keyring file in the app's data
+# directory. `CredentialStores::connect` picks it inside a sandbox.
+secret-portal = ["secret-service", "dep:ashpd", "dep:chacha20poly1305", "dep:hkdf", "dep:sha2"]
+# OAuth 2.0 authorization code + PKCE through the system browser.
+oauth = ["dep:sha2"]
+# Safe libcurl mail transport options for SMTP/IMAP.
+mail-transport = ["dep:curl", "dep:curl-sys"]
+
+# Bounded archive extraction through the system libarchive, loaded at run
+# time: ZIP, TAR (+gzip/bzip2/xz/zstd), 7z, RAR4/RAR5 and split sets.
+archive = ["dep:libloading"]
+# Spell checking (`spell_check`) for `enzui_core::spelling::SpellCheck`:
+# Enchant, loaded at run time, or the Hunspell dictionaries read directly.
+spell-check = ["dep:libloading", "dep:spellbook"]
+# Extension-host primitives: manifest envelope, strict package admission,
+# integrity-checked store, worker protocol and runner, typed settings.
+extension-package = ["dep:serde", "dep:serde_json", "dep:sha2", "dep:semver", "dep:flate2", "dep:crc32fast"]
+
+desktop-icons = ["dep:enzui-icons", "dep:iced_core", "dep:image"]
+desktop-icon-portal = ["desktop-icons", "dep:zbus", "dep:tokio", "tokio/sync", "dep:futures-util"]
+
+[dependencies]
+log.workspace = true
+enzui-core.workspace = true
+enzui-security.workspace = true
+iced_futures.workspace = true
+enzui-icons = { workspace = true, optional = true }
+iced_core = { workspace = true, optional = true, features = ["image"] }
+image = { version = "0.25", optional = true, default-features = false, features = ["png"] }
+libc = "0.2"
+gstreamer = { version = "0.23", optional = true }
+gstreamer-app = { version = "0.23", optional = true }
+gstreamer-video = { version = "0.23", optional = true }
+curl = { version = "0.4.50", default-features = false, features = ["ssl"], optional = true }
+curl-sys = { version = "0.4.90", default-features = false, features = ["ssl"], optional = true }
+pdfium-render = { version = "0.9", optional = true, default-features = false, features = ["pdfium_latest", "thread_safe"] }
+zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a", version = "5", optional = true, default-features = false, features = ["tokio"] }
+tokio = { version = "1", optional = true, features = ["rt", "sync", "time"] }
+futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
+sha2 = { workspace = true, optional = true }
+ashpd = { version = "0.13", optional = true, default-features = false, features = ["tokio", "secret"] }
+chacha20poly1305 = { version = "0.10", optional = true }
+hkdf = { version = "0.12", optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }
+serde_json = { version = "1", optional = true }
+libloading = { version = "0.8", optional = true }
+spellbook = { version = "0.4", optional = true }
+semver = { version = "1", optional = true }
+flate2 = { version = "1", optional = true }
+crc32fast = { version = "1", optional = true }
+
+[build-dependencies]
+cc = "1"
+pkg-config = "0.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1", default-features = false, features = ["fs", "process", "std", "event"] }
+
+[dev-dependencies]
+serde_json = "1"
+enzui-core = { workspace = true, features = ["media-test-support", "portal-dbus"] }
+enzui-test-support.workspace = true
+enzui-security = { workspace = true, features = ["fault-injection", "secret-observer"] }
+
+[[test]]
+name = "spell_check"
+path = "tests/spell_check.rs"
+required-features = ["spell-check"]
+
+[[test]]
+name = "credential_portal"
+required-features = ["secret-portal"]
+
+[[test]]
+name = "video_poster"
+required-features = ["gstreamer"]
+
+[[test]]
+name = "audio_service_idle"
+required-features = ["gstreamer"]
+
+[lints]
+workspace = true
+
+[[test]]
+name = "offline_video"
+required-features = ["gstreamer"]
+
+[[test]]
+name = "desktop_icon_portal"
+required-features = ["desktop-icon-portal"]
+
+[[test]]
+name = "mpris_protocol"
+required-features = ["mpris"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

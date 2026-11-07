@@ -1,0 +1,305 @@
+[package]
+name = "enzui-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Core architectural types for enzUI: actions, shortcuts, icons, and app conventions."
+
+[dependencies]
+tempfile = "3"
+log.workspace = true
+fluent-bundle = "0.16"
+fluent-langneg = "0.13"
+fluent-syntax = "0.12"
+intl-memoizer = "0.5"
+unic-langid = "0.9"
+icu_locale = "2.2"
+icu_calendar = "2.2"
+icu_datetime = "2.2"
+icu_decimal = "2.2"
+icu_collator = "2.2"
+icu_experimental = { version = "0.6", optional = true }
+icu_provider = { version = "2.2", features = ["sync"] }
+fixed_decimal = "0.7"
+writeable = "0.6"
+iced_core.workspace = true
+# The application/daemon shared-theme integration returns native iced
+# Task/Subscription values without pulling the renderer or window facade.
+iced_runtime.workspace = true
+iced_futures.workspace = true
+enzui-icons.workspace = true
+enzui-theme.workspace = true
+enzui-security.workspace = true
+# Canonical composition for `palette::normalize` (see the workspace manifest).
+# NOT optional: a fold nobody opts into has not shipped, and the file browser's
+# query filter reuses the same function.
+unicode-normalization.workspace = true
+unicode-segmentation = "1.13"
+enzui-test-support = { workspace = true, optional = true }
+# Optional AccessKit mapping. Off by default so the token/action/shortcut
+# vocabulary stays renderer- and platform-neutral; the winit adapter turns it
+# on to build the AT-SPI tree. Version matches the vendored iced's
+# accesskit_winit 0.33, which depends on accesskit 0.24.
+accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.24", optional = true }
+image = { version = "0.25", optional = true, default-features = false, features = ["png", "jpeg"] }
+roxmltree = { version = "0.20", optional = true }
+usvg = { version = "0.45", optional = true, default-features = false }
+# Real D-Bus portal backend via ashpd. Feature-gated so the default build
+# has no D-Bus dependency and tests run without a session bus.
+ashpd = { version = "=0.13.13", optional = true, default-features = false, features = ["tokio", "documents", "background", "file_chooser", "global_shortcuts", "inhibit", "memory_monitor", "network_monitor", "notification", "open_uri", "power_profile_monitor", "screenshot"] }
+# D-Bus clients for the application-activation, settings-portal and other bus
+# features. Optional and reached only through those features, so the default
+# build gains nothing. The exact transport family matches ashpd and AT-SPI;
+# consumer workspace patches select the public fork, as docs/dependencies.md describes.
+zbus = { version = "=5.18.0", optional = true, default-features = false, features = ["tokio"] }
+# AT-SPI also names these packages directly. Exact registry constraints make
+# Cargo unify them with the workspace's Git patches, including fresh consumers
+# whose registry index contains a newer, incompatible transport type family.
+zbus_names = { version = "=4.3.4", optional = true }
+zvariant = { version = "=5.13.1", optional = true }
+# The OS background-broker witness is a JSON string (application-dbus).
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+tokio = { version = "1", optional = true, features = ["rt", "sync", "time"] }
+# Stream adapters for awaiting the portal `Response` signal at the zbus level,
+# and for the mock frontend server's request loop. Already in the lock via
+# zbus/ashpd, so gating it here does not move the vendored iced build.
+futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
+# Two uses: fd-closure observation (fcntl(F_GETFD)->EBADF, pipe(2)) for the
+# PipeWire remote lifecycle tests, and the PRODUCT-path FD_CLOEXEC
+# defence-in-depth normalisation at the PipeWire adoption seam
+# (`portal::pipewire::set_cloexec`). The pinned Linux zbus transport installs
+# SCM_RIGHTS descriptors atomically close-on-exec, but this fcntl pair still
+# runs in every build to verify the invariant for direct callers and other
+# targets, so libc cannot be optional. Already in the lock via ashpd/tokio,
+# making it unconditional adds no dependency source and cannot move the
+# vendored iced build.
+libc = "0.2"
+iced_test = { workspace = true, optional = true }
+# Hashes the exact measuring binary when the opt-in report feature is
+# enabled. Already present in the workspace lock; absent from normal app builds.
+sha2 = { workspace = true, optional = true }
+md5 = { package = "md-5", version = "0.10", optional = true }
+png = { version = "0.18", optional = true }
+# Reads and writes the shared XDG theme file. `toml_edit` (not `toml` + `serde`)
+# because the theme document is *user-editable text*: the DOM parser reports a
+# duplicate key as a syntax error, keeps span-accurate messages for a
+# diagnostic, and is the crate a future comment-preserving editor writes
+# through. Both `toml_edit` and its deps (`winnow`, `toml_datetime`,
+# `toml_parser`, `indexmap`) are already resolved in the workspace lock, so
+# this adds no new dependency source and cannot move the vendored iced build.
+# `default-features = false` drops the serde bridge this module does not use.
+toml_edit = { version = "0.25", default-features = false, features = [
+    "parse",
+    "display",
+] }
+# Run the same TOML lexer/push parser before `toml_edit` builds its document so
+# theme-specific nesting can be bounded without first materialising deep tables.
+# This is already a transitive `toml_edit` dependency at the same version.
+toml_parser = "1.1"
+
+# Safe O_NONBLOCK setup, process-group signals, and non-reaping
+# `waitid(WNOWAIT)` for the bounded short-helper owner. Version 1.1 is already
+# present in Cargo.lock; `fs`/`process` expose only the reviewed wrappers used
+# by this Linux path.
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1", default-features = false, features = ["fs", "process", "std", "event", "thread"] }
+# Public app-facing owner of the per-window AccessKit adapter. The adapter is
+# backend-neutral; applications select native backends through the iced facade.
+iced_winit = { workspace = true, optional = true, features = ["a11y"] }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+# Core's standalone tests have no iced facade to supply native backends. This
+# dev edge cannot affect a downstream crate's normal feature graph.
+iced_winit = { workspace = true, features = ["x11", "wayland"] }
+# Test-only name for the patched Unix package so its own focused D-Bus targets
+# remain runnable from this workspace. Its explicit Tokio selection shadows the
+# product edge during core's tests without changing accesskit_unix's upstream
+# async-io default; product code reaches the protocol solely through iced_winit.
+accesskit_unix = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.22.1", default-features = false, features = ["tokio"] }
+
+[dev-dependencies]
+proc-macro2 = "1"
+# Scratch directories for cfg(test) unit tests: `ScratchDir` provides
+# target-bound RAII-owned scratch that refuses system temp directories.
+enzui-test-support = { workspace = true }
+# Turns on the shared atomic-publication fault switches for THIS crate's tests:
+# `atomic_state` can force its staged-file sync, publication rename, and
+# parent-directory sync failures; the theme-save route also exercises the
+# parent-directory sync seam. A dev-dependency feature never reaches the normal
+# (`--lib`) build downstream crates link against, so product builds still
+# compile staged sync/rename and parent sync to their plain filesystem
+# operations with no test hook.
+enzui-security = { workspace = true, features = ["fault-injection", "secret-observer"] }
+iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev", default-features = false, features = [
+    "tiny-skia",
+    "x11",
+    "wayland",
+] }
+# `collect::frame`'s unit tests build a `responsive` view to prove the
+# size argument reaches layout. `iced_widget` does not depend on this crate, so
+# there is no dependency cycle.
+iced_widget = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", version = "0.15.0-dev" }
+
+[[test]]
+name = "desktop_notification_portal"
+path = "tests/desktop_notification_portal.rs"
+required-features = ["portal-dbus"]
+
+[[test]]
+name = "tray"
+path = "tests/tray.rs"
+required-features = ["shell-integration"]
+
+[[test]]
+name = "capture_portals"
+path = "tests/capture_portals.rs"
+required-features = ["portal-dbus"]
+
+[[test]]
+name = "system_status"
+path = "tests/system_status.rs"
+required-features = ["portal-dbus"]
+
+[[test]]
+name = "thumbnail_cache"
+path = "tests/thumbnail_cache.rs"
+required-features = ["thumbnail-cache"]
+
+[[test]]
+name = "locale_formatters"
+path = "tests/locale_formatters.rs"
+required-features = ["locale-formatters"]
+
+[[test]]
+name = "session_lifecycle"
+path = "tests/session_lifecycle.rs"
+required-features = ["portal-dbus"]
+
+[[test]]
+name = "background_portal"
+path = "tests/background_portal.rs"
+required-features = ["portal-dbus"]
+
+[[test]]
+name = "application_activation_dbus"
+path = "tests/application_activation_dbus.rs"
+required-features = ["application-dbus"]
+
+# The material preference portal against a private `dbus-daemon`. Registered
+# like the other bus tests so a default build neither compiles nor runs it.
+[features]
+default = []
+rust-source-audit = ["dep:enzui-test-support", "enzui-test-support/rust-syntax"]
+# Test-only forwarding for secure form lifecycle gates in downstream widget
+# integration tests. It exposes counters only; product behavior is unchanged.
+secret-observer = ["enzui-security/secret-observer"]
+# Test-only forwarding for downstream cleanup race gates.
+security-fault-injection = ["enzui-security/fault-injection"]
+accesskit = ["dep:accesskit", "dep:iced_winit", "dep:zbus_names", "dep:zvariant"]
+linux-native-backends-test = ["iced_winit/x11", "iced_winit/wayland"]
+# Lightweight routed-page counting for production view seams. This feature is
+# renderer-free; test builds add the headless harness with `test-frame`.
+perf-counter = []
+# The shared headless collection frame (`collect::collect_frame`). Turns on the
+# optional `iced_test` dependency, which drives the renderer-neutral
+# `SemanticsCollector` over an app's real `view()`. Applications enable this
+# from dev-dependencies so `iced_test` and its bundled-font policy do not enter
+# product feature resolution.
+test-frame = [
+    "perf-counter",
+    "transition-capture",
+    "dep:iced_test",
+    "dep:enzui-test-support",
+]
+# Exact-frame transition capture (`transition_capture`): measurement tooling
+# an app turns on for a perf or capture build. Implied by `test-frame`.
+transition-capture = []
+# An explicit test-only superset for the hosted accessibility proof.
+# `test-frame` is also used by ordinary application test targets, so it must not
+# expose iced_winit's event-loop-only publish/close hooks. Only the focused
+# hosted-proof target opts in to this feature.
+a11y-hosted-test = [
+    "test-frame",
+    "accesskit",
+    "iced_winit/a11y-test-hooks",
+]
+# The repeatable workload report (`perf_report`) needs the observer's
+# HDR histogram / snapshot types from `iced_runtime/performance-observer`.
+# This is separate from the renderer-free `perf-counter`; only framework test
+# crates and application dev-dependencies enable it. `perf-report` implies
+# `test-frame` for the renderer.
+perf-report = [
+    "test-frame",
+    "iced_runtime/performance-observer",
+    "dep:sha2",
+]
+# Opt-in native acceptance diagnostics for real multi-window application runs.
+# Normal binaries do not link the winit counter reader or executable hasher.
+native-invalidation = ["dep:iced_winit", "dep:sha2"]
+notification-freedesktop = ["dep:zbus", "dep:tokio", "dep:futures-util"]
+# Currency, percent, relative-time and duration formatting on `Locale`
+# (`format_currency`, `format_percent`, `format_relative_time`,
+# `format_duration`) from ICU4X's CLDR data. Off by default: the data is
+# sizeable and most applications need none of it.
+locale-formatters = ["dep:icu_experimental"]
+# The freedesktop thumbnail cache (`thumbnail_cache`): read and write
+# `$XDG_CACHE_HOME/thumbnails` as file managers do.
+thumbnail-cache = ["dep:md5", "dep:png"]
+# A system tray item (`tray`, StatusNotifierItem with a dbusmenu menu) and the
+# launcher count and urgent mark (`launcher_badge`), on the session bus.
+shell-integration = ["dep:zbus", "dep:tokio", "dep:futures-util", "dep:serde"]
+portal-dbus = ["desktop-settings-portal", "dep:ashpd", "dep:zbus", "dep:zbus_names", "dep:zvariant", "dep:tokio", "dep:futures-util", "dep:image", "dep:roxmltree", "dep:usvg"]
+# The Settings portal for `desktop_settings` (accent, contrast, text size, button
+# layout, input preferences), read on the watcher's own thread. enzui-widgets
+# turns it on by default.
+desktop-settings-portal = ["dep:zbus", "dep:tokio", "dep:futures-util"]
+# Enables the separately published iced activation ABI.
+activation-native-iced = []
+# Existing-instance activation through org.freedesktop.Application.
+application-dbus = ["dep:zbus", "dep:tokio", "tokio/rt-multi-thread", "dep:serde_json", "dep:serde"]
+# The freedesktop settings-portal source for desktop font *preferences*
+# (`font_preferences::portal`). Off by default, following `portal-dbus`: the
+# default build already follows the desktop through the dependency-free
+# settings-file source, and the portal's font keys are a GNOME backend
+# extension rather than a standardised namespace, so requiring a session bus
+# for them would be dishonest. Same zbus 5 already in `Cargo.lock`, so enabling
+# it introduces no new dependency source and cannot move the vendored iced
+# build.
+desktop-font-portal = ["dep:zbus", "dep:tokio", "dep:futures-util"]
+# The freedesktop settings-portal source for the accessibility preferences a
+# sampled-backdrop material obeys (`material_preferences::portal`): the
+# standardised `org.freedesktop.appearance/contrast` key plus GNOME's own
+# high-contrast boolean, read through one generated `org.freedesktop.portal.
+# Settings` proxy with bounded calls and live `SettingChanged` signals. Off by
+# default, following `desktop-font-portal`: without it the shipped source
+# reports "no transport" truthfully and every material stays enabled, so a
+# session bus is never a requirement for correct behaviour. Same zbus 5 already
+# in `Cargo.lock`, so enabling it introduces no new dependency source and
+# cannot move the vendored iced build.
+a11y-preferences-portal = ["dep:zbus", "dep:tokio", "dep:futures-util"]
+# Exposes `media::remote_gate::test_support` (fake resolver, probe, clock and
+# cancellation effects) to the media services' tests in `enzui-services`.
+media-test-support = []
+
+[lints]
+workspace = true
+
+[[test]]
+name = "desktop_notification_freedesktop"
+path = "tests/desktop_notification_freedesktop.rs"
+required-features = ["notification-freedesktop"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[[bin]]
+name = "enzui-l10n-coverage"
+path = "src/bin/l10n_coverage.rs"

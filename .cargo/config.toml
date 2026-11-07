@@ -1,0 +1,13 @@
+[build]
+jobs = 2
+
+# Headless test baselines use the software renderer; explicit GPU checks can override it.
+[env]
+ICED_TEST_BACKEND = { value = "software", force = false }
+
+[alias]
+wbuild = "build --workspace"
+wcheck = "check --workspace --all-targets --all-features"
+wt = "test --workspace --all-features"
+# Cargo denies cached lint warnings without changing rustc flags (Cargo 1.97+).
+wclippy = ["clippy", "--locked", "--workspace", "--all-targets", "--all-features", "--config", 'build.warnings="deny"']

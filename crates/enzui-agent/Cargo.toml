@@ -1,0 +1,77 @@
+[package]
+name = "enzui-agent"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "The app side of the enzUI agent center: enrollment, authentication and typed functions."
+
+[features]
+# Opt-in production connector to the external `enzui-center` daemon. Off by
+# default so the default build keeps its dependency-light,
+# JSON-free posture and existing consumers are unaffected. The connector must
+# not be reachable without both this feature and an explicit app opt-in, so a
+# stray environment variable can never expose app data.
+central-connector = ["dep:enzui-center-protocol", "dep:serde", "dep:serde_json", "dep:hex"]
+# Opt-in ICED consumer: turns connector events into typed application messages
+# through an `iced_futures::Subscription`, off the UI thread. Kept separate from
+# `central-connector` so the headless conformance build never pulls the iced
+# graph. `iced_futures` is already in the workspace lock via `enzui-core`,
+# so enabling this adds no new resolved package.
+iced-consumer = ["central-connector", "dep:iced_futures"]
+# One renderer-free owner for reducer tasks that survive GUI promotion.
+task-host = ["iced-consumer", "dep:iced_runtime", "dep:tokio"]
+# The shared background runtime an installed app's user unit starts: the app's
+# own reducer and subscriptions on a headless executor, no display or window.
+background = ["task-host"]
+
+[dependencies]
+log.workspace = true
+enzui-security.workspace = true
+# Enabled only by `central-connector`: the wire both the daemon and this
+# connector speak.
+enzui-center-protocol = { workspace = true, optional = true }
+# Enabled only by `central-connector`. `serde`/`serde_json` carry the
+# `enzui-center` u32-BE length-prefixed JSON wire; `hex` decodes the version-1
+# credential secret. No async runtime: the connector runs on plain std threads.
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+hex = { version = "0.4", optional = true }
+# Enabled only by `iced-consumer`. Renderer-neutral subscription runtime; no
+# wgpu/winit graph.
+iced_futures = { workspace = true, optional = true }
+iced_runtime = { workspace = true, optional = true }
+tokio = { version = "1", optional = true, features = ["rt", "sync", "time", "macros"] }
+
+[dev-dependencies]
+# Enable the shared parent-directory sync barrier's fault switch for this
+# crate's tests only. The grant-store suite must be able to force a parent-dir
+# fsync failure and prove `store_from` surfaces it as `GrantFileError::Io`;
+# otherwise a lost rename could be reported as durable. A dev-dependency
+# feature never reaches a product build, so `store_from` still compiles the
+# barrier to a plain `dir.sync_all()` outside tests. `secret-observer` adds the
+# thread-local wipe/allocation counters so the credential loader can prove its
+# hex secret only ever lives in a wiped `SecretText`; it too is test-only.
+enzui-security = { workspace = true, features = [
+    "fault-injection",
+    "secret-observer",
+] }
+
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[[bin]]
+name = "enzui-agent-connector"
+path = "src/bin/central_connector_headless.rs"
+required-features = ["central-connector"]
+test = true

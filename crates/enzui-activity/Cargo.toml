@@ -1,0 +1,43 @@
+[package]
+name = "enzui-activity"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Nonblocking app-scoped publisher for the enzUI activity protocol"
+
+[features]
+default = ["launcher-entry"]
+# Dock progress through `com.canonical.Unity.LauncherEntry` where the activity
+# socket is unreachable. Opting out removes the session-bus dependency.
+launcher-entry = ["dep:zbus"]
+# Reconcile the shared in-app operation model without copying private row text.
+operation-center = ["dep:enzui-core"]
+
+[dependencies]
+enzui-core = { workspace = true, optional = true }
+getrandom = { version = "0.3", features = ["std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "net", "io-util", "sync", "time", "macros"] }
+zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a", version = "5", optional = true, default-features = false, features = ["tokio"] }
+
+[dev-dependencies]
+futures-util = "0.3"
+tempfile = "3"
+
+[[test]]
+name = "launcher_entry"
+required-features = ["launcher-entry"]
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

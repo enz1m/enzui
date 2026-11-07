@@ -1,0 +1,59 @@
+[package]
+name = "enzui-clipboard"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+publish = false
+description = "Ordinary focused-client Wayland clipboard transport (wl_data_device) owned by the application's own connection and seat."
+
+[[bin]]
+name = "enzui-clipboard-peer"
+path = "src/bin/peer.rs"
+required-features = ["test-seal"]
+
+[features]
+default = []
+test-seal = []
+
+[dependencies]
+wayland-client = "0.31.14"
+raw-window-handle = "0.6"
+
+# Foreign-display adoption requires client_system; dlopen defers libwayland loading.
+wayland-backend = { version = "0.3.15", features = ["client_system", "dlopen"] }
+rustix = { version = "1.1", default-features = false, features = [
+    "event",
+    "fs",
+    "pipe",
+    "std",
+] }
+wayland-protocols = { version = "0.32", features = ["client", "staging", "unstable"] }
+enzui-core.workspace = true
+enzui-security.workspace = true
+
+[dev-dependencies]
+enzui-security = { workspace = true, features = ["secret-observer"] }
+wayland-server = "0.31.14"
+wayland-protocols = { version = "0.32", features = ["server", "staging", "unstable"] }
+arboard = { version = "3.6.1", default-features = false, features = [
+    "wayland-data-control",
+] }
+
+[lints]
+workspace = true
+
+# The custom runner filters named cases and reexecutes the separate arboard control.
+[[test]]
+name = "wayland_data_device"
+path = "tests/wayland_data_device.rs"
+harness = false
+required-features = ["test-seal"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
