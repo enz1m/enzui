@@ -1,6 +1,3 @@
-[build]
-jobs = 2
-
 # Headless test baselines use the software renderer; explicit GPU checks can override it.
 [env]
 ICED_TEST_BACKEND = { value = "software", force = false }

@@ -2,7 +2,9 @@
 
 Use `cargo check` while editing, a normal development build to try the app, and
 release builds when measuring runtime performance. The workspace aliases are
-plain Cargo commands; they do not install tools or delete caches.
+plain Cargo commands; they do not install tools or delete caches. Cargo chooses
+build parallelism automatically. The repository imposes no CPU, memory or disk
+reserve limits; personal limits belong in the environment or user configuration.
 
 ## Development builds
 
