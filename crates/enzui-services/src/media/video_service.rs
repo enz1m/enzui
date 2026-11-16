@@ -38,6 +38,7 @@ mod pipeline;
 mod player;
 mod seek;
 mod status;
+mod subtitles;
 pub use seek::{SeekAdmissionError, SeekOutcome, SeekRejection, SeekRequest, VIDEO_SEEK_CAPACITY};
 mod worker;
 

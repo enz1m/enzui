@@ -48,6 +48,10 @@ const GENERIC_TITLES: &[&str] = &["audio", "sound", "video", "subtitle", "subtit
 /// Subtitle text size, relative to the picture.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum SubtitleSize {
+    /// About 45% of the default text height.
+    Tiny,
+    /// Between tiny and small.
+    ExtraSmall,
     /// Smaller than the default.
     Small,
     /// The default.
@@ -61,7 +65,9 @@ pub enum SubtitleSize {
 
 impl SubtitleSize {
     /// Every size, smallest first.
-    pub const ALL: [SubtitleSize; 4] = [
+    pub const ALL: [SubtitleSize; 6] = [
+        SubtitleSize::Tiny,
+        SubtitleSize::ExtraSmall,
         SubtitleSize::Small,
         SubtitleSize::Medium,
         SubtitleSize::Large,
@@ -72,6 +78,8 @@ impl SubtitleSize {
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
+            SubtitleSize::Tiny => "Tiny",
+            SubtitleSize::ExtraSmall => "Extra small",
             SubtitleSize::Small => "Small",
             SubtitleSize::Medium => "Medium",
             SubtitleSize::Large => "Large",
@@ -82,6 +90,8 @@ impl SubtitleSize {
     // The overlay scales these font sizes relative to the picture.
     pub(crate) fn font(self) -> &'static str {
         match self {
+            SubtitleSize::Tiny => "Sans Bold 8",
+            SubtitleSize::ExtraSmall => "Sans Bold 11",
             SubtitleSize::Small => "Sans Bold 14",
             SubtitleSize::Medium => "Sans Bold 18",
             SubtitleSize::Large => "Sans Bold 23",

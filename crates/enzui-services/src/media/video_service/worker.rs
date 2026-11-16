@@ -316,6 +316,7 @@ impl Worker {
             .property("uri", &uri)
             .build()
             .map_err(|_| missing_element("playbin3"))?;
+        super::subtitles::install(&playbin);
         // Subtitles show by being selected, so the overlay stays enabled.
         set_flag(&playbin, "text", true);
         set_flag(&playbin, "deinterlace", true);
