@@ -663,7 +663,8 @@ impl<'a, Message: Clone + 'a> EnzMenuButton<'a, Message> {
         let reserve_leading = level
             .entries()
             .iter()
-            .any(|entry| entry.icon_name().is_some() || entry.check_state().is_checkable());
+            // Checkmarks draw in the trailing lane; only icons need the gutter.
+            .any(|entry| entry.icon_name().is_some());
         let dedup = level.dedup_entries();
         let focusable_total = dedup.iter().filter(|e| e.is_focusable()).count();
         let mut focusable_seen: usize = 0;

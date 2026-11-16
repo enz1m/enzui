@@ -199,7 +199,8 @@ fn menu_popup<'a, Message: Clone + 'a>(
     let reserve_leading = level
         .entries()
         .iter()
-        .any(|entry| entry.icon_name().is_some() || entry.check_state().is_checkable());
+        // Checkmarks draw in the trailing lane; only icons need the gutter.
+        .any(|entry| entry.icon_name().is_some());
     let entries = level.dedup_entries();
     let total = entries.iter().filter(|entry| entry.is_focusable()).count();
     let mut seen = 0;

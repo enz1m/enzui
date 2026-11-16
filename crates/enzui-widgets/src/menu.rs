@@ -655,11 +655,11 @@ impl<'a, Message: 'a> EnzMenu<'a, Message> {
         let radius = self.radius;
         let material = self.material;
         let pinned = self.tokens;
-        let reserve_leading = self.items().any(|item| {
-            item.entry.icon_name().is_some()
-                || item.icon_source.is_some()
-                || item.entry.check_state().is_checkable()
-        });
+        // Only icons need the leading gutter: a checkmark draws in the
+        // trailing lane, so checkable rows alone keep their labels flush.
+        let reserve_leading = self
+            .items()
+            .any(|item| item.entry.icon_name().is_some() || item.icon_source.is_some());
         // Fill rows need shrink measurement twins; parent limits alone do not reveal intrinsic width.
         let measure_rows: Vec<Element<'a, Message>> = if self.hug_content {
             self.items()
