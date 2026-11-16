@@ -117,6 +117,9 @@ pub(super) fn video_sink(
     let upright_convert = gst::ElementFactory::make("videoconvert")
         .build()
         .map_err(|_| missing_element("videoconvert"))?;
+    if upright_convert.find_property("n-threads").is_some() {
+        upright_convert.set_property("n-threads", 0u32);
+    }
     let flip = gst::ElementFactory::make("videoflip")
         .build()
         .map_err(|_| missing_element("videoflip"))?;
@@ -150,6 +153,9 @@ pub(super) fn video_sink(
         let Ok(sample) = sample else {
             return Err(gst::FlowError::Eos);
         };
+        if !shared.wants_frames(generation) {
+            return Ok(gst::FlowSuccess::Ok);
+        }
         let seq = FrameSeq(sequence.fetch_add(1, Ordering::Relaxed) + 1);
         if let SampleOutcome::Frame(frame) =
             crate::media::gst_worker::sample_to_frame(&sample, generation, seq)

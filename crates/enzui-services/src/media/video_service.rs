@@ -234,17 +234,23 @@ impl Shared {
     }
 
     pub(crate) fn offer_frame(&self, frame: Rgba8Frame) {
-        let waker = {
+        let (waker, replaced) = {
             let mut slot = self.lock();
             if frame.generation() != slot.status.generation {
                 return;
             }
-            slot.frame = Some(frame);
-            slot.wake()
+            let replaced = slot.frame.replace(frame);
+            (slot.wake(), replaced)
         };
+        // Frame destruction can unmap memory; release it outside the polling lock.
+        drop(replaced);
         if let Some(waker) = waker {
             waker.wake();
         }
+    }
+
+    pub(crate) fn wants_frames(&self, generation: Generation) -> bool {
+        self.lock().status.generation == generation
     }
 
     pub(crate) fn close(&self) {

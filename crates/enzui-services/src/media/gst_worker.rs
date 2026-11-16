@@ -1181,11 +1181,16 @@ fn copy_rgba_plane(
     let layout = preflight_rgba8(width, height, stride, limits)?.check_byte_len(plane.len())?;
     #[cfg(test)]
     TEST_DESTINATION_ALLOCATIONS.set(TEST_DESTINATION_ALLOCATIONS.get() + 1);
-    let mut pixels = Vec::with_capacity(layout.tight_len());
-    for row in 0..height as usize {
-        let start = row * layout.stride();
-        pixels.extend_from_slice(&plane[start..start + layout.row_bytes()]);
-    }
+    let pixels = if layout.stride() == layout.row_bytes() {
+        plane[..layout.tight_len()].to_vec()
+    } else {
+        let mut pixels = Vec::with_capacity(layout.tight_len());
+        for row in 0..height as usize {
+            let start = row * layout.stride();
+            pixels.extend_from_slice(&plane[start..start + layout.row_bytes()]);
+        }
+        pixels
+    };
     #[cfg(test)]
     TEST_COPIED_BYTES.set(TEST_COPIED_BYTES.get() + pixels.len());
     Ok(pixels)
