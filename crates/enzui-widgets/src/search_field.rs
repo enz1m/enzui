@@ -461,7 +461,8 @@ where
     /// * compact + activated — in-popover, with fields.
     /// * in-flow rungs — under-field dropdowns at field widths while
     ///   [`results_open`](Self::results_open) (or by default: focused +
-    ///   undismissed); typing re-opens.
+    ///   undismissed, once the query is nonblank); typing re-opens. Results
+    ///   for an empty query (recent searches) need `results_open(true)`.
     /// * compact + closed — unpresented: square triggers own no visible-owner
     ///   dropdowns.
     ///
@@ -753,6 +754,7 @@ where
         let responsive_shortcut = w.shortcut.clone();
         let responsive_active = !w.value.is_empty();
         let responsive_value = w.value.to_owned();
+        let query_is_blank = w.value.trim().is_empty();
         let responsive_interactive = w.enabled;
         let responsive_presentation = w.presentation;
         let responsive_max_width = w.max_width;
@@ -1264,7 +1266,16 @@ where
             responsive_presentation,
             responsive::ResultSurface {
                 filters: w.filters,
-                results: w.results,
+                // Under the widget's own rule, results wait for a query: an
+                // empty field would otherwise open on a "no matches" notice
+                // before anything was typed. Filters still show on focus, and
+                // `results_open(true)` presents results (recent searches,
+                // say) for an empty query.
+                results: if w.results_open.is_none() && query_is_blank {
+                    None
+                } else {
+                    w.results
+                },
                 open: w.results_open,
                 on_open: w.on_results_open,
             },

@@ -32,6 +32,7 @@ mod menu_bar;
 mod menu_button_submenu;
 
 mod popover;
+mod search_results_wait_for_query;
 
 mod typed_context_menu;
 mod wheel_containment;
