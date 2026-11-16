@@ -111,8 +111,13 @@ pub struct PrintRequest {
     pub(crate) token: Option<PrintToken>,
     pub(crate) title: String,
     pub(crate) parent: ParentHandle,
-    // Close-on-exec normalization is unconditional; only consumption of its failure depends on `portal-dbus`.
-    #[cfg_attr(not(feature = "portal-dbus"), allow(dead_code))]
+    #[cfg_attr(
+        not(feature = "portal-dbus"),
+        allow(
+            dead_code,
+            reason = "Descriptor ownership always normalizes close-on-exec; only D-Bus consumes preflight failures."
+        )
+    )]
     pub(crate) preflight: PrintPreflight,
 }
 
@@ -195,7 +200,13 @@ impl PrintRequest {
     }
 
     // A close-on-exec adoption failure prevents the request from reaching a backend.
-    #[cfg_attr(not(any(feature = "portal-dbus", test)), allow(dead_code))]
+    #[cfg_attr(
+        not(any(feature = "portal-dbus", test)),
+        allow(
+            dead_code,
+            reason = "Only the D-Bus backend and tests consume preflight failures."
+        )
+    )]
     pub(crate) fn preflight_failure(&self) -> Option<super::PortalOutcome<PrintReceipt>> {
         match self.preflight {
             PrintPreflight::Ready => None,
