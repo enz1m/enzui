@@ -43,14 +43,14 @@ pub(crate) struct Primitive {
     pub(crate) opacity: f32,
 }
 
+const KEPT_BINDINGS: usize = 4;
+
 struct Instance {
     frame: Arc<ExternalFrame>,
     uniforms: wgpu::Buffer,
     bind_group: Option<wgpu::BindGroup>,
-    /// The import `bind_group` samples: a frame of the same allocation keeps
-    /// the binding.
     bound: Option<Arc<Imported>>,
-    /// What `uniforms` holds.
+    bindings: Vec<(Arc<Imported>, wgpu::BindGroup)>,
     written: Option<[f32; 8]>,
     seen: bool,
 }
@@ -242,6 +242,7 @@ impl Pipeline {
                         uniforms: uniforms(),
                         bind_group: None,
                         bound: None,
+                        bindings: Vec::new(),
                         written: None,
                         seen: true,
                     },
@@ -317,9 +318,19 @@ impl Pipeline {
         }
         for allocation in release {
             if let Some(cached) = self.imports.remove(&allocation) {
-                self.retiring_imports.push(cached.imported);
+                self.retire_import(cached.imported);
             }
         }
+    }
+
+    // Retired imports remain alive until previously submitted GPU work completes.
+    fn retire_import(&mut self, imported: Arc<Imported>) {
+        for instance in self.instances.values_mut() {
+            instance
+                .bindings
+                .retain(|(bound, _)| !Arc::ptr_eq(bound, &imported));
+        }
+        self.retiring_imports.push(imported);
     }
 
     /// The import of `frame`'s buffer for widget `instance`, from the cache
@@ -349,7 +360,7 @@ impl Pipeline {
             if let Some(oldest) = oldest
                 && let Some(evicted) = self.imports.remove(&oldest)
             {
-                self.retiring_imports.push(evicted.imported);
+                self.retire_import(evicted.imported);
             }
         }
         let _ = self.imports.insert(
@@ -533,26 +544,41 @@ impl primitive::Primitive for Primitive {
             frame.set_status(Status::Imported);
             return;
         }
-        crate::stats::binding_made();
         instance.bound = Some(Arc::clone(&imported));
-        instance.bind_group = Some(device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("enzui external image"),
-            layout: &pipeline.layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&imported.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&pipeline.sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: instance.uniforms.as_entire_binding(),
-                },
-            ],
-        }));
+        let kept = instance
+            .bindings
+            .iter()
+            .position(|(bound, _)| Arc::ptr_eq(bound, &imported));
+        let binding = match kept {
+            Some(kept) => instance.bindings.remove(kept),
+            None => {
+                crate::stats::binding_made();
+                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("enzui external image"),
+                    layout: &pipeline.layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&imported.view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&pipeline.sampler),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 2,
+                            resource: instance.uniforms.as_entire_binding(),
+                        },
+                    ],
+                });
+                (Arc::clone(&imported), bind_group)
+            }
+        };
+        instance.bind_group = Some(binding.1.clone());
+        instance.bindings.push(binding);
+        if instance.bindings.len() > KEPT_BINDINGS {
+            let _ = instance.bindings.remove(0);
+        }
         frame.set_status(Status::Imported);
     }
 
@@ -1482,5 +1508,72 @@ mod tests {
             );
         }
         force(None);
+    }
+
+    fn importing_renderer() -> Option<(gbm::Gbm, iced::Renderer)> {
+        let Some(gbm) = gbm::Gbm::open() else {
+            eprintln!("SKIPPED: no GBM render node");
+            return None;
+        };
+        let Some(renderer) = iced_test::futures::futures::executor::block_on(
+            <iced::Renderer as iced::advanced::renderer::Headless>::new(
+                iced::advanced::renderer::Settings::default(),
+                Some("wgpu"),
+            ),
+        ) else {
+            eprintln!("SKIPPED: no wgpu adapter");
+            return None;
+        };
+        Some((gbm, renderer))
+    }
+
+    #[test]
+    fn a_producer_cycling_its_buffers_binds_each_once() {
+        let _serial = serial();
+        let Some((gbm, renderer)) = importing_renderer() else {
+            return;
+        };
+        force(None);
+        let released = Arc::new(Mutex::new(Vec::new()));
+        let mut screen = Screen(renderer, Cache::default());
+        let buffers = [
+            gbm.buffer(32, 32, None, 90, |_, _| RED).unwrap(),
+            gbm.buffer(32, 32, None, 91, |_, _| GREEN).unwrap(),
+        ];
+        let lease = |index: usize| {
+            let allocation = buffers[index].allocation;
+            let released = Arc::clone(&released);
+            ExternalFrame::new(
+                buffers[index].clone(),
+                Lease::new(move || released.lock().unwrap().push(allocation)),
+            )
+        };
+        let first = lease(0);
+        let _ = screen.show(&first);
+        if !matches!(crate::support(), Some(Some(_))) {
+            eprintln!("SKIPPED: the renderer's device does not import DMA-BUF");
+            return;
+        }
+        assert_eq!(screen.show(&first), [255, 0, 0]);
+        assert_eq!(screen.show(&lease(1)), [0, 255, 0]);
+        let before = crate::stats();
+        for _ in 0..3 {
+            assert_eq!(
+                screen.show(&lease(0)),
+                [255, 0, 0],
+                "the first buffer again"
+            );
+            assert_eq!(
+                screen.show(&lease(1)),
+                [0, 255, 0],
+                "the second buffer again"
+            );
+        }
+        let after = crate::stats();
+        assert_eq!(
+            after.imports_made, before.imports_made,
+            "a buffer shown again is not imported again"
+        );
+        assert_eq!(after.bindings_made, before.bindings_made, "nor bound again");
     }
 }

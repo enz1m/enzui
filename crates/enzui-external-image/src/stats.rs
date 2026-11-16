@@ -21,8 +21,7 @@ pub struct Stats {
     pub live_imports: u64,
     /// The memory the live imports hold, as the device sized it.
     pub live_bytes: u64,
-    /// Bindings made between a widget and an imported texture. A widget
-    /// showing the same allocation again reuses its binding.
+    /// GPU bindings created, excluding reuse of cached bindings.
     pub bindings_made: u64,
     /// Writes of a widget's placement and opacity to the GPU. A widget drawn
     /// again unchanged writes nothing.
