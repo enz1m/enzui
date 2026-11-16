@@ -97,10 +97,9 @@ impl Worker {
                     break 'run;
                 }
             }
-            // Settings that met a full queue are newer than anything queued
-            // before them: apply them once the queue is seen empty, under the
-            // lock their senders take, so nothing sent after can slip ahead.
-            let waiting = {
+            // Drain earlier commands before deferred controls and settings to preserve send order.
+            let mut waiting = Vec::new();
+            for _ in 0..VIDEO_COMMAND_CAPACITY {
                 let mut slot = self.shared.lock();
                 match inbox.try_recv() {
                     Ok(command) => {
@@ -112,7 +111,7 @@ impl Worker {
                     }
                     Err(_) => std::mem::take(&mut slot.settings),
                 }
-            };
+            }
             for setting in waiting {
                 let _ = self.handle(setting);
             }

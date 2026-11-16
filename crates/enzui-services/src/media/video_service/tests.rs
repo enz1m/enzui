@@ -135,6 +135,8 @@ fn a_subtitle_file_reopens_at_the_same_position() {
     assert_eq!(h.status.playback, PlaybackState::Paused);
 }
 
+mod controls;
+
 mod seek_outcomes;
 
 mod remote_subtitles;

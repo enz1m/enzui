@@ -7,11 +7,9 @@
 //! Use [`VideoService::request_seek`] and [`VideoService::take_seek_outcomes`]
 //! for bounded, generation-tagged seek results, including backend positions.
 //!
-//! Commands use a bounded queue. When full, legacy seek and frame-step commands
-//! are dropped; other commands wait for capacity and can block the caller. The
-//! worker polls while opening, playing, seeking, or observing disk read-ahead and otherwise waits for
-//! commands or bus wakes. Configuration timeouts cover preroll after pipeline creation,
-//! not remote approval, pipeline construction, or teardown.
+//! Commands never block the caller. Under backpressure, settings and controls
+//! coalesce by kind; legacy seeks and frame steps may be dropped. Timeouts
+//! cover preroll, not approval, construction or teardown.
 //!
 //! Remote sources pass [`MediaGate`] approval before pipeline construction;
 //! a pinned proxy supplies the approved HTTP destination. Optional
@@ -52,7 +50,7 @@ use crate::media::rgba::Rgba8Frame;
 use crate::media::{Generation, MediaError, MediaErrorKind, MediaSource};
 use std::path::PathBuf;
 use std::sync::mpsc::{SyncSender, TrySendError};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::Duration;
 
 /// Commands buffered between the UI and the worker. Generous: a held arrow
@@ -158,6 +156,16 @@ pub(crate) enum SettingKind {
     FrameLimit,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ControlKind {
+    Source,
+    Transport,
+    Rate,
+    Audio,
+    Subtitle,
+    SubtitleFile,
+}
+
 #[derive(Debug)]
 pub(crate) enum Command {
     Load(Generation, MediaSource, LoadOptions),
@@ -195,10 +203,12 @@ pub(crate) struct Slot {
     /// settings of its kind wait here too, so none overtakes another; the
     /// worker applies them once it has drained everything sent before.
     pub(crate) settings: Vec<Command>,
+    pub(crate) controls: Vec<Command>,
+    finished: bool,
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct Shared(Mutex<Slot>);
+pub(crate) struct Shared(Mutex<Slot>, Condvar);
 
 impl Shared {
     pub(crate) fn lock(&self) -> MutexGuard<'_, Slot> {
@@ -242,6 +252,8 @@ impl Shared {
         let waker = {
             let mut slot = self.lock();
             slot.closed = true;
+            slot.finished = true;
+            self.1.notify_all();
             slot.wake()
         };
         if let Some(waker) = waker {
@@ -261,6 +273,8 @@ impl Slot {
 ///
 /// Dropping requests shutdown without joining the worker. Pipeline teardown
 /// runs on that thread once it observes shutdown; in-flight work can delay it.
+/// Before the process exits, call [`VideoService::shutdown`] so native decoder
+/// teardown does not race process exit.
 #[derive(Debug)]
 pub struct VideoService {
     commands: SyncSender<Command>,
@@ -559,20 +573,59 @@ impl VideoService {
                 slot.settings[at] = command;
                 return;
             }
-            if let Err(TrySendError::Full(command)) = self.commands.try_send(command) {
+            // Settings wait behind source changes so load cannot reset newer values.
+            if !slot.controls.is_empty() {
+                slot.settings.push(command);
+            } else if let Err(TrySendError::Full(command)) = self.commands.try_send(command) {
                 slot.settings.push(command);
             }
             return;
         }
-        match self.commands.try_send(command) {
-            Ok(()) | Err(TrySendError::Disconnected(_)) => {}
-            Err(TrySendError::Full(command)) => {
-                // Preserve control commands under backpressure; scrubbing and stepping may drop.
-                if !matches!(command, Command::Seek(..) | Command::Step(..)) {
-                    let _ = self.commands.send(command);
-                }
+        let mut slot = self.shared.lock();
+        let command = if slot.controls.is_empty() {
+            match self.commands.try_send(command) {
+                Ok(()) | Err(TrySendError::Disconnected(_)) => return,
+                Err(TrySendError::Full(command)) => command,
             }
+        } else {
+            command
+        };
+        let Some(kind) = command.control_kind() else {
+            return;
+        };
+        if kind == ControlKind::Source {
+            slot.controls.clear();
+        } else {
+            slot.controls
+                .retain(|waiting| waiting.control_kind() != Some(kind));
         }
+        slot.controls.push(command);
+    }
+}
+
+impl VideoService {
+    /// Stops the worker and waits up to `timeout` for native decoder teardown.
+    ///
+    /// This blocks the caller; call it off the UI thread. Returns `false` on
+    /// timeout while teardown continues on the worker.
+    #[must_use]
+    pub fn shutdown(self, timeout: Duration) -> bool {
+        let shared = Arc::clone(&self.shared);
+        drop(self);
+        let deadline = std::time::Instant::now() + timeout;
+        let mut slot = shared.lock();
+        while !slot.finished {
+            let left = deadline.saturating_duration_since(std::time::Instant::now());
+            if left.is_zero() {
+                return false;
+            }
+            slot = shared
+                .1
+                .wait_timeout(slot, left)
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .0;
+        }
+        true
     }
 }
 
@@ -595,6 +648,18 @@ impl Command {
             Self::SubtitleDelay(..) => Some(SettingKind::SubtitleDelay),
             Self::SubtitleInset(_) => Some(SettingKind::SubtitleInset),
             Self::FrameLimit(_) => Some(SettingKind::FrameLimit),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn control_kind(&self) -> Option<ControlKind> {
+        match self {
+            Self::Load(..) | Self::Unload => Some(ControlKind::Source),
+            Self::Play(_) | Self::Pause(_) => Some(ControlKind::Transport),
+            Self::SetRate(..) => Some(ControlKind::Rate),
+            Self::SelectAudio(..) => Some(ControlKind::Audio),
+            Self::SelectSubtitle(..) => Some(ControlKind::Subtitle),
+            Self::SubtitleFile(..) => Some(ControlKind::SubtitleFile),
             _ => None,
         }
     }
