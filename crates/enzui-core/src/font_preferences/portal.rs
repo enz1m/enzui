@@ -42,6 +42,9 @@ use enzui_theme::{FontRole, RawFontDescription};
 use futures_util::StreamExt;
 use zbus::zvariant::{OwnedValue, Value};
 
+/// GNOME's stock interface font size, in points.
+const GNOME_REFERENCE_POINTS: u16 = 11;
+
 /// The GNOME namespace whose interface-font keys this backend reads by default.
 ///
 /// A backend extension, not a standardised portal namespace.
@@ -242,6 +245,10 @@ impl enzui_theme::font_source::DesktopFontBackend for PortalFontBackend {
             runtime.block_on(async move {
                 let proxy = SettingsProxy::new(connection).await?;
                 let mut preferences = DesktopFontPreferences::new();
+                if namespace == GNOME_INTERFACE_NAMESPACE {
+                    // GNOME ships `Adwaita Sans 11` (formerly `Cantarell 11`).
+                    preferences.set_reference_points(Some(GNOME_REFERENCE_POINTS));
+                }
                 let mut reachable = false;
                 for (role, key) in &keys {
                     let value = read_key(&proxy, &namespace, key).await;

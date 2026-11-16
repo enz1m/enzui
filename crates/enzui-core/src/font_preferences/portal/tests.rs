@@ -389,9 +389,11 @@ fn default_font_host(root: &std::path::Path) {
         }
         let font = themes.theme().font_catalog.family(FontRole::Ui).clone();
         if font == enzui_theme::FontFamily::Named(initial.into()) && !ready {
+            // Both fixtures carry their desktop's stock size (GNOME's 11 pt,
+            // the settings file's 10 pt), which keeps the built-in body size.
             assert!(
                 (themes.theme().typography.body_size
-                    - (if fallback { 10.0 } else { 11.0 }) * 96.0 / 72.0)
+                    - enzui_theme::TypographyScale::default().body_size)
                     .abs()
                     < 0.01
             );
@@ -403,12 +405,14 @@ fn default_font_host(root: &std::path::Path) {
                 ready,
                 "the default host must observe both initial and changed portal fonts"
             );
-            assert!(
-                (themes.theme().typography.body_size
-                    - (if fallback { 12.0 } else { 14.0 }) * 96.0 / 72.0)
-                    .abs()
-                    < 0.01
-            );
+            // A changed size scales the body by its ratio to the stock size.
+            let stock = enzui_theme::TypographyScale::default().body_size;
+            let expected = if fallback {
+                stock * 12.0 / 10.0
+            } else {
+                stock * 14.0 / 11.0
+            };
+            assert!((themes.theme().typography.body_size - expected).abs() < 0.01);
             assert_eq!(
                 themes.theme().typography.weight_regular,
                 if fallback { 400 } else { 700 }

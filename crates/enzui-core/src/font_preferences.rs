@@ -64,13 +64,22 @@ pub fn apply_to_theme(
         }
     }
     let _ = effective_fonts.apply(&mut theme.font_catalog);
-    if let Some(description) = fonts
-        .platform()
-        .and_then(|fonts| fonts.parsed(enzui_theme::FontRole::Ui))
-    {
-        let pixels = description.size.map(|size| match size {
-            enzui_theme::FontSize::Points(points) => points * (96.0 / 72.0),
-            enzui_theme::FontSize::Pixels(pixels) => pixels,
+    let platform = fonts.platform();
+    if let Some(description) = platform.and_then(|fonts| fonts.parsed(enzui_theme::FontRole::Ui)) {
+        let reference = platform.and_then(enzui_theme::DesktopFontPreferences::reference_points);
+        let base_body = theme.typography.base_ramp().body_size;
+        let pixels = description.size.map(|size| {
+            let points = match size {
+                enzui_theme::FontSize::Points(points) => points,
+                enzui_theme::FontSize::Pixels(pixels) => pixels * (72.0 / 96.0),
+            };
+            // The desktop's stock size keeps the body size the controls are
+            // dimensioned for; a user's larger or smaller choice scales by the
+            // ratio. A source without a reference supplies the size directly.
+            match reference {
+                Some(reference) => base_body * points / f32::from(reference),
+                None => points * (96.0 / 72.0),
+            }
         });
         if document.get("typography.body_size", mode).is_none()
             && let Some(pixels) = pixels.filter(|pixels| (4.0..=128.0).contains(pixels))

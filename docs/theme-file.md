@@ -424,8 +424,12 @@ GTK/KDE settings files as fallback. GNOME publishes font choices in the
 `org.gnome.desktop.interface` extension namespace; no GNOME library is needed.
 There is no universal freedesktop font key. Initial preferences and live
 `SettingChanged` deliveries use the same path. A desktop UI description also
-sets the base text size (points use 96 logical DPI) and shifts the semantic
-weight ramp. Explicit theme body size and weight tokens retain precedence,
+sets the base text size and shifts the semantic weight ramp. The size is read
+relative to the desktop's stock size (GNOME's 11 pt, GTK's and KDE's 10 pt):
+the stock size keeps the theme's own body size, which the controls are
+dimensioned for, and a larger or smaller choice scales the ramp by the ratio.
+A source without a known stock size supplies the size directly (points use
+96 logical DPI). Explicit theme body size and weight tokens retain precedence,
 and accessibility text scaling applies once. The text engine tries the requested
 family's nearest weight before using another family, so a static font without
 a Medium or Semibold face still follows the chosen family. Missing preferences

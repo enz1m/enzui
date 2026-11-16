@@ -81,6 +81,7 @@ pub struct DesktopFontPreferences {
     ui: Option<RawFontDescription>,
     document: Option<RawFontDescription>,
     monospace: Option<RawFontDescription>,
+    reference_points: Option<u16>,
 }
 
 impl DesktopFontPreferences {
@@ -95,6 +96,29 @@ impl DesktopFontPreferences {
     pub fn with(mut self, role: FontRole, description: impl Into<String>) -> Self {
         self.set(role, Some(RawFontDescription::new(description)));
         self
+    }
+
+    /// Builder form of [`Self::set_reference_points`].
+    #[must_use]
+    pub fn with_reference_points(mut self, points: u16) -> Self {
+        self.set_reference_points(Some(points));
+        self
+    }
+
+    /// Records the desktop's stock interface font size, in whole points.
+    ///
+    /// A UI description at this size keeps the theme's own body size; a larger
+    /// or smaller one scales the type ramp by the ratio. Without a reference,
+    /// the description's size becomes the body size directly. Zero clears it.
+    pub fn set_reference_points(&mut self, points: Option<u16>) {
+        self.reference_points = points.filter(|points| *points > 0);
+    }
+
+    /// The desktop's stock interface font size in points, when the source
+    /// knows it.
+    #[must_use]
+    pub fn reference_points(&self) -> Option<u16> {
+        self.reference_points
     }
 
     /// Records (or clears) the description the desktop gave for `role`.

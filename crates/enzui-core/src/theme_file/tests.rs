@@ -429,6 +429,40 @@ fn theme_file_layers_validated_app_and_desktop_preferences_without_losing_unknow
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    // desktop_font_size_is_relative_to_the_desktops_stock_size
+    {
+        use enzui_theme::{DesktopFontPreferences, FontRole};
+        let _scale = enzui_theme::text_scale::TextScaleScope::enter(
+            enzui_theme::text_scale::TextScale::BASELINE,
+        );
+        let shared = ThemeDocument::parse("version = 1\n").unwrap();
+        let resolve = |description: &str| {
+            let mut policy = FontPreferencePolicy::new();
+            policy.set_platform(Some(
+                DesktopFontPreferences::new()
+                    .with(FontRole::Ui, description)
+                    .with_reference_points(11),
+            ));
+            resolve_theme(
+                &shared,
+                EnzThemeMode::Dark,
+                TextScalePolicy::new(),
+                &policy,
+                ReducedMotionPolicy::new(),
+                PlatformAppearance::default(),
+            )
+            .typography
+            .body_size
+        };
+        let stock = enzui_theme::TypographyScale::default().body_size;
+        assert!(
+            (resolve("Adwaita Sans 11") - stock).abs() < 0.01,
+            "the desktop's stock size keeps the built-in body size"
+        );
+        assert!((resolve("Adwaita Sans 13") - stock * 13.0 / 11.0).abs() < 0.01);
+        assert!((resolve("Adwaita Sans 11px") - stock * 8.25 / 11.0).abs() < 0.01);
+    }
+
     // desktop_fonts_follow_live_metrics_and_per_app_family_overrides
     {
         use enzui_theme::{DesktopFontPreferences, FontFamily, FontRole};

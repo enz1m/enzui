@@ -1191,7 +1191,9 @@ pub fn parse_settings_file(text: &str, kind: SettingsFileKind) -> Option<Desktop
         SettingsFileKind::KdeGlobals => "general",
     };
     let mut current = String::new();
-    let mut preferences = DesktopFontPreferences::new();
+    // The size each desktop ships with: GTK's built-in `Sans 10` and
+    // Plasma's `Noto Sans 10`.
+    let mut preferences = DesktopFontPreferences::new().with_reference_points(10);
     let mut found = false;
 
     for line in text.lines() {
