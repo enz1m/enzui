@@ -117,14 +117,12 @@ impl Shown {
     }
 }
 
-/// One widget across views: its identity for its uniforms in the pipeline,
-/// whether an imported frame is on screen in it, the image size it was laid
-/// out for, and whether its last draw showed a refused frame.
 struct Instance {
     id: u64,
     on_screen: std::cell::Cell<bool>,
     laid_out: Option<Size>,
     drawn_refused: std::cell::Cell<bool>,
+    redrawn_for: std::cell::Cell<Option<u64>>,
 }
 
 fn next_instance() -> u64 {
@@ -144,6 +142,7 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ExternalImage {
             on_screen: std::cell::Cell::new(false),
             laid_out: None,
             drawn_refused: std::cell::Cell::new(false),
+            redrawn_for: std::cell::Cell::new(None),
         })
     }
 
@@ -177,23 +176,28 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ExternalImage {
     ) {
         let instance = tree.state.downcast_ref::<Instance>();
         let frame = self.shown.frame();
+        let redraw = matches!(
+            event,
+            iced::Event::Window(iced::window::Event::RedrawRequested(_))
+        );
         if let Shown::Source(source) = &self.shown {
             source.register(instance.id, shell.waker());
             // A published frame of the size laid out needs only the image
             // prepared again; a new size needs layout.
+            let published = source.published();
             if source.is_pending() {
-                if instance.laid_out == Some(image_size(frame.as_deref())) {
-                    shell.request_content_redraw();
-                } else {
+                if instance.laid_out != Some(image_size(frame.as_deref())) {
                     shell.invalidate_layout();
                     shell.request_redraw();
+                } else if !redraw
+                    || instance.redrawn_for.replace(Some(published)) == Some(published)
+                {
+                    // Retry a publication only when the preceding redraw left it unread.
+                    shell.request_content_redraw();
                 }
             }
         }
-        if !matches!(
-            event,
-            iced::Event::Window(iced::window::Event::RedrawRequested(_))
-        ) {
+        if !redraw {
             return;
         }
         let status = frame.as_ref().map(|frame| frame.status());

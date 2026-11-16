@@ -458,21 +458,66 @@ impl primitive::Primitive for Primitive {
         bounds: &Rectangle,
         _viewport: &Viewport,
     ) {
+        let Some(source) = &self.source else {
+            let _ = self.prepare_frame(pipeline, device, queue, bounds);
+            return;
+        };
+        let was_bound = pipeline
+            .instances
+            .get(&self.instance)
+            .is_some_and(|instance| instance.bind_group.is_some());
+        let before = source.latest().map(|frame| frame.status());
+        let prepared = self.prepare_frame(pipeline, device, queue, bounds);
+        // GPU preparation can leave a pending import or fallback that needs another frame.
+        let follow_up = match prepared.map(|frame| frame.status()) {
+            Some(Status::Writing) => true,
+            Some(Status::Refused(_)) => !matches!(before, Some(Status::Refused(_))),
+            Some(Status::Imported) => !was_bound,
+            Some(Status::Pending) | None => false,
+        };
+        if follow_up {
+            source.request_frame();
+        }
+    }
+
+    fn draw(&self, pipeline: &Pipeline, render_pass: &mut wgpu::RenderPass<'_>) -> bool {
+        if self.frame.is_none() && self.source.is_none() {
+            return true;
+        }
+        if let Some(instance) = pipeline.instances.get(&self.instance)
+            && let Some(bind_group) = instance.bind_group.as_ref()
+        {
+            render_pass.set_pipeline(&pipeline.render);
+            render_pass.set_bind_group(0, bind_group, &[]);
+            render_pass.draw(0..6, 0..1);
+            // Retain the encoded frame until GPU sampling completes, even if a newer frame is pending.
+            instance.frame.encoded();
+        }
+        true
+    }
+}
+
+impl Primitive {
+    fn prepare_frame(
+        &self,
+        pipeline: &mut Pipeline,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        bounds: &Rectangle,
+    ) -> Option<Arc<ExternalFrame>> {
         let resolved = match (&self.frame, &self.source) {
             (Some(frame), _) => Some(Arc::clone(frame)),
             (None, Some(source)) => {
                 let Some(frame) = source.take_for_frame() else {
                     // A cleared source shows nothing.
                     pipeline.release(self.instance);
-                    return;
+                    return None;
                 };
                 Some(frame)
             }
             (None, None) => None,
         };
-        let Some(frame) = resolved.as_ref() else {
-            return;
-        };
+        let frame = resolved.as_ref()?;
         let uniforms = || {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("enzui external image"),
@@ -494,13 +539,13 @@ impl primitive::Primitive for Primitive {
         // A refused frame stays refused: it shows its fallback and is never
         // bound.
         if !is_new && matches!(frame.status(), Status::Refused(_)) {
-            return;
+            return resolved;
         }
         let imported = match pipeline.import(frame, self.instance) {
             Ok(imported) => imported,
             Err(refusal) => {
                 pipeline.refuse(self.instance, frame, refusal, uniforms);
-                return;
+                return resolved;
             }
         };
         if is_new {
@@ -514,7 +559,7 @@ impl primitive::Primitive for Primitive {
                         .and_then(|instance| instance.bound.as_ref())
                         .is_some_and(|bound| bound.opaque);
                     self.place(pipeline, queue, bounds.size(), opaque);
-                    return;
+                    return resolved;
                 }
                 import::Readiness::Unfinished => {
                     let reason = format!(
@@ -522,18 +567,18 @@ impl primitive::Primitive for Primitive {
                         crate::WRITE_WAIT_LIMIT.as_millis()
                     );
                     pipeline.refuse(self.instance, frame, Refusal::Unwritten(reason), uniforms);
-                    return;
+                    return resolved;
                 }
                 import::Readiness::Failed(reason) => {
                     pipeline.refuse(self.instance, frame, Refusal::Unwritten(reason), uniforms);
-                    return;
+                    return resolved;
                 }
             }
             pipeline.adopt(self.instance, frame, uniforms);
         }
         self.place(pipeline, queue, bounds.size(), imported.opaque);
         let Some(instance) = pipeline.instances.get_mut(&self.instance) else {
-            return;
+            return resolved;
         };
         // A frame of the allocation already bound samples the same texture.
         let bound = instance
@@ -542,7 +587,7 @@ impl primitive::Primitive for Primitive {
             .is_some_and(|bound| Arc::ptr_eq(bound, &imported));
         if bound && instance.bind_group.is_some() {
             frame.set_status(Status::Imported);
-            return;
+            return resolved;
         }
         instance.bound = Some(Arc::clone(&imported));
         let kept = instance
@@ -580,23 +625,7 @@ impl primitive::Primitive for Primitive {
             let _ = instance.bindings.remove(0);
         }
         frame.set_status(Status::Imported);
-    }
-
-    fn draw(&self, pipeline: &Pipeline, render_pass: &mut wgpu::RenderPass<'_>) -> bool {
-        if self.frame.is_none() && self.source.is_none() {
-            return true;
-        }
-        if let Some(instance) = pipeline.instances.get(&self.instance)
-            && let Some(bind_group) = instance.bind_group.as_ref()
-        {
-            render_pass.set_pipeline(&pipeline.render);
-            render_pass.set_bind_group(0, bind_group, &[]);
-            render_pass.draw(0..6, 0..1);
-            // The binding samples the frame this widget shows, which is the
-            // one encoded: a newer frame still being written is not.
-            instance.frame.encoded();
-        }
-        true
+        resolved
     }
 }
 
@@ -1525,6 +1554,206 @@ mod tests {
             return None;
         };
         Some((gbm, renderer))
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct Asked {
+        content_only: bool,
+        next_frame: bool,
+    }
+
+    const NOTHING: Asked = Asked {
+        content_only: false,
+        next_frame: false,
+    };
+    const CONTENT: Asked = Asked {
+        content_only: true,
+        next_frame: true,
+    };
+
+    #[test]
+    fn a_publication_is_drawn_by_one_frame_and_no_event() {
+        use iced_test::runtime::user_interface::State;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let _serial = serial();
+        let Some((gbm, mut renderer)) = importing_renderer() else {
+            return;
+        };
+        force(None);
+        let released = Arc::new(Mutex::new(Vec::new()));
+        let source = crate::ExternalFrameSource::new();
+        source.publish(colored(&gbm, 80, 32, RED, &released));
+
+        let woken = Arc::new(AtomicUsize::new(0));
+        let content_frames = Arc::new(AtomicUsize::new(0));
+        let waker = {
+            let (woken, content_frames) = (Arc::clone(&woken), Arc::clone(&content_frames));
+            iced_test::core::shell::Waker::new(move || {
+                let _ = woken.fetch_add(1, Ordering::Relaxed);
+            })
+            .with_content_redraw(move || {
+                let _ = content_frames.fetch_add(1, Ordering::Relaxed);
+            })
+        };
+        let counts = || {
+            (
+                woken.load(Ordering::Relaxed),
+                content_frames.load(Ordering::Relaxed),
+            )
+        };
+
+        let size = Size::new(32.0, 32.0);
+        let fallback = iced::advanced::image::Handle::from_rgba(1, 1, vec![0, 0, 255, 255]);
+        let view = || -> iced::Element<'_, ()> {
+            crate::enz_external_image_source(&source)
+                .fallback(fallback.clone())
+                .content_fit(ContentFit::Fill)
+                .width(32)
+                .height(32)
+                .into()
+        };
+        let centre = |renderer: &mut iced::Renderer| {
+            let pixels = renderer.screenshot(Size::new(32, 32), 1.0, Color::BLACK);
+            let at = (16 * 32 + 16) * 4;
+            [pixels[at], pixels[at + 1], pixels[at + 2]]
+        };
+        let redraw = || {
+            [iced::Event::Window(iced::window::Event::RedrawRequested(
+                iced::time::Instant::now(),
+            ))]
+        };
+        let update = |ui: &mut UserInterface<'_, (), iced::Theme, iced::Renderer>,
+                      renderer: &mut iced::Renderer,
+                      events: &[iced::Event]|
+         -> Asked {
+            match ui
+                .update(
+                    &iced::window::Headless,
+                    &waker,
+                    events,
+                    mouse::Cursor::Unavailable,
+                    renderer,
+                    &mut iced::advanced::shell::Bus::new(),
+                )
+                .0
+            {
+                State::Updated {
+                    is_content_only,
+                    redraw_request,
+                    ..
+                } => Asked {
+                    content_only: is_content_only,
+                    next_frame: redraw_request == iced::window::RedrawRequest::NextFrame,
+                },
+                State::Outdated => panic!("the view is not rebuilt"),
+            }
+        };
+        let full = |renderer: &mut iced::Renderer, cache: Cache| {
+            let mut ui = UserInterface::build(view(), size, cache, renderer);
+            let _ = update(&mut ui, renderer, &redraw());
+            ui.draw(
+                renderer,
+                &iced::Theme::Dark,
+                &iced::advanced::renderer::Style {
+                    text_color: Color::WHITE,
+                },
+                mouse::Cursor::Unavailable,
+            );
+            let shown = centre(renderer);
+            (ui.into_cache(), shown)
+        };
+
+        let (cache, _) = full(&mut renderer, Cache::default());
+        if !matches!(crate::support(), Some(Some(_))) {
+            eprintln!("SKIPPED: the renderer's device does not import DMA-BUF");
+            return;
+        }
+        assert_eq!(
+            counts(),
+            (0, 1),
+            "the first frame imported asks for the frame that takes its fallback away"
+        );
+        let (cache, shown) = full(&mut renderer, cache);
+        assert_eq!(shown, [255, 0, 0], "the first publication shows");
+        let (cache, _) = full(&mut renderer, cache);
+        assert_eq!(counts(), (0, 1), "a frame drawn again asks for nothing");
+
+        source.publish(colored(&gbm, 81, 32, GREEN, &released));
+        assert_eq!(counts(), (0, 2), "a publication asks for its frame");
+        let mut ui = UserInterface::build(view(), size, cache, &mut renderer);
+        assert_eq!(
+            update(&mut ui, &mut renderer, &redraw()),
+            NOTHING,
+            "the redraw pass of the frame that prepares a publication asks for no other"
+        );
+        assert!(iced::advanced::Renderer::reuse_frame(&mut renderer));
+        assert_eq!(centre(&mut renderer), [0, 255, 0], "the frame draws it");
+        assert_eq!(
+            update(&mut ui, &mut renderer, &redraw()),
+            NOTHING,
+            "nothing is pending after it"
+        );
+        assert_eq!(counts(), (0, 2), "one frame for one publication");
+
+        source.publish(colored(&gbm, 82, 32, RED, &released));
+        assert_eq!(update(&mut ui, &mut renderer, &redraw()), NOTHING);
+        assert_eq!(
+            update(&mut ui, &mut renderer, &redraw()),
+            CONTENT,
+            "a publication a redraw pass left unread is asked for again"
+        );
+        assert_eq!(
+            update(&mut ui, &mut renderer, &[iced::Event::Waken]),
+            CONTENT,
+            "and by any other event"
+        );
+        assert!(iced::advanced::Renderer::reuse_frame(&mut renderer));
+        assert_eq!(centre(&mut renderer), [255, 0, 0]);
+        assert_eq!(counts(), (0, 3));
+
+        force(Some(Readiness::Unfinished));
+        source.publish(colored(&gbm, 83, 32, GREEN, &released));
+        assert_eq!(update(&mut ui, &mut renderer, &redraw()), NOTHING);
+        assert!(iced::advanced::Renderer::reuse_frame(&mut renderer));
+        assert_eq!(centre(&mut renderer), [255, 0, 0], "the frame before stays");
+        assert_eq!(
+            counts(),
+            (0, 5),
+            "a frame left unwritten asks for the frame that tries it again"
+        );
+        force(Some(Readiness::Ready));
+        let _ = update(&mut ui, &mut renderer, &redraw());
+        assert!(iced::advanced::Renderer::reuse_frame(&mut renderer));
+        assert_eq!(centre(&mut renderer), [0, 255, 0], "then it is drawn");
+        assert_eq!(
+            counts(),
+            (0, 5),
+            "a frame imported over another asks for nothing"
+        );
+
+        force(Some(Readiness::Failed("an error".into())));
+        source.publish(colored(&gbm, 84, 32, RED, &released));
+        let _ = update(&mut ui, &mut renderer, &redraw());
+        assert!(iced::advanced::Renderer::reuse_frame(&mut renderer));
+        let _ = centre(&mut renderer);
+        assert_eq!(counts(), (0, 7), "a frame just refused asks for a frame");
+        assert_eq!(
+            update(&mut ui, &mut renderer, &redraw()),
+            Asked {
+                content_only: false,
+                next_frame: true
+            },
+            "in which the widget asks to draw its fallback"
+        );
+        force(None);
+
+        source.publish(colored(&gbm, 85, 16, GREEN, &released));
+        assert_eq!(counts(), (1, 7), "another size wakes the window");
+        source.clear();
+        assert_eq!(counts(), (2, 7), "so does showing nothing");
+        source.publish(colored(&gbm, 86, 16, GREEN, &released));
+        assert_eq!(counts(), (3, 7), "and the first frame after it");
+        drop(ui);
     }
 
     #[test]

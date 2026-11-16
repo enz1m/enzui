@@ -325,24 +325,15 @@ impl Drop for ExternalFrame {
     }
 }
 
-/// The latest frame a streaming producer published, shared with the
-/// widget that shows it ([`enz_external_image_source`]).
+/// The latest frame published for [`enz_external_image_source`].
 ///
-/// [`publish`](Self::publish) replaces the frame and wakes the window
-/// showing it, which draws the new frame in a content-only redraw: no
-/// application message, no view rebuild and no widget draw, only the image's
-/// own preparation, as long as nothing else in the window changed and the
-/// frame keeps its size. The application never sees these frames; it only
-/// builds the widget once with the source.
+/// Same-size publications request a content-only frame without application
+/// messages or widget events. The first frame, size changes and [`clear`](Self::clear)
+/// wake the window for layout. Publications may originate from any thread.
 ///
-/// The source holds one frame. A frame it replaces is released once nothing
-/// shows it any more and the GPU work that sampled it has finished, as for
-/// any [`ExternalFrame`]. A new frame still being written keeps the one shown
-/// before on screen, and a refused one shows the widget's fallback.
-/// [`clear`](Self::clear) shows nothing.
-///
-/// Publishing before any widget shows the source is fine: the first draw
-/// shows the latest frame.
+/// Only the latest publication is retained. Unfinished writes preserve the
+/// previously displayed frame; refused imports show the widget fallback.
+/// Replaced frames are released after their GPU work completes.
 #[derive(Clone)]
 pub struct ExternalFrameSource {
     shared: Arc<SourceShared>,
@@ -350,9 +341,8 @@ pub struct ExternalFrameSource {
 
 struct SourceShared {
     latest: Mutex<Option<Arc<ExternalFrame>>>,
-    /// Published since the last preparation read it.
-    pending: std::sync::atomic::AtomicBool,
-    /// The windows of the widgets showing this source, by widget.
+    published: std::sync::atomic::AtomicU64,
+    taken: std::sync::atomic::AtomicU64,
     windows: Mutex<Vec<(u64, iced::advanced::shell::Waker)>>,
 }
 
@@ -379,14 +369,15 @@ impl ExternalFrameSource {
         Self {
             shared: Arc::new(SourceShared {
                 latest: Mutex::new(None),
-                pending: std::sync::atomic::AtomicBool::new(false),
+                published: std::sync::atomic::AtomicU64::new(0),
+                taken: std::sync::atomic::AtomicU64::new(0),
                 windows: Mutex::new(Vec::new()),
             }),
         }
     }
 
-    /// Shows `frame` next, in place of the frame before, and wakes the
-    /// windows showing this source. Callable from any thread.
+    /// Shows `frame` next, in place of the frame before, and has the
+    /// windows showing this source draw it. Callable from any thread.
     pub fn publish(&self, frame: Arc<ExternalFrame>) {
         self.replace(Some(frame));
     }
@@ -411,15 +402,23 @@ impl ExternalFrameSource {
     }
 
     fn replace(&self, frame: Option<Arc<ExternalFrame>>) {
+        let size = |frame: &Option<Arc<ExternalFrame>>| {
+            frame
+                .as_ref()
+                .map(|frame| (frame.buffer().width, frame.buffer().height))
+        };
+        let new_size = size(&frame);
         // The replaced frame drops outside the lock: its lease may call back.
         let replaced = match self.shared.latest.lock() {
             Ok(mut latest) => std::mem::replace(&mut *latest, frame),
             Err(_) => return,
         };
+        let content_only = new_size.is_some() && size(&replaced) == new_size;
         drop(replaced);
-        self.shared
-            .pending
-            .store(true, std::sync::atomic::Ordering::Release);
+        let _ = self
+            .shared
+            .published
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
         let wakers: Vec<_> = self
             .shared
             .windows
@@ -427,23 +426,44 @@ impl ExternalFrameSource {
             .map(|windows| windows.iter().map(|(_, waker)| waker.clone()).collect())
             .unwrap_or_default();
         for waker in wakers {
-            waker.wake();
+            if content_only {
+                waker.request_content_redraw();
+            } else {
+                waker.wake();
+            }
         }
     }
 
-    /// The frame to prepare, clearing the pending mark.
     fn take_for_frame(&self) -> Option<Arc<ExternalFrame>> {
+        // Read the publication counter first so a concurrent replacement remains pending.
+        let published = self.published();
+        let latest = self.latest();
         self.shared
-            .pending
-            .store(false, std::sync::atomic::Ordering::Release);
-        self.latest()
+            .taken
+            .store(published, std::sync::atomic::Ordering::Release);
+        latest
     }
 
-    /// Whether a frame was published since the last preparation read one.
-    fn is_pending(&self) -> bool {
+    fn request_frame(&self) {
+        let wakers: Vec<_> = self
+            .shared
+            .windows
+            .lock()
+            .map(|windows| windows.iter().map(|(_, waker)| waker.clone()).collect())
+            .unwrap_or_default();
+        for waker in wakers {
+            waker.request_content_redraw();
+        }
+    }
+
+    fn published(&self) -> u64 {
         self.shared
-            .pending
+            .published
             .load(std::sync::atomic::Ordering::Acquire)
+    }
+
+    fn is_pending(&self) -> bool {
+        self.shared.taken.load(std::sync::atomic::Ordering::Acquire) != self.published()
     }
 
     /// Wakes `waker` on each publish for the widget `instance`.
