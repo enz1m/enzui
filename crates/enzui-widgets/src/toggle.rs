@@ -75,7 +75,8 @@ impl ToggleSize {
         self.geometry().track_height
     }
 
-    /// Returns the label text size for this variant.
+    /// Returns the unscaled label text size for this variant; the widget
+    /// draws it at the desktop text size.
     pub fn label_size(self) -> f32 {
         match self {
             Self::Sm => 12.0,
@@ -84,7 +85,8 @@ impl ToggleSize {
         }
     }
 
-    /// Returns the description (subtitle) text size for this variant.
+    /// Returns the unscaled description (subtitle) text size for this
+    /// variant; the widget draws it at the desktop text size.
     pub fn description_size(self) -> f32 {
         match self {
             Self::Sm => 10.0,
@@ -574,7 +576,7 @@ impl<'a, Message: 'a> EnzToggle<'a, Message> {
             .spacing(self.description_spacing)
             .align_x(Alignment::Start);
         if !self.label.is_empty() {
-            let label_size = sz.label_size();
+            let label_size = enzui_theme::text_scale::ui_px(sz.label_size());
             let pinned = pinned_tokens;
             text_col = text_col.push(
                 text(self.label.to_string())
@@ -598,7 +600,7 @@ impl<'a, Message: 'a> EnzToggle<'a, Message> {
             );
         }
         if !self.description.is_empty() {
-            let desc_size = sz.description_size();
+            let desc_size = enzui_theme::text_scale::ui_px(sz.description_size());
             let pinned = pinned_tokens;
             text_col = text_col.push(
                 text(self.description.to_string())

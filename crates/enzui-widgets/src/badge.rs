@@ -2,7 +2,7 @@
 //!
 //! Default badges use the medium preset and neutral ink. Unpinned colours
 //! follow the live palette; size tokens override presets in either builder order.
-//! Small text uses ambient label size, medium text stock 12px and large stock 14px.
+//! Small text uses ambient label size, medium text 12px and large 14px, all at the desktop text size.
 //! Labels use ambient Semibold, end elision and a shared line box. Preferred
 //! height grows to fit that line box or a visible icon, subject to parent limits.
 //! Minimum width allows natural content growth but cannot defeat parent bounds.
@@ -75,12 +75,13 @@ impl BadgeSize {
     }
 
     /// Label size in logical pixels: the default label rung for `Sm`, 12 for
-    /// `Md`, and 14 for `Lg`. The larger presets have badge-specific metrics.
+    /// `Md`, and 14 for `Lg`, at the desktop text size. The larger presets have
+    /// badge-specific metrics.
     pub fn text_size(self) -> f32 {
         match self {
             Self::Sm => TypographyScale::ambient().label_size,
-            Self::Md => 12.0,
-            Self::Lg => 14.0,
+            Self::Md => enzui_theme::text_scale::ui_px(12.0),
+            Self::Lg => enzui_theme::text_scale::ui_px(14.0),
         }
     }
 

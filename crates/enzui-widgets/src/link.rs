@@ -330,12 +330,13 @@ impl<'a, Message: Clone + 'a> EnzLink<'a, Message> {
         };
         let label_widget = iced::widget::text(self.label)
             .font(label_font)
-            .size(size.text_size());
+            .size(enzui_theme::text_scale::ui_px(size.text_size()));
         // The button writes status before its child glyph draws, keeping interaction ink aligned.
         let status_cell = std::rc::Rc::new(std::cell::Cell::new(FocusStatus::Active));
         let content: Element<'a, Message> = if external {
-            let glyph_size =
-                glyph_size_override.unwrap_or_else(|| (size.text_size() - 2.0).max(8.0));
+            let glyph_size = glyph_size_override.unwrap_or_else(|| {
+                enzui_theme::text_scale::ui_px((size.text_size() - 2.0).max(8.0))
+            });
             let icon_el = crate::icon::enz_icon("external-link")
                 .size(glyph_size)
                 .tint_with_status(
@@ -390,7 +391,7 @@ impl<'a, Message: Clone + 'a> EnzLink<'a, Message> {
         fb.underline(move |status: FocusStatus, pointer_over: bool| {
             decoration.underline_visible(status, pointer_over)
         })
-        .underline_line_height(size.text_size() * 1.3)
+        .underline_line_height(enzui_theme::text_scale::ui_px(size.text_size()) * 1.3)
         .style_focus(move |theme: &iced::Theme, status: FocusStatus| {
             status_cell.set(status);
             let tokens = pinned_tokens
