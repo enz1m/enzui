@@ -2,13 +2,13 @@
 
 This is a Git-source release. The enzUI crates and their development iced
 versions are not published on crates.io. Clone this repository to work on it;
-Cargo fetches the external forks from their public URLs automatically.
+Cargo fetches the pinned sources automatically.
 
 ## Pinned foundations
 
 | Source | Revision |
 | --- | --- |
-| [iced](https://github.com/enz1m/enzim-iced) | `67f991b7442cbd79821141069c3b864cc12413f2` |
+| [iced](https://github.com/enz1m/enzim-iced) | `de6159248c487dddaeec639fe4ec0e7c41c1de2b` |
 | [wgpu family](https://github.com/enz1m/enzim-wgpu) | `7f040c8501f6838262c90ede4edfa40940fe2de8` |
 | [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `ad474131e52c0fde5979f8def2889489b50a0480` |
 | [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `eeaaa5585fbb1bac004ca398cfad957fec6be5f3` |
@@ -22,7 +22,7 @@ licenses. Neither needs a separate checkout.
 
 ## An application using Alpha 0.1
 
-Use the `v0.1.0-alpha.1` release tag for this snapshot. Keep all enzUI
+Use the `v0.1.0-alpha.1` tag for the published alpha release. Keep all enzUI
 dependencies on the same Git URL and tag, and commit the application's Cargo.lock.
 The lockfile records the resolved commit so subsequent builds reuse that snapshot.
 
