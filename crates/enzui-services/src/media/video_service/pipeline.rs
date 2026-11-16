@@ -136,7 +136,10 @@ pub(super) fn video_sink(
         .max_buffers(1)
         .drop(true)
         .sync(true)
+        .qos(true)
+        .max_lateness(80_000_000)
         .build();
+    sink.set_property("processing-deadline", 0u64);
     let sequence = Arc::new(AtomicU64::new(0));
     let deliver = move |sink: &gst_app::AppSink, preroll: bool, shared: &Shared| {
         let sample = if preroll {
@@ -321,5 +324,77 @@ pub(super) fn missing_element(name: &str) -> MediaError {
     MediaError {
         kind: MediaErrorKind::Backend,
         message: format!("GStreamer is missing the {name} element"),
+    }
+}
+
+#[cfg(test)]
+mod playback_qos_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    fn delayed_frames(qos: bool) -> usize {
+        gst::init().expect("gstreamer");
+        let shared = Arc::new(Shared::default());
+        let (sink, _) = video_sink(Generation::FIRST, &shared, None).expect("video sink");
+        if !qos {
+            let bin = sink.clone().downcast::<gst::Bin>().expect("video bin");
+            for element in bin.iterate_recurse().into_iter().flatten() {
+                if element.is::<gst_app::AppSink>() {
+                    element.set_property("qos", false);
+                    element.set_property("max-lateness", -1i64);
+                }
+            }
+        }
+        let pipeline = gst::Pipeline::new();
+        let source = gst::ElementFactory::make("videotestsrc")
+            .property("is-live", true)
+            .property("num-buffers", 45i32)
+            .build()
+            .expect("video source");
+        let delay = gst::ElementFactory::make("identity")
+            .property("sleep-time", 60_000u32)
+            .build()
+            .expect("delayed decoder");
+        pipeline
+            .add_many([&source, &delay, &sink])
+            .expect("pipeline elements");
+        gst::Element::link_many([&source, &delay, &sink]).expect("pipeline links");
+        pipeline.set_state(gst::State::Playing).expect("play");
+        let bus = pipeline.bus().expect("bus");
+        let deadline = Instant::now() + Duration::from_secs(8);
+        let mut frames = 0;
+        loop {
+            if shared.lock().frame.take().is_some() {
+                frames += 1;
+            }
+            if let Some(message) = bus.timed_pop_filtered(
+                gst::ClockTime::from_mseconds(5),
+                &[gst::MessageType::Eos, gst::MessageType::Error],
+            ) {
+                assert_eq!(
+                    message.type_(),
+                    gst::MessageType::Eos,
+                    "delayed playback must finish"
+                );
+                break;
+            }
+            assert!(Instant::now() < deadline, "delayed pipeline stalled");
+        }
+        pipeline.set_state(gst::State::Null).expect("stop");
+        frames
+    }
+
+    #[test]
+    fn overloaded_video_discards_late_frames_instead_of_replaying_a_backlog() {
+        let unbounded = delayed_frames(false);
+        let bounded = delayed_frames(true);
+        assert!(
+            unbounded >= 40,
+            "positive control must reproduce backlog: {unbounded}"
+        );
+        assert!(
+            bounded < unbounded / 2,
+            "late frames must be discarded: {bounded} of {unbounded}"
+        );
     }
 }
