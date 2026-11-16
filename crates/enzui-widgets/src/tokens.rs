@@ -143,8 +143,8 @@ pub struct ButtonTokens {
     /// Defaults to [`Self::border_width`] (`1.0`) though the default colour
     /// is transparent; `0.0` stays available for callers wanting no stroke
     /// geometry. Drawn in the *interactive* states so hover/pressed washes
-    /// sit inside rest's edge; the disabled branch still zeroes it (disabled
-    /// chrome comes from `disabled_bg`/`disabled_fg`), keeping disabled
+    /// sit inside rest's edge; the disabled branch still zeroes it (a disabled
+    /// ghost button only dims its label to `disabled_fg`), keeping disabled
     /// distinguishable from rest with no second per-kind decision.
     pub ghost_border_width: f32,
 
@@ -185,9 +185,11 @@ pub struct ButtonTokens {
     pub success_fg: Color,
 
     // Disabled state
-    /// Background used for any button kind when disabled.
+    /// Retained for custom painters and the contrast audit; a disabled filled
+    /// button draws its own resting colours at half strength instead.
     pub disabled_bg: Color,
-    /// Label colour used for any button kind when disabled.
+    /// Label colour of a disabled button that is transparent at rest
+    /// (Plain, Quiet, Ghost, QuietDestructive).
     pub disabled_fg: Color,
 
     // Focus
@@ -246,6 +248,9 @@ impl ButtonTokens {
         };
         let primary_border = if palette.is_on_glass() || palette.is_high_contrast() {
             palette.control_border
+        } else if !palette.is_dark() {
+            // The field edge: a white button and a white field share a line.
+            palette.field_border
         } else {
             crate::surface_edge::edge_color(
                 palette.button_primary_bg,
@@ -263,9 +268,13 @@ impl ButtonTokens {
             // outline, is what identifies a text button (WCAG 1.4.11 asks for
             // contrast on the visual information needed to identify it).
             primary_border,
-            // Neutral buttons have no edge: their fill sets them apart from
-            // the page. Glass and high contrast keep the line.
-            primary_border_width: if palette.is_on_glass() || palette.is_high_contrast() {
+            // A dark neutral button has no edge: its raised fill sets it apart.
+            // A light one is white on a near-white page, so a hairline holds
+            // its shape; glass and high contrast keep the line too.
+            primary_border_width: if palette.is_on_glass()
+                || palette.is_high_contrast()
+                || !palette.is_dark()
+            {
                 1.0
             } else {
                 0.0
@@ -677,10 +686,13 @@ impl ButtonSizeTokens {
         }
     }
 
+    // Side padding is about 0.55x the height: a pill's round ends take room
+    // from the label, so it needs more than a rounded rectangle would.
+
     /// Extra-small: 22px height.
     pub const XS: Self = Self {
         height: 22.0,
-        padding_x: 8.0,
+        padding_x: 10.0,
         text_size: 11.0,
         icon_size: 10.0, // 1.10x optical ratio
         radius: 8.0,
@@ -690,7 +702,7 @@ impl ButtonSizeTokens {
     /// Small: 26px height.
     pub const SM: Self = Self {
         height: 26.0,
-        padding_x: 10.0,
+        padding_x: 13.0,
         text_size: 12.0,
         icon_size: 11.0, // 1.11x optical ratio
         radius: 9.0,
@@ -700,7 +712,7 @@ impl ButtonSizeTokens {
     /// Medium (default): 28px height.
     pub const MD: Self = Self {
         height: 28.0, // 2.0x dead-space cap
-        padding_x: 12.0,
+        padding_x: 15.0,
         text_size: 13.0,
         icon_size: 12.0, // 1.12x optical ratio
         radius: 9.0,     // keeps the 10/32 corner proportion at 28px
@@ -710,7 +722,7 @@ impl ButtonSizeTokens {
     /// Large: 40px height.
     pub const LG: Self = Self {
         height: 40.0,
-        padding_x: 16.0,
+        padding_x: 20.0,
         text_size: 14.0,
         icon_size: 13.0, // 1.13x optical ratio
         radius: 12.0,
@@ -720,7 +732,7 @@ impl ButtonSizeTokens {
     /// Extra-large: 52px height.
     pub const XL: Self = Self {
         height: 52.0,
-        padding_x: 22.0,
+        padding_x: 26.0,
         text_size: 15.0,
         icon_size: 14.0, // 1.13x optical ratio
         radius: 14.0,

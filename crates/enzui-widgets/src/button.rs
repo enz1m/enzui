@@ -922,6 +922,9 @@ pub(crate) fn kind_visual(
 pub(crate) fn kind_is_framed(kind: ButtonKind) -> bool {
     matches!(kind, ButtonKind::Secondary | ButtonKind::Outlined)
 }
+/// The strength a disabled filled button keeps of its resting colours.
+const DISABLED_OPACITY: f32 = 0.5;
+
 fn style_for(
     kind: ButtonKind,
     status: Status,
@@ -941,19 +944,32 @@ fn style_for(
                 | ButtonKind::Ghost
                 | ButtonKind::QuietDestructive
         );
+        if transparent_at_rest {
+            return Style {
+                background: Some(Color::TRANSPARENT.into()),
+                text_color: tokens.disabled_fg,
+                border: Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: size_tokens.radius.into(),
+                },
+                ..Style::default()
+            };
+        }
+        // A filled kind keeps its own resting colours at half strength, as
+        // current component libraries dim a disabled button: a disabled Save
+        // still reads as the dialog's main action, not as a grey slab.
+        let rest = kind_visual(kind, KindInteraction::Active, tokens);
+        let dim = |c: Color| Color {
+            a: c.a * DISABLED_OPACITY,
+            ..c
+        };
         return Style {
-            background: Some(
-                if transparent_at_rest {
-                    Color::TRANSPARENT
-                } else {
-                    tokens.disabled_bg
-                }
-                .into(),
-            ),
-            text_color: tokens.disabled_fg,
+            background: Some(dim(rest.bg).into()),
+            text_color: dim(rest.fg),
             border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
+                color: dim(rest.border_color),
+                width: rest.border_width,
                 radius: size_tokens.radius.into(),
             },
             ..Style::default()
@@ -1051,8 +1067,10 @@ fn button_fg_role(kind: ButtonKind) -> crate::icon::ButtonFgRole {
     crate::icon::ButtonFgRole::from(kind)
 }
 
+// Medium, as current platform and web systems set button labels: heavy
+// enough to read as an action, without the shout of a semibold row of labels.
 fn label_font() -> Font {
-    enzui_theme::text_defaults::font(enzui_theme::FontRole::Ui, enzui_theme::WeightRung::Semibold)
+    enzui_theme::text_defaults::font(enzui_theme::FontRole::Ui, enzui_theme::WeightRung::Medium)
 }
 fn label_optical_offset(text_size: f32) -> f32 {
     crate::optical_centre::cap_centre_offset(label_font(), text_size, text::LineHeight::default())
@@ -1064,7 +1082,12 @@ fn label_only_padding(
     padding_x: f32,
 ) -> Padding {
     let shift = if !label.is_empty() && icon.is_empty() {
-        label_optical_offset(size_tokens.text_size)
+        crate::optical_centre::snapped_cap_centre_offset(
+            label_font(),
+            size_tokens.text_size,
+            text::LineHeight::default(),
+            size_tokens.height,
+        )
     } else {
         0.0
     };

@@ -224,7 +224,7 @@ button_group = "full"  # the outline of a segmented button group
 search_field = "full"  # an expanded search field
 badge = "full"         # badges
 card = "lg"            # cards
-checkbox = "full"      # checkbox boxes: round; "xs" gives rounded squares
+checkbox = "sm"        # checkbox boxes: rounded squares; "full" makes them round
 field = "md"           # text fields, dropdowns, text areas (medium size;
                        # small one step squarer, large one rounder)
 dialog = "window"      # modal dialog surfaces and the stock dialogs
@@ -267,15 +267,15 @@ The outline follows `palette.focus_ring`, `stroke.focus_ring` and `shape.row`.
 ## Button elevation
 
 `elevation.button` is the level, 0 to 5, that filled buttons (Primary,
-Secondary, Accent, Destructive, Success) are lifted to. The default is 0:
-buttons are flat, set apart from the page by their fill. Above 0 a filled
-button casts a faint contact shadow in the palette's `shadow` colour, a little
-deeper per level, and none while pressed. Outlined and quiet kinds, glass and
+Secondary, Accent, Destructive, Success) are lifted to. The default is 1: a
+filled button casts a faint contact shadow in the palette's `shadow` colour,
+a little deeper per level above 1, and none while pressed. At 0 buttons are
+flat, set apart from the page by their fill. Outlined and quiet kinds, glass and
 high contrast stay flat.
 
 ```toml
 [elevation]
-button = 1             # a faint contact shadow; the default 0 is flat
+button = 0             # flat buttons; the default 1 casts a faint contact shadow
 ```
 
 An app raises or flattens one button with `enz_button(..).elevation(level)`.

@@ -310,9 +310,9 @@ impl Palette {
             // A raised tone above every surface rung, `surface_elevated`
             // included, so the default button reads by its fill alone, on a
             // dialog as on the page.
-            button_primary_bg: hex(0x44, 0x44, 0x46),
-            button_primary_hover_bg: hex(0x4D, 0x4D, 0x4F),
-            button_primary_pressed_bg: hex(0x3A, 0x3A, 0x3C),
+            button_primary_bg: hex(0x4A, 0x4A, 0x4C),
+            button_primary_hover_bg: hex(0x54, 0x54, 0x56),
+            button_primary_pressed_bg: hex(0x40, 0x40, 0x42),
         }
     }
 
@@ -384,11 +384,11 @@ impl Palette {
             selected: hex(0xD9, 0xD9, 0xDE),
             error: hex(0xD7, 0x00, 0x15),
 
-            // A grey fill on the near-white page, with no edge: the fill
-            // alone sets the button apart.
-            button_primary_bg: hex(0xE8, 0xE8, 0xEC),
-            button_primary_hover_bg: hex(0xDF, 0xDF, 0xE4),
-            button_primary_pressed_bg: hex(0xD5, 0xD5, 0xDB),
+            // A white button on the near-white page, held by a hairline edge
+            // and a faint contact shadow, as macOS draws its push buttons.
+            button_primary_bg: hex(0xFF, 0xFF, 0xFF),
+            button_primary_hover_bg: hex(0xF4, 0xF4, 0xF6),
+            button_primary_pressed_bg: hex(0xE9, 0xE9, 0xEC),
         }
     }
 }
