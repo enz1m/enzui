@@ -165,9 +165,9 @@ pub struct Palette {
     /// Resting border of a text-entry field: `enz_text_field`,
     /// `enz_text_area`, `enz_search_field`, `enz_secure_field`,
     /// `enz_date_field`, `enz_combo_box`, `enz_autocomplete_field`,
-    /// `enz_input_otp`. Built-in palettes make it a shade of the field body
-    /// (`surface_alt`, 12% darker): the body identifies the field, the edge
-    /// only holds its shape.
+    /// `enz_input_otp`. Built-in palettes keep it close to the field body: a
+    /// darker shade in light mode, a slightly lighter hairline in dark mode.
+    /// The body identifies the field; the edge only holds its shape.
     pub field_border: Color,
     /// Hover outline for text-entry fields. Built-in palettes move the field
     /// body a quarter of the way to `text`, so the edge answers the pointer.
@@ -265,13 +265,16 @@ impl Palette {
             control_border: hex(0x88, 0x88, 0x8A),
             control_border_strong: hex(0xA8, 0xA8, 0xAA),
 
-            // The field body is the elevated step, one above `surface_alt`: a
-            // field on a sidebar (`surface_alt`) was the sidebar's own colour
-            // and vanished. Its edge stays a darker shade, and on hover the
-            // edge moves a quarter of the way to the text.
-            field: hex(0x38, 0x38, 0x3A),
-            field_border: hex(0x2A, 0x2A, 0x2C),
-            field_border_strong: hex(0x60, 0x60, 0x62),
+            // The field body is one step above `surface_elevated`, so a field
+            // keeps a body of its own on every surface rung: on a sidebar
+            // (`surface_alt`) as on a dialog or popover (`surface_elevated`).
+            // It stays below the default button's raised fill. The body
+            // identifies the field; its resting edge is a hairline a hair
+            // lighter than the body, so it reads as lit rather than inset. On
+            // hover the edge moves a quarter of the way to the text.
+            field: hex(0x40, 0x40, 0x42),
+            field_border: hex(0x4A, 0x4A, 0x4C),
+            field_border_strong: hex(0x6C, 0x6C, 0x6E),
 
             accent: hex(0x0A, 0x84, 0xFF),
             accent_hover: hex(0x40, 0x9C, 0xFF),
