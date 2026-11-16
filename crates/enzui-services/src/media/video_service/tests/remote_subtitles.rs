@@ -108,10 +108,14 @@ fn serve(stream: &mut TcpStream, bytes: &[u8]) -> std::io::Result<()> {
 }
 
 fn video_only(dir: &Scratch) -> PathBuf {
+    video_only_frames(dir, 90)
+}
+
+fn video_only_frames(dir: &Scratch, frames: usize) -> PathBuf {
     gst::init().expect("GStreamer");
     let path = dir.path().join("silent.mkv");
     let pipeline = gst::parse::launch(&format!(
-        "videotestsrc pattern=black num-buffers=90 ! video/x-raw,width=320,height=240,framerate=30/1 ! vp8enc deadline=1 ! matroskamux ! filesink location={}", path.display()
+        "videotestsrc pattern=black num-buffers={frames} ! video/x-raw,width=320,height=240,framerate=30/1 ! vp8enc deadline=1 ! matroskamux ! filesink location={}", path.display()
     )).expect("video fixture encoders");
     pipeline.set_state(gst::State::Playing).expect("encode");
     let done = pipeline.bus().unwrap().timed_pop_filtered(
@@ -637,4 +641,79 @@ fn disk_read_ahead_crash_leaves_no_named_media() {
         "abrupt death must leave no named media"
     );
     assert!(storage.join("control").exists());
+}
+
+#[test]
+fn remote_pause_and_seek_resume_at_normal_speed_without_a_clock_backlog() {
+    use enzui_core::url_policy::UrlPolicy;
+    let path = std::env::temp_dir().join(format!("enzui-remote-clock-{}", std::process::id()));
+    std::fs::create_dir(&path).expect("private test directory");
+    let dir = Scratch(path);
+    let video = video_only_frames(&dir, 600);
+    let origin = Origin::new(std::fs::read(video).expect("fixture"));
+    let policy = UrlPolicy {
+        allow_http: true,
+        allow_private_network: true,
+        max_redirects: 0,
+    };
+    let mut h = Harness {
+        service: VideoService::new(VideoServiceConfig {
+            gate: MediaGate {
+                policy,
+                ..MediaGate::DEFAULT
+            },
+            ..Default::default()
+        })
+        .expect("video service"),
+        status: VideoStatus::default(),
+        frame: None,
+        frames: 0,
+    };
+    h.service.load(
+        MediaSource::remote(&format!("http://{}/silent.mkv", origin.address), &policy)
+            .expect("remote source"),
+        LoadOptions {
+            autoplay: true,
+            ..quiet()
+        },
+    );
+    h.until("playing remote", |h| {
+        h.status.is_playing() && h.status.position > Duration::from_millis(300)
+    });
+    h.service.pause();
+    h.until("paused remote", |h| {
+        h.status.playback == PlaybackState::Paused
+    });
+    let paused = h.status.position;
+    std::thread::sleep(Duration::from_millis(2200));
+    assert!(h.service.status().position.abs_diff(paused) < Duration::from_millis(150));
+    let receipt = h
+        .service
+        .request_seek(Duration::from_secs(8), SeekMode::Accurate)
+        .expect("seek admission");
+    let outcome = std::cell::Cell::new(None);
+    h.until("remote seek", |h| {
+        for result in h.service.take_seek_outcomes() {
+            if result.request == receipt {
+                outcome.set(Some(result));
+            }
+        }
+        outcome.get().is_some()
+    });
+    assert_eq!(outcome.get().expect("seek outcome").result, Ok(()));
+    assert_eq!(h.service.status().playback, PlaybackState::Paused);
+    h.service.play();
+    h.until("resumed remote", |h| h.status.is_playing());
+    let before = h.service.status().position;
+    let start = Instant::now();
+    h.until("normal paced remote", |h| {
+        h.status.position.saturating_sub(before) >= Duration::from_millis(1200)
+    });
+    let elapsed = start.elapsed();
+    assert!(
+        elapsed >= Duration::from_millis(900),
+        "playback must not catch up paused wall time: {elapsed:?}"
+    );
+    assert!((h.status.rate - 1.0).abs() < 0.001);
+    assert!(h.status.error.is_none());
 }

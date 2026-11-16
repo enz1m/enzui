@@ -116,6 +116,8 @@ pub struct VideoStatus {
     pub duration: Option<Duration>,
     /// Whether the source can seek.
     pub seekable: bool,
+    /// A flushing seek is waiting for decoder preroll.
+    pub seeking: bool,
     /// Whether the source has a video track.
     pub has_video: bool,
     /// Whether the source has an audio track.
@@ -180,6 +182,7 @@ impl VideoStatus {
             position: Duration::ZERO,
             duration: None,
             seekable: false,
+            seeking: false,
             has_video: false,
             has_audio: false,
             natural_size: None,

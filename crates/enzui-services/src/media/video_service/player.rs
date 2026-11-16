@@ -307,6 +307,7 @@ impl Player {
         self.active_seek = request.map(|request| (request, position));
         let resumed = std::mem::take(&mut self.ended).then_some(self.target.playback());
         shared.update(|status| {
+            status.seeking = true;
             if request.is_none() {
                 status.position = position;
             }
@@ -694,10 +695,18 @@ impl Player {
         }
     }
 
+    fn seek_timeout(&self) -> Duration {
+        if matches!(self.source, MediaSource::Remote(_)) {
+            Duration::from_secs(15)
+        } else {
+            Duration::from_secs(2)
+        }
+    }
+
     pub(super) fn check_seek_timeout(&mut self, shared: &Shared) {
         if self
             .seek_started
-            .is_some_and(|started| started.elapsed() >= Duration::from_secs(2))
+            .is_some_and(|started| started.elapsed() >= self.seek_timeout())
         {
             self.finish_seek(Some(SeekRejection::TimedOut), shared);
         }
@@ -710,7 +719,10 @@ impl Player {
         let actual = self.position();
         let rate = self.rate;
         self.publish_position(shared);
-        shared.update(|status| status.rate = rate);
+        shared.update(|status| {
+            status.rate = rate;
+            status.seeking = false;
+        });
         if let Some((request, target)) = self.active_seek.take() {
             let tolerance = self
                 .frame_duration
@@ -827,6 +839,30 @@ mod seek_tests {
         assert_eq!(outcomes[0].request, request);
         assert_eq!(outcomes[0].result, Err(SeekRejection::NotReady));
         assert_eq!(player.start_at, Duration::ZERO);
+        player.shut();
+    }
+    #[test]
+    fn remote_seek_keeps_its_receipt_until_network_preroll_deadline() {
+        let shared = Shared::default();
+        let mut player = player();
+        player.source = MediaSource::remote(
+            "https://example.com/video.mkv",
+            &enzui_core::url_policy::UrlPolicy::DEFAULT,
+        )
+        .unwrap();
+        let receipt = request(&shared, 10);
+        player.seeking = true;
+        player.active_seek = Some((receipt, Duration::from_secs(10)));
+        player.seek_started = Some(Instant::now() - Duration::from_secs(3));
+        player.check_seek_timeout(&shared);
+        assert!(shared.lock().seeks.take().is_empty());
+        assert!(player.seeking);
+        player.seek_started = Some(Instant::now() - Duration::from_secs(16));
+        player.check_seek_timeout(&shared);
+        let outcomes = shared.lock().seeks.take();
+        assert_eq!(outcomes.len(), 1);
+        assert_eq!(outcomes[0].result, Err(SeekRejection::TimedOut));
+        assert!(!player.seeking);
         player.shut();
     }
 }
