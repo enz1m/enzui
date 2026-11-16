@@ -568,7 +568,7 @@
     "group": "Text input and forms",
     "summary": "labelled settings row (Adw-style).",
     "api": ["enz_preferences_row", "EnzPreferencesRow"],
-    "keywords": ["AdwActionRow", "AdwSwitchRow", "accessible id", "adw row", "choose an option in preferences", "click row to toggle", "field size tier", "owned display text", "pick a value", "preferences row", "preferences row size", "repeated setting identity", "responsive settings row", "restack label over control", "settings field size", "settings picker", "settings row", "settings row with a menu", "settings validation", "stable node identity", "stacked row", "switch row", "value button", "week start"],
+    "keywords": ["AdwActionRow", "AdwActionRow suffix", "AdwSwitchRow", "accessible id", "adw row", "button next to toggle", "choose an option in preferences", "click row to toggle", "edit button beside switch", "field size tier", "owned display text", "pick a value", "preferences row", "preferences row size", "repeated setting identity", "responsive settings row", "restack label over control", "row with two controls", "secondary action in row", "settings field size", "settings picker", "settings row", "settings row with a menu", "settings validation", "stable node identity", "stacked row", "suffix", "switch row", "value button", "week start"],
     "wiring_contract": false
   },
   {

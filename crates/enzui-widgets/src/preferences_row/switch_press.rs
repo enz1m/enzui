@@ -26,18 +26,17 @@ struct SwitchPress<'a, Message> {
 #[derive(Default)]
 struct Hover(bool);
 
+/// The row's last focusable: the switch, which trails any suffix controls.
 #[derive(Default)]
-struct FirstFocusable(Option<Rectangle>);
+struct LastFocusable(Option<Rectangle>);
 
-impl Operation for FirstFocusable {
+impl Operation for LastFocusable {
     fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn Operation<()>)) {
-        if self.0.is_none() {
-            operate(self);
-        }
+        operate(self);
     }
 
     fn focusable(&mut self, _id: Option<&Id>, bounds: Rectangle, _state: &mut dyn Focusable) {
-        self.0.get_or_insert(bounds);
+        self.0 = Some(bounds);
     }
 }
 
@@ -56,7 +55,7 @@ impl<Message> SwitchPress<'_, Message> {
         viewport: &Rectangle,
         renderer: &iced::Renderer,
     ) -> Option<Rectangle> {
-        let mut finder = FirstFocusable::default();
+        let mut finder = LastFocusable::default();
         let child = row_layout(layout, tree);
         self.row.as_widget_mut().operate(
             &mut tree.children[0],

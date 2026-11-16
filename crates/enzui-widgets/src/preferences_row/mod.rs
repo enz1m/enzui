@@ -223,6 +223,7 @@ pub struct EnzPreferencesRow<'a, Message> {
     id: Option<Id>,
     id_prefix: Option<String>,
     kind: Option<Kind<'a, Message>>,
+    suffixes: Vec<Element<'a, Message>>,
     tokens: Option<PreferencesRowTokens>,
 }
 
@@ -247,6 +248,7 @@ pub fn enz_preferences_row<'a, Message: Clone + 'a>(
         id: None,
         id_prefix: None,
         kind: None,
+        suffixes: Vec::new(),
         tokens: None,
     }
 }
@@ -340,6 +342,20 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
             checked,
             on_toggle: Box::new(on_toggle),
         });
+        self
+    }
+    /// Add a secondary control inside the row, before its main control: an
+    /// Edit or info button beside a switch, say. Suffixes keep the row's
+    /// hover, padding and narrow-width stacking, and sit between the label
+    /// and the main control in the order added, so the main control (the
+    /// switch) stays at the trailing edge as in the platform settings apps.
+    ///
+    /// Use this rather than a `row![preferences_row, button]`, which puts the
+    /// button outside the row's surface. A press on a suffix belongs to the
+    /// suffix; on a switch row any other press still toggles the switch.
+    /// Action rows are one whole-row button, so they ignore suffixes.
+    pub fn suffix(mut self, control: impl Into<Element<'a, Message>>) -> Self {
+        self.suffixes.push(control.into());
         self
     }
     /// Sets the shared entry/password size tier, defaulting to [`Md`](crate::text_field::TextFieldSize::Md), the size of a standalone field.
@@ -846,6 +862,23 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
                 );
             }
             None => {}
+        }
+
+        if !self.suffixes.is_empty() && action_on_click.is_none() {
+            // The main control keeps its own width; the lane then sizes to
+            // the suffixes plus that width, so a suffix is never squeezed.
+            if let Some(width) = trailing_min_width.take() {
+                trailing_children = vec![
+                    container(row(trailing_children).mirrored(rtl).spacing(t.gap))
+                        .width(Length::Fixed(width))
+                        .align_x(Alignment::End)
+                        .into(),
+                ];
+            }
+            let mut lane = self.suffixes;
+            lane.append(&mut trailing_children);
+            trailing_children = lane;
+            expand_when_stacked = false;
         }
 
         let can_stack = !trailing_children.is_empty();
