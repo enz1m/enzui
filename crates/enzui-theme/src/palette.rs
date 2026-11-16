@@ -276,10 +276,14 @@ impl Palette {
             field_border: hex(0x4A, 0x4A, 0x4C),
             field_border_strong: hex(0x6C, 0x6C, 0x6E),
 
-            accent: hex(0x0A, 0x84, 0xFF),
-            accent_hover: hex(0x40, 0x9C, 0xFF),
-            accent_pressed: hex(0x00, 0x6E, 0xDB),
-            accent_soft: hex(0x18, 0x3A, 0x60),
+            // One blue across both modes, specified in OKLCH at hue 259-261:
+            // a hair toward indigo from the older cyan-leaning system blue,
+            // with calmer chroma in dark mode. The accent holds 4.5:1 as text
+            // on the page; filled controls deepen it for their white label.
+            accent: hex(0x4F, 0x94, 0xFF),
+            accent_hover: hex(0x66, 0xA4, 0xFF),
+            accent_pressed: hex(0x35, 0x7C, 0xE9),
+            accent_soft: hex(0x1B, 0x37, 0x63),
 
             danger: hex(0xF8, 0x71, 0x71),
             danger_soft: hex(0x4A, 0x1F, 0x25),
@@ -298,7 +302,7 @@ impl Palette {
 
             overlay: Color::from_rgba(0.0, 0.0, 0.0, 0.51),
             shadow: Color::from_rgba8(0x00, 0x00, 0x00, 0x3a as f32 / 255.0),
-            focus_ring: hex(0x0A, 0x84, 0xFF),
+            focus_ring: hex(0x4F, 0x94, 0xFF),
             disabled: hex(0x6C, 0x6C, 0x6E),
             selected: hex(0x45, 0x45, 0x47),
             error: hex(0xF8, 0x71, 0x71),
@@ -348,12 +352,14 @@ impl Palette {
             field_border: hex(0xD0, 0xD0, 0xD5),
             field_border_strong: hex(0xAE, 0xAE, 0xB4),
 
-            accent: hex(0x00, 0x6C, 0xDC),
+            // The dark mode's blue at a lower OKLCH lightness: a white label
+            // holds 5:1 on it, and as text it holds 4.5:1 on the page.
+            accent: hex(0x15, 0x65, 0xEF),
             // A light theme's hover and press darken, so the white label
             // keeps its contrast.
-            accent_hover: hex(0x00, 0x62, 0xC8),
-            accent_pressed: hex(0x00, 0x58, 0xB4),
-            accent_soft: hex(0xE3, 0xEE, 0xFC),
+            accent_hover: hex(0x11, 0x5B, 0xD8),
+            accent_pressed: hex(0x0D, 0x50, 0xC3),
+            accent_soft: hex(0xE2, 0xEE, 0xFF),
 
             danger: hex(0xD7, 0x00, 0x15),
             danger_soft: hex(0xFF, 0xE5, 0xE7),
@@ -372,7 +378,7 @@ impl Palette {
 
             overlay: Color::from_rgba(0.0, 0.0, 0.0, 0.35),
             shadow: Color::from_rgba(0.0, 0.0, 0.0, 0.13),
-            focus_ring: hex(0x00, 0x6C, 0xDC),
+            focus_ring: hex(0x15, 0x65, 0xEF),
             // Keeps disabled ink above 3:1 while below `text_subtle` in the emphasis ramp.
             disabled: hex(0x86, 0x86, 0x8B),
             selected: hex(0xD9, 0xD9, 0xDE),

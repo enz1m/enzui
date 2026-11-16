@@ -42,8 +42,8 @@ pub struct DisclosureTokens {
     /// same surface. A pre-darkened opaque fill can move the wash
     /// the wrong way and leave pressed within ~1px of hover.
     pub pressed_background: Color,
-    /// Keyboard focus-ring colour — `Palette::focus_ring` (dark `#0A84FF`,
-    /// light `#006CDC`). The ring uses the semantic focus-ring token like every
+    /// Keyboard focus-ring colour — `Palette::focus_ring` (dark `#4F94FF`,
+    /// light `#1565EF`). The ring uses the semantic focus-ring token like every
     /// sibling widget, rather than a hardcoded `text_color`.
     pub focus_ring_color: Color,
     /// Keyboard focus-ring width, in px. Matches the crate convention

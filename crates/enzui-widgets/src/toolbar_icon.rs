@@ -188,8 +188,8 @@ pub struct ToolbarIconTokens {
     pub slot_height: f32,
     /// Icon glyph size (`icon-sm` = 16px).
     pub icon_size: f32,
-    /// Focus-ring colour from `Palette::focus_ring` (dark `#0A84FF`, light
-    /// `#006CDC`): a dedicated token rather than `active_color`, so the ring
+    /// Focus-ring colour from `Palette::focus_ring` (dark `#4F94FF`, light
+    /// `#1565EF`): a dedicated token rather than `active_color`, so the ring
     /// stays distinguishable from the active-state glyph.
     pub focus_ring: Color,
     /// Focus-ring border width in px (shared convention: `2.0`).

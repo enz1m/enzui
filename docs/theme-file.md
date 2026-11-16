@@ -141,8 +141,10 @@ Rules:
 * **The desktop accent fills in.** When the file sets no `palette.accent`
   for the active mode, the desktop's accent colour (the Settings portal's
   `org.freedesktop.appearance accent-color`) replaces the built-in accent
-  family: accent, hover, pressed, soft and the focus ring. A file accent
-  always wins.
+  family: accent, hover, pressed, soft and the focus ring. GNOME's stock
+  blue counts as unset, because GNOME always reports an accent: as with
+  macOS's Multicolor setting, apps keep their own accent until the user picks
+  a specific colour. A file accent always wins.
 * **Everything else is common.** Geometry, typography, motion, fonts,
   breakpoints, elevation and scrollbar tokens are shared; writing them inside
   a mode table is rejected the same way.

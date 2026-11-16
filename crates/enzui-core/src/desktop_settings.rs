@@ -18,7 +18,7 @@
 //! | setting | GTK `settings.ini` | Settings portal | effect |
 //! |---|---|---|---|
 //! | middle-click paste | `gtk-enable-primary-paste` | `org.gnome.desktop.interface` `gtk-enable-primary-paste` | [`iced_core::clipboard::set_primary_paste_enabled`] |
-//! | accent colour | - | `org.freedesktop.appearance` `accent-color` | the theme's accent, below an explicit `palette.accent` in the theme file |
+//! | accent colour | - | `org.freedesktop.appearance` `accent-color` | the theme's accent, below an explicit `palette.accent` in the theme file; GNOME's stock blue counts as unset |
 //! | text size | - | `org.gnome.desktop.interface` `text-scaling-factor` | the theme's platform text scale, below the theme file and an in-app choice |
 //! | window buttons | `gtk-decoration-layout` | `org.gnome.desktop.wm.preferences` `button-layout` | [`button_layout`]: window control order and side |
 //! | scrollbars | `gtk-overlay-scrolling` | `org.gnome.desktop.interface` `overlay-scrolling` | [`overlay_scrollbars`]: hide scrollbars until used, or always show them |
@@ -716,6 +716,10 @@ mod portal {
     }
 
     /// `(ddd)` in 0..=1; out-of-range components mean "no accent".
+    ///
+    /// GNOME always reports an accent and has no "app default" choice, so its
+    /// stock blue also means "no accent": as with macOS's Multicolor setting,
+    /// an app keeps its own accent until the user picks a specific colour.
     fn accent(value: &Value<'_>) -> Option<iced_core::Color> {
         let Value::Structure(structure) = value else {
             return None;
@@ -734,9 +738,21 @@ mod portal {
         if [r, g, b].iter().any(|c| !(0.0..=1.0).contains(c)) {
             return None;
         }
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "colour channels in 0..=1"
+        )]
+        let byte = |c: f64| (c * 255.0).round() as u8;
+        if [byte(r), byte(g), byte(b)] == GNOME_DEFAULT_ACCENT {
+            return None;
+        }
         #[allow(clippy::cast_possible_truncation, reason = "colour channels in 0..=1")]
         Some(iced_core::Color::from_rgb(r as f32, g as f32, b as f32))
     }
+
+    /// GNOME's default accent (`blue`, `#3584E4`) as the portal reports it.
+    const GNOME_DEFAULT_ACCENT: [u8; 3] = [0x35, 0x84, 0xE4];
 
     /// Reads the portal, applies it over `files`, then follows changes until
     /// the bus goes away. Returns quietly without a portal.
@@ -1022,6 +1038,19 @@ mod tests {
             portal::from_value("org.freedesktop.appearance", "accent-color", &unset).accent,
             None,
             "out of range means no accent"
+        );
+        let gnome_default = Value::Structure(
+            zbus::zvariant::StructureBuilder::new()
+                .add_field(53.0_f64 / 255.0)
+                .add_field(132.0_f64 / 255.0)
+                .add_field(228.0_f64 / 255.0)
+                .build()
+                .unwrap(),
+        );
+        assert_eq!(
+            portal::from_value("org.freedesktop.appearance", "accent-color", &gnome_default).accent,
+            None,
+            "GNOME's stock blue leaves the app accent in place"
         );
     }
 
