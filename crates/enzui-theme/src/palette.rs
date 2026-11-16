@@ -265,21 +265,12 @@ impl Palette {
             control_border: hex(0x88, 0x88, 0x8A),
             control_border_strong: hex(0xA8, 0xA8, 0xAA),
 
-            // The field body is one step above `surface_elevated`, so a field
-            // keeps a body of its own on every surface rung: on a sidebar
-            // (`surface_alt`) as on a dialog or popover (`surface_elevated`).
-            // It stays below the default button's raised fill. The body
-            // identifies the field; its resting edge is a hairline a hair
-            // lighter than the body, so it reads as lit rather than inset. On
-            // hover the edge moves a quarter of the way to the text.
+            // Fields remain lighter than dialog surfaces and darker than neutral buttons.
             field: hex(0x40, 0x40, 0x42),
             field_border: hex(0x4A, 0x4A, 0x4C),
             field_border_strong: hex(0x6C, 0x6C, 0x6E),
 
-            // One blue across both modes, specified in OKLCH at hue 259-261:
-            // a hair toward indigo from the older cyan-leaning system blue,
-            // with calmer chroma in dark mode. The accent holds 4.5:1 as text
-            // on the page; filled controls deepen it for their white label.
+            // Accent text clears 4.5:1 on the page; filled controls deepen it for white labels.
             accent: hex(0x4F, 0x94, 0xFF),
             accent_hover: hex(0x66, 0xA4, 0xFF),
             accent_pressed: hex(0x35, 0x7C, 0xE9),
@@ -352,8 +343,7 @@ impl Palette {
             field_border: hex(0xD0, 0xD0, 0xD5),
             field_border_strong: hex(0xAE, 0xAE, 0xB4),
 
-            // The dark mode's blue at a lower OKLCH lightness: a white label
-            // holds 5:1 on it, and as text it holds 4.5:1 on the page.
+            // White labels clear 5:1; accent text clears 4.5:1 on the page.
             accent: hex(0x15, 0x65, 0xEF),
             // A light theme's hover and press darken, so the white label
             // keeps its contrast.
@@ -384,8 +374,6 @@ impl Palette {
             selected: hex(0xD9, 0xD9, 0xDE),
             error: hex(0xD7, 0x00, 0x15),
 
-            // A white button on the near-white page, held by a hairline edge
-            // and a faint contact shadow, as macOS draws its push buttons.
             button_primary_bg: hex(0xFF, 0xFF, 0xFF),
             button_primary_hover_bg: hex(0xF4, 0xF4, 0xF6),
             button_primary_pressed_bg: hex(0xE9, 0xE9, 0xEC),

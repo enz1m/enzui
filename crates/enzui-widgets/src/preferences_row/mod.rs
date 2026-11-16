@@ -344,16 +344,10 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
         });
         self
     }
-    /// Add a secondary control inside the row, before its main control: an
-    /// Edit or info button beside a switch, say. Suffixes keep the row's
-    /// hover, padding and narrow-width stacking, and sit between the label
-    /// and the main control in the order added, so the main control (the
-    /// switch) stays at the trailing edge as in the platform settings apps.
+    /// Adds a secondary control before the main control, inside the row's surface.
     ///
-    /// Use this rather than a `row![preferences_row, button]`, which puts the
-    /// button outside the row's surface. A press on a suffix belongs to the
-    /// suffix; on a switch row any other press still toggles the switch.
-    /// Action rows are one whole-row button, so they ignore suffixes.
+    /// Suffixes retain insertion order and narrow-width stacking. Their presses
+    /// do not toggle a switch row. Whole-row action buttons ignore suffixes.
     pub fn suffix(mut self, control: impl Into<Element<'a, Message>>) -> Self {
         self.suffixes.push(control.into());
         self
@@ -496,8 +490,6 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
                 enzui_theme::WeightRung::Semibold,
             )
         } else {
-            // A setting's title reads at body weight, as in the platform
-            // settings apps; size and the muted subtitle carry the hierarchy.
             (
                 enzui_theme::WeightRung::Regular,
                 enzui_theme::WeightRung::Regular,

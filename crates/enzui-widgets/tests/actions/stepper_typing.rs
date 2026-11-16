@@ -124,7 +124,6 @@ fn unreadable_text_keeps_the_value() {
 
 #[test]
 fn backspace_edits_the_shown_text() {
-    // The click selects "9:00"; Backspace clears it, then "8:15" is typed.
     let mut ui = Simulator::new(parsed_clock());
     ui.point_at(Point::new(50.0, 16.0));
     let _ = ui.simulate(click());

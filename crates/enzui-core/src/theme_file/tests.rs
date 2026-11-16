@@ -429,7 +429,6 @@ fn theme_file_layers_validated_app_and_desktop_preferences_without_losing_unknow
         let _ = std::fs::remove_dir_all(&root);
     }
 
-    // desktop_font_size_is_relative_to_the_desktops_stock_size
     {
         use enzui_theme::{DesktopFontPreferences, FontRole};
         let _scale = enzui_theme::text_scale::TextScaleScope::enter(

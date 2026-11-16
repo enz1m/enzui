@@ -175,7 +175,6 @@ pub struct ShapeScale {
 impl Default for ShapeScale {
     fn default() -> Self {
         Self {
-            // Pills, echoing the strongly rounded window corners.
             button: RadiusStep::Full,
             button_group: RadiusStep::Full,
             search_field: RadiusStep::Full,

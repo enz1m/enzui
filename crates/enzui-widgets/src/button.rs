@@ -956,9 +956,6 @@ fn style_for(
                 ..Style::default()
             };
         }
-        // A filled kind keeps its own resting colours at half strength, as
-        // current component libraries dim a disabled button: a disabled Save
-        // still reads as the dialog's main action, not as a grey slab.
         let rest = kind_visual(kind, KindInteraction::Active, tokens);
         let dim = |c: Color| Color {
             a: c.a * DISABLED_OPACITY,
@@ -1067,8 +1064,6 @@ fn button_fg_role(kind: ButtonKind) -> crate::icon::ButtonFgRole {
     crate::icon::ButtonFgRole::from(kind)
 }
 
-// Medium, as current platform and web systems set button labels: heavy
-// enough to read as an action, without the shout of a semibold row of labels.
 fn label_font() -> Font {
     enzui_theme::text_defaults::font(enzui_theme::FontRole::Ui, enzui_theme::WeightRung::Medium)
 }

@@ -1220,12 +1220,7 @@ pub(crate) fn text_field_style(
         _ => 1.0,
     };
 
-    // the resting field fill is `field_fill_for(variant)` — `surface_alt`
-    // (a body distinct from the `surface` pane) for the `Filled` default, or
-    // `surface` (the compatibility page-coloured fill) for `Outlined`. Routed
-    // through the shared helper so a slotted field cannot drift from an
-    // unslotted one, nor from the other five family members. Disabled lands on
-    // the same fill; it is set apart by dimmed ink/border, not fill.
+    // Disabled fields retain the family fill and dim their ink and border.
     let bg = crate::tokens::field_fill_for(palette, variant);
 
     Style {

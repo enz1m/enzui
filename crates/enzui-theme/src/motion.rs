@@ -350,10 +350,7 @@ impl Default for ElevationScale {
     }
 }
 
-/// The level filled buttons are raised to by default: 1, a faint contact
-/// shadow, as macOS push buttons and current web component libraries rest
-/// their buttons on the surface. A theme flattens them with
-/// `elevation.button = 0`.
+/// Default filled-button elevation: a faint contact shadow; set `elevation.button = 0` to flatten it.
 pub const DEFAULT_BUTTON_ELEVATION: u8 = 1;
 
 #[cfg(test)]
