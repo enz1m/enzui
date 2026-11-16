@@ -557,10 +557,10 @@ impl Worker {
         let source = player.source.clone();
         let (audio_choice, text_choice) = player.choices();
         let start = Start {
-            at: player.position().unwrap_or(player.start_at),
+            at: player.intended_position(),
             target: player.target,
             subtitle_file: path.clone(),
-            rate: player.rate,
+            rate: player.intended_rate(),
             audio_choice,
             text_choice: if path.is_some() { None } else { text_choice },
         };

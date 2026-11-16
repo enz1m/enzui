@@ -56,6 +56,7 @@ pub(super) struct Player {
     // Only the newest seek requested during an in-flight seek runs.
     queued_seek: Option<(Duration, SeekMode, Option<SeekRequest>)>,
     active_seek: Option<(SeekRequest, Duration)>,
+    seek_target: Option<Duration>,
     seek_started: Option<Instant>,
     queued_rate: Option<f64>,
     buffering: bool,
@@ -77,6 +78,7 @@ pub(super) struct Player {
     text_choice: Option<String>,
     text_stream: Option<String>,
     resync_audio: bool,
+    selected: Vec<String>,
 }
 
 pub(super) struct Start {
@@ -116,12 +118,13 @@ impl Player {
             target: start.target,
             opened_at: Instant::now(),
             start_at: start.at,
-            rate: start.rate,
+            rate: 1.0,
             seeking: false,
             queued_seek: None,
             active_seek: None,
+            seek_target: None,
             seek_started: None,
-            queued_rate: None,
+            queued_rate: ((start.rate - 1.0).abs() >= f64::EPSILON).then_some(start.rate),
             buffering: false,
             ended: false,
             flushed: true,
@@ -139,6 +142,7 @@ impl Player {
             text_stream: start.text_choice.clone(),
             text_choice: start.text_choice,
             resync_audio: false,
+            selected: Vec::new(),
         }
     }
 
@@ -160,7 +164,7 @@ impl Player {
             at: self.start_at,
             target: self.target,
             subtitle_file: self.subtitle_file.clone(),
-            rate: self.rate,
+            rate: self.intended_rate(),
             audio_choice,
             text_choice,
         }
@@ -171,6 +175,19 @@ impl Player {
             bus.unset_sync_handler();
         }
         let _ = self.playbin.set_state(gst::State::Null);
+    }
+
+    // Pipeline position is unreliable during a flush; prefer queued or in-flight targets.
+    pub(super) fn intended_position(&self) -> Duration {
+        self.queued_seek
+            .map(|(position, _, _)| position)
+            .or(self.seek_target)
+            .or_else(|| self.position())
+            .unwrap_or(self.start_at)
+    }
+
+    pub(super) fn intended_rate(&self) -> f64 {
+        self.queued_rate.unwrap_or(self.rate)
     }
 
     pub(super) fn position(&self) -> Option<Duration> {
@@ -273,7 +290,10 @@ impl Player {
                 self.start_at = position;
                 return;
             }
-            Phase::Starting => return,
+            Phase::Starting => {
+                self.queued_seek = Some((position, mode, None));
+                return;
+            }
             Phase::Ready => {}
         }
         if self.seeking {
@@ -311,6 +331,7 @@ impl Player {
         }
         self.seeking = true;
         self.seek_started = Some(Instant::now());
+        self.seek_target = Some(position);
         self.active_seek = request.map(|request| (request, position));
         let resumed = std::mem::take(&mut self.ended).then_some(self.target.playback());
         shared.update(|status| {
@@ -370,10 +391,7 @@ impl Player {
     }
 
     pub(super) fn set_rate(&mut self, rate: f64) {
-        if self.phase != Phase::Ready {
-            return;
-        }
-        if self.seeking {
+        if self.phase != Phase::Ready || self.seeking {
             self.queued_rate = Some(rate);
             return;
         }
@@ -467,11 +485,12 @@ impl Player {
         if let Some(text) = &self.text_stream {
             ids.push(text);
         }
-        if ids.is_empty() {
+        if ids.is_empty() || ids == self.selected {
             return;
         }
-        self.playbin
-            .send_event(gst::event::SelectStreams::new(&ids));
+        let event = gst::event::SelectStreams::new(&ids);
+        self.selected = ids.into_iter().map(str::to_owned).collect();
+        self.playbin.send_event(event);
     }
 
     fn on_collection(&mut self, collection: gst::StreamCollection, shared: &Shared) {
@@ -568,13 +587,13 @@ impl Player {
             .audio_choice
             .as_ref()
             .is_some_and(|choice| ids.contains(choice));
-        if self.resync_audio
-            && audio_live
-            && self.phase == Phase::Ready
-            && let Some(position) = self.position()
-        {
+        if self.resync_audio && audio_live {
             self.resync_audio = false;
-            self.seek(position, SeekMode::Accurate, shared);
+            if self.phase == Phase::Ready
+                && let Some(position) = self.position()
+            {
+                self.seek(position, SeekMode::Accurate, shared);
+            }
         }
     }
 
@@ -714,6 +733,7 @@ impl Player {
                     )
                 {
                     self.phase = Phase::Starting;
+                    self.seek_started = Some(Instant::now());
                     shared.update(|status| {
                         status.seekable = seekable;
                         status.duration = duration;
@@ -727,8 +747,11 @@ impl Player {
                 let duration = self.duration();
                 self.become_ready(seekable, duration, shared);
             }
+            // playbin3 assigns async-done sequence numbers, so completions cannot identify a seek.
             Phase::Ready => {
-                self.finish_seek(None, shared);
+                if self.seeking {
+                    self.finish_seek(None, shared);
+                }
             }
         }
     }
@@ -737,21 +760,31 @@ impl Player {
         if matches!(self.source, MediaSource::Remote(_)) {
             Duration::from_secs(15)
         } else {
-            Duration::from_secs(2)
+            // Long-GOP seeks decode from a preceding keyframe and need time to preroll.
+            Duration::from_secs(5)
         }
     }
 
     pub(super) fn check_seek_timeout(&mut self, shared: &Shared) {
-        if self
+        if !self
             .seek_started
             .is_some_and(|started| started.elapsed() >= self.seek_timeout())
         {
+            return;
+        }
+        if self.phase == Phase::Starting {
+            self.seek_started = None;
+            let seekable = self.seekable();
+            let duration = self.duration();
+            self.become_ready(seekable, duration, shared);
+        } else {
             self.finish_seek(Some(SeekRejection::TimedOut), shared);
         }
     }
 
     fn finish_seek(&mut self, rejection: Option<SeekRejection>, shared: &Shared) {
         self.seeking = false;
+        self.seek_target = None;
         self.seek_started = None;
         self.flushed = true;
         let actual = self.position();
@@ -812,6 +845,15 @@ impl Player {
         if self.target == Target::Playing && !self.buffering {
             let _ = self.playbin.set_state(gst::State::Playing);
         }
+        self.seek_started = None;
+        if let Some((position, mode, request)) = self.queued_seek.take() {
+            self.seek_request(position, mode, request, shared);
+        }
+        if !self.seeking
+            && let Some(rate) = self.queued_rate.take()
+        {
+            self.set_rate(rate);
+        }
     }
 
     fn seekable(&self) -> bool {
@@ -825,6 +867,10 @@ mod seek_tests {
     use super::*;
 
     fn player() -> Player {
+        player_at_rate(1.0)
+    }
+
+    fn player_at_rate(rate: f64) -> Player {
         gst::init().unwrap();
         let playbin = gst::ElementFactory::make("identity").build().unwrap();
         let scale_caps = gst::ElementFactory::make("capsfilter").build().unwrap();
@@ -845,7 +891,7 @@ mod seek_tests {
                 at: Duration::ZERO,
                 target: Target::Paused,
                 subtitle_file: None,
-                rate: 1.0,
+                rate,
                 audio_choice: None,
                 text_choice: None,
             },
@@ -901,6 +947,33 @@ mod seek_tests {
         let outcomes = shared.lock().seeks.take();
         assert_eq!(outcomes.len(), 1);
         assert_eq!(outcomes[0].result, Err(SeekRejection::TimedOut));
+        assert!(!player.seeking);
+        player.shut();
+    }
+
+    #[test]
+    fn startup_preserves_pending_seek_and_rate_until_preroll() {
+        let shared = Shared::default();
+        let mut player = player_at_rate(1.5);
+        player.phase = Phase::Starting;
+        player.seek(Duration::from_secs(7), SeekMode::Fast, &shared);
+        assert_eq!(player.intended_position(), Duration::from_secs(7));
+        assert_eq!(player.rate, 1.0);
+        assert_eq!(player.restart().rate, 1.5);
+        player.seek_started = Some(Instant::now() - Duration::from_secs(6));
+        player.check_seek_timeout(&shared);
+        assert_eq!(player.phase, Phase::Ready);
+        assert!(!shared.lock().status.loading);
+        player.shut();
+    }
+
+    #[test]
+    fn async_done_outside_a_seek_changes_nothing() {
+        let shared = Shared::default();
+        let mut player = player();
+        player.flushed = false;
+        player.on_async_done(&shared);
+        assert!(!player.flushed);
         assert!(!player.seeking);
         player.shut();
     }
