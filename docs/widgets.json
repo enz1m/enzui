@@ -395,7 +395,7 @@
     "group": "Text input and forms",
     "summary": "bounded integer or decimal spinbox with ± buttons.",
     "api": ["enz_stepper", "enz_stepper_u32", "EnzStepper"],
-    "keywords": ["12 hour clock", "24 hour clock", "am pm", "caption beside stepper", "click and type a time", "clock input", "decimal spinbox", "decimal stepper", "edit a time", "editable spinbox", "end time", "float stepper", "fractional value", "hh:mm", "increment decrement", "number out of range", "number stepper", "numeric stepper", "plus minus number", "spin button", "spinbox", "start time", "stepper value padding", "time entry", "time input", "time of day", "time picker", "time spinner", "type a number", "type a time", "u32 stepper", "unsigned count", "value touching the button"],
+    "keywords": ["12 hour clock", "24 hour clock", "am pm", "caption beside stepper", "click and type a time", "clock input", "decimal spinbox", "decimal stepper", "edit a time", "edit the readout", "editable spinbox", "end time", "float stepper", "formatted stepper", "fractional value", "hh:mm", "increment decrement", "number out of range", "number stepper", "numeric stepper", "plus minus number", "spin button", "spinbox", "start time", "stepper value padding", "time entry", "time input", "time of day", "time picker", "time spinner", "type a number", "type a time", "u32 stepper", "unsigned count", "value touching the button"],
     "wiring_contract": false
   },
   {

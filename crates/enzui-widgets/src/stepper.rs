@@ -15,7 +15,9 @@
 //! publish numeric semantics but advertise no routed value actions.
 //! A nonblank value-text override changes display and announced text while
 //! retaining numeric semantics. The value can be typed in place unless
-//! [`EnzStepper::editable`] turns it off; [`EnzStepper::range_error`] marks a
+//! [`EnzStepper::editable`] turns it off. A value-text override turns it off
+//! by default, since the typed draft is the raw number, unless
+//! [`EnzStepper::parse_value_text`] reads the text as written; [`EnzStepper::range_error`] marks a
 //! typed value outside the range before it is clamped.
 
 use enzui_core::collect::SemanticsNode;
@@ -429,7 +431,14 @@ pub struct EnzStepper<'a, Message, Value = i32> {
     decimals: Option<u32>,
     chrome: StepperChrome,
     on_change: Box<dyn Fn(Value) -> Message + 'a>,
+    parse: Option<ValueParser<'a, Value>>,
 }
+
+/// Reads typed text as a stepper value; see [`EnzStepper::parse_value_text`].
+type ValueParser<'a, Value> = Box<dyn Fn(&str) -> Option<Value> + 'a>;
+
+/// Reads a typed draft as a value, in the control's integer units.
+type DraftParser<'a> = Box<dyn Fn(&str) -> Option<i64> + 'a>;
 
 /// The namespace stepper ids are derived under when no [`EnzStepper::id`] or
 /// [`EnzStepper::id_prefix`] is supplied. The key is the stepper's label.
@@ -460,7 +469,7 @@ pub fn enz_stepper<'a, Message: Clone + 'a, Value: StepperValue + 'a>(
         chrome: StepperChrome {
             wrap: false,
             enabled: true,
-            editable: true,
+            editable: None,
             range_error: false,
             label: String::new(),
             label_visible: false,
@@ -472,6 +481,7 @@ pub fn enz_stepper<'a, Message: Clone + 'a, Value: StepperValue + 'a>(
             value_width: None,
         },
         on_change: Box::new(on_change),
+        parse: None,
     }
 }
 
@@ -525,9 +535,23 @@ impl<'a, Message: Clone + 'a, Value: StepperValue + 'a> EnzStepper<'a, Message, 
     }
     /// Whether the value can be typed: clicking it (or typing a digit while
     /// the stepper has focus) edits it in place; Enter or clicking away
-    /// commits, clamped to the range, and Escape cancels. Defaults to true.
+    /// commits, clamped to the range, and Escape cancels. Defaults to true,
+    /// except with a [`Self::value_text`] override: the typed draft is the raw
+    /// number, which then would not match the readout (minutes shown as a
+    /// clock time would turn into `540`), so such a stepper only steps unless
+    /// [`Self::parse_value_text`] reads the text back or this is set.
     pub fn editable(mut self, editable: bool) -> Self {
-        self.chrome.editable = editable;
+        self.chrome.editable = Some(editable);
+        self
+    }
+    /// Read typed text with `parse`, the inverse of [`Self::value_text`], so a
+    /// formatted readout can be edited as written: clicking it edits the
+    /// shown text (`9:00 AM`) rather than the raw number, any characters can
+    /// be typed, and Enter or clicking away commits `parse`'s value, clamped
+    /// to the range. Text it cannot read (`None`) keeps the old value.
+    /// Turns typing on unless [`Self::editable`] is set to false.
+    pub fn parse_value_text(mut self, parse: impl Fn(&str) -> Option<Value> + 'a) -> Self {
+        self.parse = Some(Box::new(parse));
         self
     }
     /// Paint the error style while a typed value lies outside the range
@@ -616,12 +640,16 @@ impl<'a, Message: Clone + 'a, Value: StepperValue + 'a> EnzStepper<'a, Message, 
             .map_or_else(|| scale(decimals) as i64, units)
             .max(1);
         let on_change = self.on_change;
+        let parse = self.parse.map(|parse| -> DraftParser<'a> {
+            Box::new(move |text| parse(text).map(|value| value.to_units(decimals)))
+        });
         self.chrome.assemble(
             units(self.value).clamp(min, max),
             (min, max),
             step,
             decimals,
             Box::new(move |value| on_change(Value::from_units(value, decimals))),
+            parse,
         )
     }
 }
@@ -639,7 +667,8 @@ impl<'a, Message: Clone + 'a, Value: StepperValue + 'a> From<EnzStepper<'a, Mess
 struct StepperChrome {
     wrap: bool,
     enabled: bool,
-    editable: bool,
+    /// Explicit typing choice; unset follows whether the readout is the number.
+    editable: Option<bool>,
     range_error: bool,
     label: String,
     label_visible: bool,
@@ -668,6 +697,7 @@ impl StepperChrome {
         step: i64,
         decimals: u32,
         on_change: Box<dyn Fn(i64) -> Message + 'a>,
+        parse: Option<DraftParser<'a>>,
     ) -> Element<'a, Message> {
         let pinned = self.tokens;
         let size = self.size;
@@ -703,7 +733,10 @@ impl StepperChrome {
             step,
             decimals,
             wrap: self.wrap,
-            editable: self.editable,
+            editable: self
+                .editable
+                .unwrap_or_else(|| !has_override || parse.is_some()),
+            parse,
             range_error: self.range_error,
             display,
             announced_value,
@@ -806,6 +839,8 @@ struct SpinBoxControl<'a, Message> {
     step: i64,
     wrap: bool,
     editable: bool,
+    /// Reads a draft written like the readout; without it a draft is a number.
+    parse: Option<DraftParser<'a>>,
     range_error: bool,
     display: String,
     announced_value: Option<String>,
@@ -941,19 +976,30 @@ impl<'a, Message> SpinBoxControl<'a, Message> {
         shell.request_redraw();
     }
 
+    /// `text` read as a value: by the caller's parser when there is one,
+    /// otherwise as a number. Not yet clamped.
+    fn read_text(&self, text: &str) -> Option<i64> {
+        match &self.parse {
+            Some(parse) => parse(text),
+            None => scaled_parse(text, self.decimals),
+        }
+    }
+
     /// The value typed so far, clamped to the range, or the current value
-    /// when the draft is not a number.
+    /// when the draft cannot be read.
     fn draft_value(&self, edit: &Edit) -> i64 {
         if edit.fresh {
             return self.value;
         }
-        scaled_set_value(&edit.draft, self.min, self.max, self.decimals).unwrap_or(self.value)
+        self.read_text(&edit.draft)
+            .map_or(self.value, |value| value.clamp(self.min, self.max))
     }
 
-    /// Whether the draft is a number outside the range.
+    /// Whether the draft is a value outside the range.
     fn draft_out_of_range(&self, edit: &Edit) -> bool {
         !edit.fresh
-            && scaled_parse(&edit.draft, self.decimals)
+            && self
+                .read_text(&edit.draft)
                 .is_some_and(|value| value < self.min || value > self.max)
     }
 
@@ -1024,7 +1070,13 @@ impl<'a, Message> SpinBoxControl<'a, Message> {
                     .as_deref()
                     .unwrap_or_default()
                     .chars()
-                    .filter(|c| is_value_char(*c))
+                    .filter(|c| {
+                        if self.parse.is_some() {
+                            !c.is_control()
+                        } else {
+                            is_value_char(*c)
+                        }
+                    })
                     .collect();
                 if typed.is_empty() {
                     return false;
@@ -1064,7 +1116,12 @@ impl<'a, Message> SpinBoxControl<'a, Message> {
                 wide_adjust(self.value, -self.step, self.min, self.max, self.wrap)
             }
             ValueIntent::Increment | ValueIntent::Decrement => return None,
-            ValueIntent::Set(text) => scaled_set_value(text, self.min, self.max, self.decimals)?,
+            // The numeric contract first; then text written like the readout.
+            ValueIntent::Set(text) => scaled_set_value(text, self.min, self.max, self.decimals)
+                .or_else(|| {
+                    let parse = self.parse.as_ref()?;
+                    Some(parse(text)?.clamp(self.min, self.max))
+                })?,
         };
         (v != self.value).then_some(v)
     }
@@ -1295,10 +1352,13 @@ where
                     // A press on the value starts typing it, the old value
                     // selected so the first character replaces it.
                     if seg == Segment::None && self.editable && state.edit.is_none() {
-                        state.edit = Some(Edit {
-                            draft: format_scaled(self.value, self.decimals),
-                            fresh: true,
-                        });
+                        // A parsed readout is edited as written.
+                        let draft = if self.parse.is_some() {
+                            self.display.clone()
+                        } else {
+                            format_scaled(self.value, self.decimals)
+                        };
+                        state.edit = Some(Edit { draft, fresh: true });
                     }
                     shell.capture_event();
                     shell.request_redraw();
