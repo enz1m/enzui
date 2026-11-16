@@ -775,18 +775,21 @@ where
                     radius: radius.into(),
                 },
                 shadow: Shadow::default(),
-                snap: false,
+                // On the pixel grid: a track at a fractional position renders
+                // one end crisp and flat-looking and the other soft.
+                snap: true,
             },
             Background::Color(colors.track),
         );
 
-        // Track and thumb retain fractional coordinates so their centres agree
-        // at fractional display scales and while the thumb slides.
         let thumb_y = bounds.y + (g.track_height - g.thumb) / 2.0;
         let progress = state
             .anim
             .interpolate(0.0, 1.0, state.now())
             .clamp(0.0, 1.0);
+        // A resting thumb snaps with the track so its insets match; a sliding
+        // one keeps fractional coordinates so the motion stays smooth.
+        let thumb_sliding = progress > 0.0 && progress < 1.0;
         let thumb_x = self.thumb_x_at(bounds.x, progress, resolve_direction(self.direction));
 
         // Sanitise the shadow at the paint boundary: `SwitchColors` fields
@@ -816,7 +819,7 @@ where
                     radius: (g.thumb / 2.0).into(),
                 },
                 shadow,
-                snap: false,
+                snap: !thumb_sliding,
             },
             Background::Color(colors.thumb),
         );
