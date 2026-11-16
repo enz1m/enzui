@@ -34,6 +34,8 @@ pub(super) struct Worker {
     muted: bool,
     subtitle_size: SubtitleSize,
     subtitle_delay_ns: i64,
+    subtitle_inset: u32,
+    subtitle_layout: super::subtitles::Layout,
     frame_limit: Option<(u32, u32)>,
     /// Whether the current generation's stalled pipeline was already reopened.
     reopened: bool,
@@ -55,6 +57,8 @@ impl Worker {
             muted: false,
             subtitle_size: SubtitleSize::Medium,
             subtitle_delay_ns: 0,
+            subtitle_inset: 0,
+            subtitle_layout: Default::default(),
             frame_limit: None,
             reopened: false,
         }
@@ -163,8 +167,21 @@ impl Worker {
                 let ms = self.subtitle_delay_ns / 1_000_000;
                 self.shared.update(|status| status.subtitle_delay_ms = ms);
             }
+            Command::SubtitleInset(inset) => {
+                self.subtitle_inset = inset;
+                self.subtitle_layout.update(
+                    self.frame_limit,
+                    inset,
+                    self.player.as_ref().map(|player| &player.playbin),
+                );
+            }
             Command::FrameLimit(limit) => {
                 self.frame_limit = limit;
+                self.subtitle_layout.update(
+                    limit,
+                    self.subtitle_inset,
+                    self.player.as_ref().map(|player| &player.playbin),
+                );
                 if let Some(player) = &self.player {
                     player.scale_caps.set_property("caps", scale_caps(limit));
                 }
@@ -316,7 +333,7 @@ impl Worker {
             .property("uri", &uri)
             .build()
             .map_err(|_| missing_element("playbin3"))?;
-        super::subtitles::install(&playbin);
+        super::subtitles::install(&playbin, self.subtitle_layout.clone());
         // Subtitles show by being selected, so the overlay stays enabled.
         set_flag(&playbin, "text", true);
         set_flag(&playbin, "deinterlace", true);

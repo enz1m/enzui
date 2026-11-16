@@ -154,6 +154,7 @@ pub(crate) enum SettingKind {
     Mute,
     SubtitleSize,
     SubtitleDelay,
+    SubtitleInset,
     FrameLimit,
 }
 
@@ -174,6 +175,7 @@ pub(crate) enum Command {
     SubtitleFile(Generation, Option<PathBuf>),
     SubtitleSize(SubtitleSize),
     SubtitleDelay(Duration, bool),
+    SubtitleInset(u32),
     FrameLimit(Option<(u32, u32)>),
     Bus,
     Shutdown,
@@ -506,6 +508,16 @@ impl VideoService {
         self.send(Command::FrameLimit(limit));
     }
 
+    /// Reserve bottom viewport pixels for controls beneath plain-text subtitles.
+    /// Uses the viewport supplied to [`Self::set_frame_limit`], accounting for
+    /// letterboxing. Zero preserves renderer placement; authored ASS and bitmap
+    /// subtitles retain their own layout. Requests coalesce without blocking.
+    pub fn set_subtitle_bottom_inset(&self, pixels: u32) {
+        self.send(Command::SubtitleInset(
+            pixels.min(crate::media::rgba::MAX_EDGE),
+        ));
+    }
+
     /// The current status.
     #[must_use]
     pub fn status(&self) -> VideoStatus {
@@ -581,6 +593,7 @@ impl Command {
             Self::SetMute(_) => Some(SettingKind::Mute),
             Self::SubtitleSize(_) => Some(SettingKind::SubtitleSize),
             Self::SubtitleDelay(..) => Some(SettingKind::SubtitleDelay),
+            Self::SubtitleInset(_) => Some(SettingKind::SubtitleInset),
             Self::FrameLimit(_) => Some(SettingKind::FrameLimit),
             _ => None,
         }
