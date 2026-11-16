@@ -20,6 +20,7 @@ const HEADER_LIMIT: usize = 16 * 1024;
 // Bound concurrent handshakes so partial unauthenticated requests cannot grow workers or monopolize admission.
 const ADMISSION_SLOTS: usize = 4;
 const RELAY_BUFFER: usize = 64 * 1024;
+const RELAY_WAKE: Duration = Duration::from_millis(50);
 // Release an orphaned upstream after this idle period when no read budget exists.
 const ORPHAN_IDLE_FALLBACK_MS: u64 = 30_000;
 
@@ -240,7 +241,10 @@ fn accept_loop(listener: &TcpListener, context: &Arc<ServeContext>) {
                     }
                 }
             }
-            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => thread::sleep(POLL),
+            // Drop connects to the listener to interrupt this readiness wait.
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                wait_readable(listener);
+            }
             Err(_) => {
                 record_error(&context.error, refused("the pinned media proxy failed"));
                 break;
@@ -471,6 +475,7 @@ fn relay(
     let mut last_io = Instant::now();
     let mut client_eof = false;
     let mut upstream_eof = false;
+    let mut buf = vec![0u8; RELAY_BUFFER];
 
     loop {
         // Poll cancellation independently of establishment deadlines; clientless tunnels also use orphan idle expiry.
@@ -484,8 +489,7 @@ fn relay(
         }
         let mut progressed = false;
         if !client_eof && to_upstream.len() < RELAY_BUFFER {
-            let mut buf = [0u8; 8192];
-            let room = (RELAY_BUFFER - to_upstream.len()).min(buf.len());
+            let room = RELAY_BUFFER - to_upstream.len();
             match client.read(&mut buf[..room]) {
                 Ok(0) => {
                     client_eof = true;
@@ -500,8 +504,7 @@ fn relay(
             }
         }
         if !upstream_eof && to_client.len() < RELAY_BUFFER {
-            let mut buf = [0u8; 8192];
-            let room = (RELAY_BUFFER - to_client.len()).min(buf.len());
+            let room = RELAY_BUFFER - to_client.len();
             match upstream.read(&mut buf[..room]) {
                 Ok(0) => {
                     upstream_eof = true;
@@ -542,8 +545,55 @@ fn relay(
             return Ok(());
         }
         if !progressed {
-            thread::sleep(POLL);
+            wait_ready(
+                &client,
+                &upstream,
+                [
+                    !client_eof && to_upstream.len() < RELAY_BUFFER,
+                    !to_client.is_empty(),
+                    !upstream_eof && to_client.len() < RELAY_BUFFER,
+                    !to_upstream.is_empty(),
+                ],
+            );
         }
+    }
+}
+
+fn wait_readable(listener: &TcpListener) {
+    use rustix::event::{PollFd, PollFlags, Timespec, poll};
+    let mut fds = [PollFd::new(listener, PollFlags::IN)];
+    let timeout = Timespec {
+        tv_sec: 0,
+        tv_nsec: i64::try_from(RELAY_WAKE.as_nanos()).unwrap_or(50_000_000),
+    };
+    if poll(&mut fds, Some(&timeout)).is_err() {
+        thread::sleep(POLL);
+    }
+}
+
+// Interest order: client read/write, upstream read/write; the timeout bounds cancellation latency.
+fn wait_ready(client: &TcpStream, upstream: &TcpStream, interest: [bool; 4]) {
+    use rustix::event::{PollFd, PollFlags, Timespec, poll};
+    let flags = |read: bool, write: bool| {
+        let mut flags = PollFlags::empty();
+        if read {
+            flags |= PollFlags::IN;
+        }
+        if write {
+            flags |= PollFlags::OUT;
+        }
+        flags
+    };
+    let mut fds = [
+        PollFd::new(client, flags(interest[0], interest[1])),
+        PollFd::new(upstream, flags(interest[2], interest[3])),
+    ];
+    let timeout = Timespec {
+        tv_sec: 0,
+        tv_nsec: i64::try_from(RELAY_WAKE.as_nanos()).unwrap_or(50_000_000),
+    };
+    if poll(&mut fds, Some(&timeout)).is_err() {
+        thread::sleep(POLL);
     }
 }
 
