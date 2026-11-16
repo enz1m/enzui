@@ -242,7 +242,7 @@ pub fn enz_preferences_row<'a, Message: Clone + 'a>(
         icon: "",
         property_style: false,
         enabled: true,
-        field_size: crate::text_field::TextFieldSize::Sm,
+        field_size: crate::text_field::TextFieldSize::Md,
         field_error: None,
         id: None,
         id_prefix: None,
@@ -342,7 +342,7 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
         });
         self
     }
-    /// Sets the shared entry/password size tier, defaulting to [`Sm`](crate::text_field::TextFieldSize::Sm).
+    /// Sets the shared entry/password size tier, defaulting to [`Md`](crate::text_field::TextFieldSize::Md), the size of a standalone field.
     /// The field height contributes to the row floor; it does not change accessory widths.
     pub fn field_size(mut self, size: crate::text_field::TextFieldSize) -> Self {
         self.field_size = size;
@@ -480,8 +480,10 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
                 enzui_theme::WeightRung::Semibold,
             )
         } else {
+            // A setting's title reads at body weight, as in the platform
+            // settings apps; size and the muted subtitle carry the hierarchy.
             (
-                enzui_theme::WeightRung::Semibold,
+                enzui_theme::WeightRung::Regular,
                 enzui_theme::WeightRung::Regular,
             )
         };
