@@ -488,12 +488,16 @@ impl VideoService {
         }
     }
 
-    /// Play the audio track at `index` in [`VideoStatus::audio_tracks`].
+    /// Play the audio track at `index` in [`VideoStatus::audio_tracks`]. The
+    /// pipeline re-prerolls at the current position once the switch lands, so
+    /// queued audio of the previous track does not keep playing.
     pub fn select_audio(&self, index: i32) {
         self.send(Command::SelectAudio(self.generation, index));
     }
 
-    /// Show the embedded subtitle track at `index`, or none.
+    /// Show the embedded subtitle track at `index`, or none. Playback never
+    /// pauses or seeks for it: a newly shown track appears from its next cue,
+    /// and turning subtitles off hides them without changing the streams.
     pub fn select_subtitle(&self, index: Option<i32>) {
         self.send(Command::SelectSubtitle(self.generation, index));
     }

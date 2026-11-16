@@ -107,13 +107,18 @@ impl Worker {
                         if !self.handle(command) {
                             break 'run;
                         }
-                        Vec::new()
                     }
-                    Err(_) => std::mem::take(&mut slot.settings),
+                    Err(_) => {
+                        waiting = std::mem::take(&mut slot.controls);
+                        waiting.append(&mut slot.settings);
+                        break;
+                    }
                 }
             }
-            for setting in waiting {
-                let _ = self.handle(setting);
+            for command in waiting {
+                if !self.handle(command) {
+                    break 'run;
+                }
             }
             if self.shared.lock().closed {
                 break;
@@ -215,9 +220,7 @@ impl Worker {
                 self.with_player(generation, |player, _| player.set_rate(rate));
             }
             Command::SelectAudio(generation, index) => {
-                self.with_player(generation, |player, shared| {
-                    player.select_audio(index, shared);
-                });
+                self.with_player(generation, |player, _| player.select_audio(index));
             }
             Command::SelectSubtitle(generation, index) => {
                 self.with_player(generation, |player, shared| {
@@ -332,7 +335,8 @@ impl Worker {
             .property("uri", &uri)
             .build()
             .map_err(|_| missing_element("playbin3"))?;
-        super::subtitles::install(&playbin, self.subtitle_layout.clone());
+        let silence = super::subtitles::Silence::default();
+        super::subtitles::install(&playbin, self.subtitle_layout.clone(), silence.clone());
         // Subtitles show by being selected, so the overlay stays enabled.
         set_flag(&playbin, "text", true);
         set_flag(&playbin, "deinterlace", true);
@@ -445,6 +449,7 @@ impl Worker {
         }
         Ok(Built {
             playbin,
+            silence,
             scale_caps,
             bus_wake,
             proxy,

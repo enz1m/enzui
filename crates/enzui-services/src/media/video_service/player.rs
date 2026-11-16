@@ -45,6 +45,7 @@ pub(super) struct Player {
     pub(super) generation: Generation,
     pub(super) source: MediaSource,
     pub(super) playbin: gst::Element,
+    silence: super::subtitles::Silence,
     pub(super) scale_caps: gst::Element,
     pub(super) phase: Phase,
     pub(super) target: Target,
@@ -74,6 +75,8 @@ pub(super) struct Player {
     streams: Vec<Stream>,
     audio_choice: Option<String>,
     text_choice: Option<String>,
+    text_stream: Option<String>,
+    resync_audio: bool,
 }
 
 pub(super) struct Start {
@@ -87,6 +90,7 @@ pub(super) struct Start {
 
 pub(super) struct Built {
     pub(super) playbin: gst::Element,
+    pub(super) silence: super::subtitles::Silence,
     pub(super) scale_caps: gst::Element,
     pub(super) bus_wake: Arc<AtomicBool>,
     pub(super) proxy: Option<PinnedProxy>,
@@ -106,6 +110,7 @@ impl Player {
             generation,
             source,
             playbin: built.playbin,
+            silence: built.silence,
             scale_caps: built.scale_caps,
             phase: Phase::Opening,
             target: start.target,
@@ -131,7 +136,9 @@ impl Player {
             collection: None,
             streams: Vec::new(),
             audio_choice: start.audio_choice,
+            text_stream: start.text_choice.clone(),
             text_choice: start.text_choice,
+            resync_audio: false,
         }
     }
 
@@ -406,14 +413,15 @@ impl Player {
             .map(Stream::origin)
     }
 
-    pub(super) fn select_audio(&mut self, index: i32, shared: &Shared) {
+    pub(super) fn select_audio(&mut self, index: i32) {
         let chosen = usize::try_from(index)
             .ok()
             .and_then(|index| self.audio_streams().nth(index))
             .map(|stream| stream.id.clone());
         if chosen.is_some() && chosen != self.audio_choice {
             self.audio_choice = chosen;
-            self.apply_selection(shared);
+            self.apply_selection();
+            self.resync_audio = self.phase == Phase::Ready;
         }
     }
 
@@ -422,14 +430,33 @@ impl Player {
             .and_then(|index| usize::try_from(index).ok())
             .and_then(|index| self.embedded_text().nth(index))
             .map(|stream| stream.id.clone());
-        if chosen != self.text_choice {
-            self.text_choice = chosen;
-            self.apply_selection(shared);
+        if chosen == self.text_choice {
+            return;
         }
+        self.text_choice = chosen;
+        if let Some(chosen) = &self.text_choice
+            && self.text_stream.as_ref() != Some(chosen)
+        {
+            self.text_stream = Some(chosen.clone());
+            self.apply_selection();
+        }
+        self.silence.set(self.text_choice.is_none(), &self.playbin);
+        let current = self.current_subtitle();
+        shared.update(|status| status.current_subtitle = current);
     }
 
-    // Re-preroll after selection so buffered data does not delay the change.
-    fn apply_selection(&mut self, shared: &Shared) {
+    fn current_subtitle(&self) -> Option<i32> {
+        let choice = self.text_choice.as_ref()?;
+        if self.subtitle_file.is_some() {
+            return None;
+        }
+        self.embedded_text()
+            .position(|stream| &stream.id == choice)
+            .and_then(|index| i32::try_from(index).ok())
+    }
+
+    // Flushing during stream reconfiguration can deadlock playsink.
+    fn apply_selection(&mut self) {
         let mut ids: Vec<&str> = Vec::new();
         if let Some(video) = self.streams.iter().find(|s| s.is(gst::StreamType::VIDEO)) {
             ids.push(&video.id);
@@ -437,7 +464,7 @@ impl Player {
         if let Some(audio) = &self.audio_choice {
             ids.push(audio);
         }
-        if let Some(text) = &self.text_choice {
+        if let Some(text) = &self.text_stream {
             ids.push(text);
         }
         if ids.is_empty() {
@@ -445,11 +472,6 @@ impl Player {
         }
         self.playbin
             .send_event(gst::event::SelectStreams::new(&ids));
-        if self.phase == Phase::Ready
-            && let Some(position) = self.position()
-        {
-            self.seek(position, SeekMode::Accurate, shared);
-        }
     }
 
     fn on_collection(&mut self, collection: gst::StreamCollection, shared: &Shared) {
@@ -478,7 +500,13 @@ impl Player {
         } else {
             keep(&self.text_choice, &self.streams)
         };
-        self.apply_selection(shared);
+        self.text_stream = self
+            .text_choice
+            .clone()
+            .or_else(|| keep(&self.text_stream, &self.streams))
+            .or_else(|| self.embedded_text().next().map(|stream| stream.id.clone()));
+        self.silence.set(self.text_choice.is_none(), &self.playbin);
+        self.apply_selection();
     }
 
     // Republish late tags without resending stream selection.
@@ -530,14 +558,24 @@ impl Player {
             .position(|stream| ids.contains(&stream.id))
             .and_then(|index| i32::try_from(index).ok());
         let current_subtitle = self
-            .embedded_text()
-            .position(|stream| ids.contains(&stream.id))
-            .filter(|_| self.subtitle_file.is_none())
-            .and_then(|index| i32::try_from(index).ok());
+            .current_subtitle()
+            .filter(|_| self.text_stream.as_ref().is_some_and(|id| ids.contains(id)));
         shared.update(|status| {
             status.current_audio = current_audio;
             status.current_subtitle = current_subtitle;
         });
+        let audio_live = self
+            .audio_choice
+            .as_ref()
+            .is_some_and(|choice| ids.contains(choice));
+        if self.resync_audio
+            && audio_live
+            && self.phase == Phase::Ready
+            && let Some(position) = self.position()
+        {
+            self.resync_audio = false;
+            self.seek(position, SeekMode::Accurate, shared);
+        }
     }
 
     fn publish_video_info(&mut self, shared: &Shared) {
@@ -795,6 +833,7 @@ mod seek_tests {
             MediaSource::local("fixture.flv"),
             Built {
                 playbin,
+                silence: super::super::subtitles::Silence::default(),
                 scale_caps,
                 bus_wake: Arc::new(AtomicBool::new(false)),
                 proxy: None,

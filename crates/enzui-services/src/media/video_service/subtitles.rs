@@ -2,6 +2,7 @@
 
 use gstreamer as gst;
 use gstreamer::prelude::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Default)]
@@ -97,8 +98,41 @@ impl Placement {
     }
 }
 
-pub(super) fn install(playbin: &gst::Element, layout: Layout) {
+// Keep the text pad connected while muted: sparse streams can block playsink during pad changes.
+#[derive(Clone, Default)]
+pub(super) struct Silence(Arc<AtomicBool>);
+
+impl Silence {
+    pub(super) fn set(&self, silent: bool, playbin: &gst::Element) {
+        self.0.store(silent, Ordering::Relaxed);
+        if let Some(bin) = playbin.downcast_ref::<gst::Bin>() {
+            for overlay in bin
+                .iterate_recurse()
+                .into_iter()
+                .flatten()
+                .filter(|element| {
+                    element
+                        .factory()
+                        .is_some_and(|factory| factory.name() == "subtitleoverlay")
+                })
+            {
+                overlay.set_property("silent", silent);
+            }
+        }
+    }
+}
+
+pub(super) fn install(playbin: &gst::Element, layout: Layout, silence: Silence) {
     playbin.connect("deep-element-added", false, move |values| {
+        if let Some(element) = values
+            .get(2)
+            .and_then(|value| value.get::<gst::Element>().ok())
+            && element
+                .factory()
+                .is_some_and(|factory| factory.name() == "subtitleoverlay")
+        {
+            element.set_property("silent", silence.0.load(Ordering::Relaxed));
+        }
         if let Some(element) = values
             .get(2)
             .and_then(|value| value.get::<gst::Element>().ok())
@@ -222,7 +256,7 @@ mod tests {
         ] {
             let pipeline = gst::Pipeline::new();
             if installed {
-                install(pipeline.upcast_ref(), Layout::default());
+                install(pipeline.upcast_ref(), Layout::default(), Silence::default());
             }
             let overlay = gst::ElementFactory::make("subtitleoverlay")
                 .build()
@@ -294,7 +328,7 @@ mod tests {
         let pipeline = gst::Pipeline::new();
         let layout = Layout::default();
         layout.update(Some((640, 480)), bottom, None);
-        install(pipeline.upcast_ref(), layout);
+        install(pipeline.upcast_ref(), layout, Silence::default());
         let video = gst::ElementFactory::make("videotestsrc")
             .property_from_str("pattern", "black")
             .property("num-buffers", 1i32)
