@@ -252,6 +252,51 @@ fn track_switches_keep_playing_and_show_or_hide_subtitles() {
     );
 }
 
+#[test]
+fn a_resize_burst_keeps_frames_flowing_and_lands_on_the_final_size() {
+    assert_eq!(
+        super::worker::fitted((320, 240), Some((1920, 1080))),
+        (320, 240)
+    );
+    assert_eq!(
+        super::worker::fitted((1920, 1080), Some((960, 1080))),
+        (960, 540)
+    );
+    assert_eq!(super::worker::fitted((1920, 800), None), (1920, 800));
+    let Some((_dir, path)) = clip() else {
+        return;
+    };
+    let mut h = Harness::new();
+    h.service.load(
+        MediaSource::local(&path),
+        LoadOptions {
+            autoplay: true,
+            ..quiet()
+        },
+    );
+    h.until("playing", |h| h.status.is_playing() && h.frame.is_some());
+    let mut last_frame = Instant::now();
+    for step in 0..20u32 {
+        h.service
+            .set_frame_limit(Some((320 - step * 8, 240 - step * 6)));
+        std::thread::sleep(Duration::from_millis(10));
+        if h.service.poll().frame.is_some() {
+            last_frame = Instant::now();
+        }
+        assert!(
+            last_frame.elapsed() < Duration::from_millis(500),
+            "frames stopped during the resize"
+        );
+    }
+    h.until("final size", |h| {
+        h.frame
+            .as_ref()
+            .is_some_and(|frame| (frame.width(), frame.height()) == (168, 126))
+    });
+    let Harness { service, .. } = h;
+    assert!(service.shutdown(Duration::from_secs(5)));
+}
+
 mod controls;
 
 mod seek_outcomes;

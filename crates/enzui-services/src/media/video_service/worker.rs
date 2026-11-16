@@ -20,6 +20,44 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+#[derive(Clone, Copy)]
+struct LimitChange {
+    limit: Option<(u32, u32)>,
+    first: Instant,
+    last: Instant,
+}
+
+const LIMIT_SETTLE: Duration = Duration::from_millis(100);
+const LIMIT_SETTLE_MAX: Duration = Duration::from_millis(300);
+
+pub(super) fn fitted(natural: (u32, u32), limit: Option<(u32, u32)>) -> (u32, u32) {
+    let edge = crate::media::rgba::MAX_EDGE;
+    let (width, height) = limit.unwrap_or((edge, edge));
+    let (limit_w, limit_h) = (
+        u64::from(width.clamp(1, edge)),
+        u64::from(height.clamp(1, edge)),
+    );
+    let (w, h) = (u64::from(natural.0.max(1)), u64::from(natural.1.max(1)));
+    if w <= limit_w && h <= limit_h {
+        return natural;
+    }
+    let scaled = |value: u64, numerator: u64, denominator: u64| {
+        u32::try_from((value * numerator + denominator / 2) / denominator).unwrap_or(u32::MAX)
+    };
+    if w * limit_h >= h * limit_w {
+        (
+            u32::try_from(limit_w).unwrap_or(u32::MAX),
+            scaled(h, limit_w, w),
+        )
+    } else {
+        (
+            scaled(w, limit_h, h),
+            u32::try_from(limit_h).unwrap_or(u32::MAX),
+        )
+    }
+}
 
 // Superseded approval failures are suppressed rather than shown as playback errors.
 const SUPERSEDED: &str = "superseded";
@@ -37,6 +75,7 @@ pub(super) struct Worker {
     subtitle_inset: u32,
     subtitle_layout: super::subtitles::Layout,
     frame_limit: Option<(u32, u32)>,
+    limit_change: Option<LimitChange>,
     /// Whether the current generation's stalled pipeline was already reopened.
     reopened: bool,
 }
@@ -60,6 +99,7 @@ impl Worker {
             subtitle_inset: 0,
             subtitle_layout: Default::default(),
             frame_limit: None,
+            limit_change: None,
             reopened: false,
         }
     }
@@ -67,13 +107,22 @@ impl Worker {
     pub(super) fn run(mut self, inbox: &Receiver<Command>) {
         'run: loop {
             let active = self.player.as_ref().is_some_and(Player::is_active);
-            let next = if active {
-                match inbox.recv_timeout(
-                    self.player
-                        .as_ref()
-                        .expect("active player")
-                        .poll_interval(self.config.position_interval),
-                ) {
+            let poll = active.then(|| {
+                self.player
+                    .as_ref()
+                    .expect("active player")
+                    .poll_interval(self.config.position_interval)
+            });
+            let settle = self.limit_change.map(|_| {
+                self.limit_deadline()
+                    .saturating_duration_since(Instant::now())
+            });
+            let wait = match (poll, settle) {
+                (Some(poll), Some(settle)) => Some(poll.min(settle)),
+                (poll, settle) => poll.or(settle),
+            };
+            let next = if let Some(wait) = wait {
+                match inbox.recv_timeout(wait) {
                     Ok(command) => Some(command),
                     Err(RecvTimeoutError::Timeout) => None,
                     Err(RecvTimeoutError::Disconnected) => break,
@@ -122,6 +171,9 @@ impl Worker {
             }
             if self.shared.lock().closed {
                 break;
+            }
+            if self.limit_change.is_some() && Instant::now() >= self.limit_deadline() {
+                self.settle_frame_limit();
             }
             self.pump_bus();
             self.tick();
@@ -180,14 +232,19 @@ impl Worker {
                 );
             }
             Command::FrameLimit(limit) => {
-                self.frame_limit = limit;
-                self.subtitle_layout.update(
-                    limit,
-                    self.subtitle_inset,
-                    self.player.as_ref().map(|player| &player.playbin),
-                );
-                if let Some(player) = &self.player {
-                    player.scale_caps.set_property("caps", scale_caps(limit));
+                let now = Instant::now();
+                if self.player.is_none() {
+                    self.limit_change = None;
+                    self.apply_frame_limit(limit);
+                } else if let Some(pending) = &mut self.limit_change {
+                    pending.limit = limit;
+                    pending.last = now;
+                } else if limit != self.frame_limit {
+                    self.limit_change = Some(LimitChange {
+                        limit,
+                        first: now,
+                        last: now,
+                    });
                 }
             }
             Command::Play(generation) => self.with_player(generation, Player::play),
@@ -240,6 +297,37 @@ impl Worker {
         true
     }
 
+    fn limit_deadline(&self) -> Instant {
+        self.limit_change.map_or_else(Instant::now, |pending| {
+            (pending.last + LIMIT_SETTLE).min(pending.first + LIMIT_SETTLE_MAX)
+        })
+    }
+
+    fn settle_frame_limit(&mut self) {
+        if let Some(pending) = self.limit_change.take() {
+            self.apply_frame_limit(pending.limit);
+        }
+    }
+
+    fn apply_frame_limit(&mut self, limit: Option<(u32, u32)>) {
+        if limit == self.frame_limit {
+            return;
+        }
+        let previous = std::mem::replace(&mut self.frame_limit, limit);
+        self.subtitle_layout.update(
+            limit,
+            self.subtitle_inset,
+            self.player.as_ref().map(|player| &player.playbin),
+        );
+        let Some(player) = &self.player else {
+            return;
+        };
+        let natural = self.shared.lock().status.natural_size;
+        if natural.is_none_or(|natural| fitted(natural, previous) != fitted(natural, limit)) {
+            player.scale_caps.set_property("caps", scale_caps(limit));
+        }
+    }
+
     fn with_player(&mut self, generation: Generation, act: impl FnOnce(&mut Player, &Shared)) {
         if let Some(player) = self.player.as_mut()
             && player.generation == generation
@@ -250,6 +338,7 @@ impl Worker {
 
     fn load(&mut self, generation: Generation, source: MediaSource, options: LoadOptions) {
         self.teardown();
+        self.settle_frame_limit();
         self.reopened = false;
         self.volume = options.volume.clamp(0.0, 1.0);
         self.muted = options.muted;
