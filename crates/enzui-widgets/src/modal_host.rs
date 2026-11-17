@@ -132,7 +132,9 @@ pub fn resolve_scrim(pinned: Option<Color>, palette: &Palette) -> Color {
 /// growth below and move at half the pointer's rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum SurfacePlacement {
-    /// Centred on both axes. The right default for a dialog.
+    /// Opens centred on both axes, then keeps its top edge while its
+    /// content changes size, growing and shrinking downward; it rises only to
+    /// stay inside the window margin. The right default for a dialog.
     #[default]
     Centred,
     /// Flush against the bottom edge, centred horizontally. What an
@@ -1484,12 +1486,20 @@ impl<'a, Message: Clone + 'a> EnzModalHost<'a, Message> {
             SurfacePlacement::Centred => DIALOG_WINDOW_MARGIN,
             SurfacePlacement::BottomEdge => 0.0,
         };
-        let mut placed = container(surface)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .padding(margin)
-            .center_x(Length::Fill)
-            .align_y(self.placement.vertical_alignment());
+        // A centred dialog opens centred and then keeps its top edge while
+        // its content changes size, so switching settings pages does not
+        // move the tabs under the pointer; an edge sheet stays attached.
+        let mut placed = match self.placement {
+            SurfacePlacement::Centred => container(stable_top::StableTop::new(surface, margin))
+                .width(Length::Fill)
+                .height(Length::Fill),
+            SurfacePlacement::BottomEdge => container(surface)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .padding(margin)
+                .center_x(Length::Fill)
+                .align_y(self.placement.vertical_alignment()),
+        };
 
         if let Some(scope) = self.scope {
             placed = placed.id(scope);
@@ -1585,3 +1595,6 @@ impl<'a, Message: Clone + 'a> From<EnzModalHost<'a, Message>> for Element<'a, Me
 }
 
 include!("modal_host/dialog_stack.rs");
+
+#[path = "modal_host/stable_top.rs"]
+mod stable_top;
