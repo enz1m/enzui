@@ -7,7 +7,8 @@
 //!
 //! Placement defaults below the anchor in the Popup overlay layer. Outside
 //! click dismissal is opt-in and requires a completed press/release outside
-//! both anchor and popup. The host must apply dismissal messages to close it.
+//! both anchor and popup. Menu helpers also close an open popup when its
+//! trigger is pressed again. The host must apply dismissal messages to close it.
 //! Menu helpers also bind uncaptured Escape regardless of modifiers or repeat.
 //!
 //! A popup that opens after the first frame fades and scales in from the edge
@@ -31,6 +32,9 @@ pub struct AnchoredOverlay<'a, Message> {
     anchor_bounds: Option<Rectangle>,
     index: f32,
     dismiss: Option<Box<dyn Fn() -> Message + 'a>>,
+    /// While open, a primary press on the content publishes `dismiss`
+    /// instead of reaching it, so a trigger closes the popup it opened.
+    dismiss_on_anchor_press: bool,
     overflow: Option<PopupOverflow>,
 }
 
@@ -47,6 +51,7 @@ pub fn anchored_overlay<'a, Message: 'a>(
         anchor_bounds: None,
         index: enzui_core::overlay_layer::OverlayLayer::Popup.z_index(),
         dismiss: None,
+        dismiss_on_anchor_press: false,
         overflow: None,
     }
 }
@@ -65,6 +70,7 @@ pub fn dismissible_anchored_menu<'a, Message: Clone + 'a>(
     let anchored: Element<'a, Message> = anchored_overlay(trigger, popup)
         .placement(placement)
         .dismiss_on_outside_press(outside)
+        .dismiss_on_anchor_press(true)
         .into();
     dismiss_on_escape(anchored, open, on_dismiss)
 }
@@ -154,6 +160,19 @@ impl<'a, Message> AnchoredOverlay<'a, Message> {
     #[must_use]
     pub fn dismiss_on_outside_press(mut self, on_dismiss: impl Fn() -> Message + 'a) -> Self {
         self.dismiss = Some(Box::new(on_dismiss));
+        self
+    }
+
+    /// While open, make a primary mouse or touch press on the content publish
+    /// the [`Self::dismiss_on_outside_press`] message instead of reaching the
+    /// content, so pressing a trigger again closes the popup it opened, as a
+    /// platform menu button does. Defaults off; [`dismissible_anchored_menu`]
+    /// turns it on. Keep it off when the content is a text field or another
+    /// control that must take presses while its popup stays open. It applies
+    /// only to a popup anchored to its content, not to [`Self::anchor_bounds`].
+    #[must_use]
+    pub fn dismiss_on_anchor_press(mut self, on: bool) -> Self {
+        self.dismiss_on_anchor_press = on;
         self
     }
 
@@ -355,6 +374,29 @@ impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for AnchoredOverl
                 .downcast_mut::<BackdropState>()
                 .reveal
                 .track(event, open, shell);
+        }
+        if self.popup.is_some()
+            && self.dismiss_on_anchor_press
+            && self.anchor_bounds.is_none()
+            && !shell.is_event_captured()
+            && let Some(dismiss) = self.dismiss.as_ref()
+        {
+            let pressed_at = match event {
+                Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                    cursor.position_over(layout.bounds())
+                }
+                Event::Touch(iced::touch::Event::FingerPressed { position, .. }) => {
+                    layout.bounds().contains(*position).then_some(*position)
+                }
+                _ => None,
+            };
+            if pressed_at.is_some() {
+                // The trigger never sees the press, so it cannot reopen
+                // the popup on its release.
+                shell.publish(dismiss());
+                shell.capture_event();
+                return;
+            }
         }
         self.content.as_widget_mut().update(
             &mut tree.children[0],

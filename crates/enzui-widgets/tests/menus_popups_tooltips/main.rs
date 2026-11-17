@@ -28,6 +28,7 @@ mod context_menu_host_interaction;
 pub mod corner_probe;
 mod fade_tooltip_cancel_interaction;
 mod menu_bar;
+mod menu_trigger_toggles;
 
 mod menu_button_submenu;
 

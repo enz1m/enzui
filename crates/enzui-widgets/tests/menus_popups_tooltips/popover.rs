@@ -110,8 +110,8 @@ fn popover_publishes_routes_and_restores_exclusive_focus() {
         assert!(outside.contains(&Msg::Dismiss), "{outside:?}");
         assert_eq!(
             press_at(trigger.center()),
-            [Msg::Toggle],
-            "the trigger toggles"
+            [Msg::Dismiss],
+            "the trigger closes its open popover, whatever its own message"
         );
         assert_eq!(
             press_at(Point::new(panel.x + 4.0, panel.y + 4.0)),

@@ -995,7 +995,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "dpi"
 version = "0.1.1"
-source = "git+https://github.com/enz1m/enzim-winit.git?rev=f6ce16941bf815a438db7e628ab1126ce48e31dd#f6ce16941bf815a438db7e628ab1126ce48e31dd"
+source = "git+https://github.com/enz1m/enzim-winit.git?rev=40eeb41f8637ef1620afa377ba006874224b6d65#40eeb41f8637ef1620afa377ba006874224b6d65"
 
 [[package]]
 name = "dtor"
@@ -6021,7 +6021,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "winit"
 version = "0.30.13"
-source = "git+https://github.com/enz1m/enzim-winit.git?rev=f6ce16941bf815a438db7e628ab1126ce48e31dd#f6ce16941bf815a438db7e628ab1126ce48e31dd"
+source = "git+https://github.com/enz1m/enzim-winit.git?rev=40eeb41f8637ef1620afa377ba006874224b6d65#40eeb41f8637ef1620afa377ba006874224b6d65"
 dependencies = [
  "ahash",
  "android-activity",
