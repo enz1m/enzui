@@ -159,6 +159,7 @@ pub struct EnzStatusPage<'a, Message> {
     primary: Option<Action<Message>>,
     secondary: Option<Action<Message>>,
     primary_emphasis: ActionEmphasis,
+    secondary_kind: ButtonKind,
     artwork: Option<Element<'a, Message>>,
     has_image: bool,
     tokens: Option<StatusPageTokens>,
@@ -181,6 +182,7 @@ pub fn enz_status_page<'a, Message: Clone + 'a>(
         primary: None,
         secondary: None,
         primary_emphasis: ActionEmphasis::Suggested,
+        secondary_kind: ButtonKind::Secondary,
         artwork: None,
         has_image: false,
         tokens: None,
@@ -232,9 +234,15 @@ impl<'a, Message: Clone + 'a> EnzStatusPage<'a, Message> {
         self
     }
     /// Choose primary button emphasis; defaults to Suggested (Accent).
-    /// Neutral uses Secondary treatment, as the secondary button always does.
+    /// Neutral uses Secondary treatment, as the secondary button does by default.
     pub fn primary_action_emphasis(mut self, emphasis: ActionEmphasis) -> Self {
         self.primary_emphasis = emphasis;
+        self
+    }
+    /// Draw the secondary action as `kind` instead of the default
+    /// [`ButtonKind::Secondary`], for an app whose page actions stay flat.
+    pub fn secondary_action_kind(mut self, kind: ButtonKind) -> Self {
+        self.secondary_kind = kind;
         self
     }
     /// Namespace action widget ids with the shared action-id derivation.
@@ -370,11 +378,12 @@ impl<'a, Message: Clone + 'a> EnzStatusPage<'a, Message> {
         let action_min_w = t.action_min_width;
         let id_prefix = self.id_prefix;
         let primary_kind = self.primary_emphasis.button_kind();
+        let secondary_kind = self.secondary_kind;
         let mut action_row: Vec<Element<'a, Message>> = Vec::new();
         if let Some(s) = self.secondary {
             action_row.push(action_button(
                 s,
-                ButtonKind::Secondary,
+                secondary_kind,
                 action_min_w,
                 id_prefix.as_deref(),
             ));

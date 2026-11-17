@@ -97,6 +97,7 @@ pub enum CompactPolicy {
 pub struct EnzPageHeader<'a, Message> {
     title: String,
     primary_action: Option<Action<Message>>,
+    primary_kind: ButtonKind,
     secondary_action: Option<Action<Message>>,
     compact: CompactPolicy,
     tokens: Option<PageHeaderTokens>,
@@ -126,6 +127,12 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
     /// Set the trailing Primary action; wide uses a growable width floor, compact fills.
     pub fn primary_action(mut self, action: Action<Message>) -> Self {
         self.primary_action = Some(action);
+        self
+    }
+    /// Draw the primary action as `kind` instead of the default raised
+    /// [`ButtonKind::Primary`], for an app whose page actions stay flat.
+    pub fn primary_action_kind(mut self, kind: ButtonKind) -> Self {
+        self.primary_kind = kind;
         self
     }
     /// Set a Quiet action before the primary in traversal order.
@@ -218,6 +225,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
 
     fn build_primary(
         act: Action<Message>,
+        kind: ButtonKind,
         id_prefix: Option<&str>,
     ) -> crate::button::EnzButton<'a, Message> {
         let label = act.label().to_owned();
@@ -225,7 +233,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
         let enabled = act.is_enabled();
         let id = derive_action_id(id_prefix, act.id());
         let mut button = enz_button(label, act.into_message())
-            .kind(ButtonKind::Primary)
+            .kind(kind)
             .size(ButtonSize::Md)
             .id(id);
         if let Some(icon) = icon {
@@ -243,6 +251,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
         secondary: Option<Action<Message>>,
         t: &PageHeaderTokens,
         id_prefix: Option<&str>,
+        kind: ButtonKind,
     ) -> iced::Element<'a, Message> {
         let mut keyed: Vec<(String, iced::Element<'a, Message>)> = Vec::new();
         if let Some(act) = secondary {
@@ -253,7 +262,9 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
             let key = act.id().to_owned();
             keyed.push((
                 key,
-                Self::build_primary(act, id_prefix).fill_width(true).into(),
+                Self::build_primary(act, kind, id_prefix)
+                    .fill_width(true)
+                    .into(),
             ));
         }
         let actions_row = crate::keyed_row::keyed_row(keyed)
@@ -270,6 +281,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
         secondary: Option<Action<Message>>,
         t: &PageHeaderTokens,
         id_prefix: Option<&str>,
+        kind: ButtonKind,
     ) -> iced::Element<'a, Message> {
         let mut keyed: Vec<(String, iced::Element<'a, Message>)> = Vec::new();
         if let Some(act) = secondary {
@@ -281,7 +293,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
             keyed.push((
                 key,
                 // A wrapper floor would leave the button content leading-aligned.
-                Self::build_primary(act, id_prefix)
+                Self::build_primary(act, kind, id_prefix)
                     .min_width(t.primary_min_width)
                     .into(),
             ));
@@ -298,6 +310,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
     /// Build the header; Auto and Fit rebuild their selected arrangement during layout.
     pub fn into_element(self) -> iced::Element<'a, Message> {
         let t = self.resolved_tokens();
+        let kind = self.primary_kind;
 
         match self.compact {
             CompactPolicy::Always => {
@@ -309,6 +322,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
                     self.secondary_action,
                     &t,
                     p.as_deref(),
+                    kind,
                 )
             }
             CompactPolicy::Never => {
@@ -320,6 +334,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
                     self.secondary_action,
                     &t,
                     p.as_deref(),
+                    kind,
                 )
             }
             CompactPolicy::Fit => {
@@ -342,6 +357,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
                             wide_secondary.clone(),
                             &t,
                             wide_prefix.as_deref(),
+                            kind,
                         )
                     }),
                     Box::new(move || {
@@ -351,6 +367,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
                             compact_secondary.clone(),
                             &t,
                             compact_prefix.as_deref(),
+                            kind,
                         )
                     }),
                 ];
@@ -376,6 +393,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
                             secondary.clone(),
                             &t,
                             id_prefix.as_deref(),
+                            kind,
                         )
                     } else {
                         Self::wide_view(
@@ -384,6 +402,7 @@ impl<'a, Message: Clone + 'a> EnzPageHeader<'a, Message> {
                             secondary.clone(),
                             &t,
                             id_prefix.as_deref(),
+                            kind,
                         )
                     }
                 })
@@ -408,6 +427,7 @@ pub fn enz_page_header<'a, Message: Clone + 'a>(
     EnzPageHeader {
         title: title.into(),
         primary_action: None,
+        primary_kind: ButtonKind::Primary,
         secondary_action: None,
         compact: CompactPolicy::Auto,
         tokens: None,
