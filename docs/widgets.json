@@ -305,7 +305,7 @@
     "group": "Text input and forms",
     "summary": "a styled text input component.",
     "api": ["enz_text_field", "enz_text_field_owned", "EnzTextField"],
-    "keywords": ["cut copy paste menu", "edit a label", "edit in place", "editable value", "entry", "inline edit", "inline rename", "input", "input purpose", "numeric keyboard", "numeric value editor", "on-screen keyboard layout", "quiet field", "rename in place", "right click copy paste", "single line input", "square input corners", "text box", "text context menu", "text field", "text field radius", "text input", "undo in text field"],
+    "keywords": ["click outside to commit", "commit on blur", "cut copy paste menu", "edit a label", "edit in place", "editable value", "entry", "inline edit", "inline rename", "input", "input purpose", "numeric keyboard", "numeric value editor", "on-screen keyboard layout", "quiet field", "rename in place", "right click copy paste", "single line input", "square input corners", "text box", "text context menu", "text field", "text field radius", "text input", "undo in text field"],
     "wiring_contract": false
   },
   {
