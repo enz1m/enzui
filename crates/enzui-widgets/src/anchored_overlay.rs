@@ -153,9 +153,10 @@ impl<'a, Message> AnchoredOverlay<'a, Message> {
     }
 
     /// Publish on completed clicks outside both anchor and popup; defaults off.
-    /// Presses over either rectangle remain available to their controls. The
-    /// backdrop captures admitted outside presses and committing releases, and
-    /// mouse movement onto either hole cancels admission. No backdrop is mounted
+    /// Presses over either rectangle remain available to their controls. An
+    /// outside click is not consumed: it dismisses and also reaches the
+    /// control beneath, so it acts in one click. Mouse movement onto either
+    /// hole cancels admission. No backdrop is mounted
     /// while closed or when the anchor is outside its viewport.
     #[must_use]
     pub fn dismiss_on_outside_press(mut self, on_dismiss: impl Fn() -> Message + 'a) -> Self {

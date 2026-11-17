@@ -64,3 +64,28 @@ fn a_settings_picker_closes_when_pressed_again() {
     assert_eq!(click(picker(false), "Name"), [Msg::Open]);
     assert_eq!(click(picker(true), "Name"), [Msg::Dismiss]);
 }
+
+/// An open menu beside another control: a click on that control closes the
+/// menu and acts in the same click.
+fn menu_beside_button() -> Element<'static, Msg> {
+    iced::widget::column![
+        enz_button("Elsewhere", Msg::Pick(9)),
+        iced::widget::container(dismissible_anchored_menu(
+            enz_button("Trigger", Msg::Open),
+            Some(iced::widget::text("Popup body").into()),
+            Placement::new(Side::Bottom),
+            || Msg::Dismiss,
+        )),
+    ]
+    .spacing(20)
+    .padding(20)
+    .into()
+}
+
+#[test]
+fn an_outside_click_closes_the_menu_and_reaches_its_target() {
+    assert_eq!(
+        click(menu_beside_button(), "Elsewhere"),
+        [Msg::Dismiss, Msg::Pick(9)]
+    );
+}

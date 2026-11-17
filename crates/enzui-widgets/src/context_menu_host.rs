@@ -12,7 +12,8 @@
 //!
 //! The default suppresses ordinary target events while presenting; point hosts
 //! forward unclaimed events. Neither mode hides target semantics or child overlays.
-//! Menu keys and plain Tab stay with the menu, and outside presses are consumed.
+//! Menu keys and plain Tab stay with the menu. An outside press closes it and
+//! still reaches its target, so it acts in one click.
 //! An optional [`EnzContextMenuHost::header`] adds caller-owned controls above
 //! root commands; Tab then wraps within the deepest menu surface.
 //! Routed requests drain during ordinary updates, after child dispatch; captured
@@ -40,6 +41,9 @@ use iced::{Element, Event, Length, Point, Rectangle, Size, Vector};
 #[derive(Debug, Default)]
 struct State {
     context_menu_pending: bool,
+    /// An outside press went through to the target while the menu showed;
+    /// its release follows it there even if the menu has not closed yet.
+    forwarded_press: bool,
     /// The menu fading and scaling in as it opens.
     reveal: crate::anchored_overlay::PopupReveal,
 }
@@ -47,6 +51,7 @@ struct State {
 impl tree::Interactive for State {
     fn cancel_interaction(&mut self) {
         self.context_menu_pending = false;
+        self.forwarded_press = false;
     }
 }
 
@@ -243,11 +248,12 @@ pub enum ContextMenuEvent {
     },
 }
 
-/// Dismiss on Escape or an outside press and consume the dismissing press.
-/// The policy does not itself install a scrim or make background widgets inert.
+/// Dismiss on Escape or an outside press, which still reaches its target so
+/// it acts in the same click. The policy does not install a scrim or make
+/// background widgets inert.
 #[must_use]
 pub const fn context_menu_dismiss_policy() -> DismissPolicy {
-    DismissPolicy::popover().modality(enzui_core::dismissal::Modality::Modal)
+    DismissPolicy::popover()
 }
 
 /// Add a target origin and translation to a local point.

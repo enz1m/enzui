@@ -409,3 +409,47 @@ fn escape_dismisses_an_open_menu() {
     assert!(!host.state.is_open());
     assert!(host.menu_bounds().is_none());
 }
+
+/// A primary click outside an open menu closes it and still reaches what it
+/// landed on, for the ordinary and the point host alike: the background
+/// control below and the host's own target both act in that one click.
+#[test]
+fn an_outside_click_dismisses_and_reaches_its_target() {
+    let click = |at: Point| {
+        vec![
+            Event::Mouse(mouse::Event::CursorMoved { position: at }),
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)),
+            Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)),
+        ]
+    };
+    for live_target in [false, true] {
+        for (at, expected) in [
+            (Point::new(600.0, 600.0), Msg::BackgroundPressed),
+            (Point::new(110.0, 60.0), Msg::TargetPressed),
+        ] {
+            let mut host = Host::offset();
+            host.live_target = live_target;
+            host.point_at(parked());
+            host.focus_target();
+            let _ = host.frame(&press(Named::ContextMenu, false));
+            assert!(host.state.is_open(), "precondition: the menu is open");
+            let menu = host.menu_bounds().expect("menu laid out");
+            assert!(!menu.contains(at), "{at:?} lies outside the menu {menu:?}");
+            host.messages.clear();
+
+            host.point_at(at);
+            let events = host.frame(&click(at));
+
+            assert_eq!(
+                events,
+                vec![ContextMenuEvent::Dismissed(CloseCause::OutsideClick)],
+                "live {live_target}: the click closes the menu"
+            );
+            assert!(
+                host.messages.contains(&expected),
+                "live {live_target}: the click also reaches {expected:?}: {:?}",
+                host.messages
+            );
+        }
+    }
+}

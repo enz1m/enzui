@@ -1287,12 +1287,12 @@ pub fn menu_placement(side: Side, direction: Direction) -> Placement {
         .direction(direction)
 }
 
-/// Dismiss on outside press or Escape, consuming an unclaimed closing press.
-/// The policy's modal input setting does not add a scrim, background inertness
-/// or modal accessibility semantics.
+/// Dismiss on outside press or Escape. The closing press is not consumed: it
+/// still reaches the control beneath, so it acts in the same click.
 #[must_use]
 pub const fn menu_dismiss_policy() -> DismissPolicy {
-    DismissPolicy::popover().modality(enzui_core::dismissal::Modality::Modal)
+    // Pass-through: the press that closes the menu still acts on its target.
+    DismissPolicy::popover()
 }
 
 /// Return an outside-click close event for an open menu when the policy dismisses.

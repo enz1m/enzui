@@ -91,6 +91,65 @@ where
         // A press the menu took arrives levitating: a control here holding focus lets
         // go, so the pressed menu row is the only focus owner.
         let press_taken_above = press_belongs_to_dismissal && cursor.is_levitating();
+        // An outside primary press closes the menu and still reaches the
+        // target it was aimed at, so it acts in one click. A right press
+        // keeps the path below, which reopens the menu where it landed.
+        let outside_press = press_belongs_to_dismissal
+            && !press_taken_above
+            && self.enabled
+            && !matches!(
+                event,
+                Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right))
+            );
+        if outside_press {
+            let position = match event {
+                Event::Touch(iced::touch::Event::FingerPressed { position, .. }) => Some(*position),
+                _ => cursor.position(),
+            };
+            if let Some(position) = position
+                && dismissal::on_press(
+                    context_menu_dismiss_policy(),
+                    &dismiss_regions(None),
+                    position,
+                )
+                .closes()
+            {
+                shell.publish((self.on_event)(ContextMenuEvent::Dismissed(
+                    CloseCause::OutsideClick,
+                )));
+            }
+            tree.state.downcast_mut::<State>().forwarded_press = true;
+            self.target.as_widget_mut().update(
+                &mut tree.children[0],
+                event,
+                layout,
+                cursor,
+                renderer,
+                shell,
+                viewport,
+            );
+            crate::frame_routing::refresh_opaque_child(&self.target, tree, 0);
+            return;
+        }
+        // The release of a press forwarded above completes its click.
+        let completes_forwarded = matches!(
+            event,
+            Event::Mouse(mouse::Event::ButtonReleased(_))
+                | Event::Touch(iced::touch::Event::FingerLifted { .. })
+        ) && std::mem::take(&mut tree.state.downcast_mut::<State>().forwarded_press);
+        if presenting && completes_forwarded {
+            self.target.as_widget_mut().update(
+                &mut tree.children[0],
+                event,
+                layout,
+                cursor,
+                renderer,
+                shell,
+                viewport,
+            );
+            crate::frame_routing::refresh_opaque_child(&self.target, tree, 0);
+            return;
+        }
         if !presenting || press_taken_above || (self.live_target && !press_belongs_to_dismissal) {
             self.target.as_widget_mut().update(
                 &mut tree.children[0],
