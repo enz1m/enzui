@@ -32,7 +32,7 @@ futures = { version = "0.3", default-features = false, features = ["std", "execu
 [features]
 default = ["wayland"]
 x11 = ["iced_winit/x11"]
-wayland = ["iced_winit/wayland"]
+wayland = ["iced_winit/wayland", "iced_winit/wayland-dlopen", "iced_winit/wayland-decorations"]
 # Clipboard images travel as encoded PNG between applications while iced hands
 # the program raw RGBA, so the conversion is only compiled where it is wanted.
 image = ["dep:image", "iced_core/image", "iced_winit/image"]

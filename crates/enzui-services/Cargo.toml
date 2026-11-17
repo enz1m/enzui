@@ -63,7 +63,7 @@ gstreamer-video = { version = "0.23", optional = true }
 curl = { version = "0.4.50", default-features = false, features = ["ssl"], optional = true }
 curl-sys = { version = "0.4.90", default-features = false, features = ["ssl"], optional = true }
 pdfium-render = { version = "0.9", optional = true, default-features = false, features = ["pdfium_latest", "thread_safe"] }
-zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a", version = "5", optional = true, default-features = false, features = ["tokio"] }
+zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716", version = "5", optional = true, default-features = false, features = ["tokio"] }
 tokio = { version = "1", optional = true, features = ["rt", "sync", "time"] }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
 sha2 = { workspace = true, optional = true }

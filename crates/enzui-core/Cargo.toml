@@ -46,7 +46,7 @@ enzui-test-support = { workspace = true, optional = true }
 # vocabulary stays renderer- and platform-neutral; the winit adapter turns it
 # on to build the AT-SPI tree. Version matches the vendored iced's
 # accesskit_winit 0.33, which depends on accesskit 0.24.
-accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.24", optional = true }
+accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.25", optional = true }
 image = { version = "0.25", optional = true, default-features = false, features = ["png", "jpeg"] }
 roxmltree = { version = "0.20", optional = true }
 usvg = { version = "0.45", optional = true, default-features = false }
@@ -57,12 +57,12 @@ ashpd = { version = "=0.13.13", optional = true, default-features = false, featu
 # features. Optional and reached only through those features, so the default
 # build gains nothing. The exact transport family matches ashpd and AT-SPI;
 # consumer workspace patches select the public fork, as docs/dependencies.md describes.
-zbus = { version = "=5.18.0", optional = true, default-features = false, features = ["tokio"] }
+zbus = { version = "=5.19.0", optional = true, default-features = false, features = ["tokio"] }
 # AT-SPI also names these packages directly. Exact registry constraints make
 # Cargo unify them with the workspace's Git patches, including fresh consumers
 # whose registry index contains a newer, incompatible transport type family.
-zbus_names = { version = "=4.3.4", optional = true }
-zvariant = { version = "=5.13.1", optional = true }
+zbus_names = { version = "=4.3.5", optional = true }
+zvariant = { version = "=5.15.1", optional = true }
 # The OS background-broker witness is a JSON string (application-dbus).
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
@@ -122,7 +122,7 @@ iced_winit = { workspace = true, features = ["x11", "wayland"] }
 # remain runnable from this workspace. Its explicit Tokio selection shadows the
 # product edge during core's tests without changing accesskit_unix's upstream
 # async-io default; product code reaches the protocol solely through iced_winit.
-accesskit_unix = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.22.1", default-features = false, features = ["tokio"] }
+accesskit_unix = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.24.1", default-features = false, features = ["tokio"] }
 
 [dev-dependencies]
 proc-macro2 = "1"
@@ -137,7 +137,7 @@ enzui-test-support = { workspace = true }
 # compile staged sync/rename and parent sync to their plain filesystem
 # operations with no test hook.
 enzui-security = { workspace = true, features = ["fault-injection", "secret-observer"] }
-iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "de6159248c487dddaeec639fe4ec0e7c41c1de2b", version = "0.15.0-dev", default-features = false, features = [
+iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6", version = "0.15.0-dev", default-features = false, features = [
     "tiny-skia",
     "x11",
     "wayland",
@@ -145,7 +145,7 @@ iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "de6159
 # `collect::frame`'s unit tests build a `responsive` view to prove the
 # size argument reaches layout. `iced_widget` does not depend on this crate, so
 # there is no dependency cycle.
-iced_widget = { git = "https://github.com/enz1m/enzim-iced.git", rev = "de6159248c487dddaeec639fe4ec0e7c41c1de2b", version = "0.15.0-dev" }
+iced_widget = { git = "https://github.com/enz1m/enzim-iced.git", rev = "a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6", version = "0.15.0-dev" }
 
 [[test]]
 name = "desktop_notification_portal"

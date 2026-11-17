@@ -363,6 +363,9 @@ pub(crate) fn import(
                 usage: wgpu::TextureUsages::TEXTURE_BINDING,
                 view_formats: &[],
             },
+            // The freshly created image's state, as wgpu 29 assumed for every
+            // adopted texture.
+            wgpu::TextureUses::UNINITIALIZED,
         )
     };
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());

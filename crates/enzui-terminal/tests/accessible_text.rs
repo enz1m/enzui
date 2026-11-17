@@ -13,7 +13,7 @@
 )]
 
 use accesskit_atspi_common::{
-    Adapter, AdapterCallback, AppContext, Event, InterfaceSet, NodeId as AtspiNodeId, ObjectEvent,
+    Adapter, AdapterCallback, AppContext, Event, InterfaceSet, FullNodeId as AtspiNodeId, ObjectEvent,
     WindowBounds,
 };
 use enzui_core::collect::SemanticsCollector;

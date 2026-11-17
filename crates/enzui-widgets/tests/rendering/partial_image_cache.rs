@@ -60,7 +60,11 @@ fn read(device: &wgpu::Device, queue: &wgpu::Queue, target: &wgpu::Texture) -> V
         .recv_timeout(std::time::Duration::from_secs(1))
         .unwrap()
         .unwrap();
-    let bytes = buffer.slice(..).get_mapped_range().to_vec();
+    let bytes = buffer
+        .slice(..)
+        .get_mapped_range()
+        .expect("mapped readback range")
+        .to_vec();
     buffer.unmap();
     bytes
 }

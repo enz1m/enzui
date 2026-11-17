@@ -16,7 +16,7 @@ description = "A GPU terminal view for enzUI apps: glyph atlases, instanced cell
 # one to compile, so both are on by default, as in iced.
 default = ["wayland"]
 x11 = ["iced/x11"]
-wayland = ["iced/wayland"]
+wayland = ["iced/wayland", "iced/wayland-dlopen", "iced/wayland-decorations"]
 
 [dependencies]
 bytemuck = { version = "1", features = ["derive"] }
@@ -32,8 +32,8 @@ iced_wgpu.workspace = true
 iced_test.workspace = true
 # The accessibility tests publish the terminal through the vendored AT-SPI
 # adapter the product uses (by path, as enzui-widgets does).
-accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.24" }
-accesskit_atspi_common = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.19.1" }
+accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.25" }
+accesskit_atspi_common = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.21.1" }
 atspi-common = "0.13"
 enzui-core = { workspace = true, features = ["accesskit"] }
 

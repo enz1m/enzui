@@ -5,7 +5,7 @@
 //! semantic frames through the vendored adapter used by the product path.
 
 use accesskit_atspi_common::{
-    Adapter, AdapterCallback, AppContext, Event, InterfaceSet, NodeId as AtspiNodeId, NodeIdOrRoot,
+    Adapter, AdapterCallback, AppContext, Event, InterfaceSet, FullNodeId as AtspiNodeId, NodeIdOrRoot,
     ObjectEvent, PlatformRoot, WindowBounds, next_adapter_id,
 };
 use enzui_core::collect::SemanticsCollector;

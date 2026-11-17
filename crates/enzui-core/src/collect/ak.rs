@@ -1,6 +1,6 @@
 //! Conversion from collected semantics to AccessKit tree updates and action-routing maps.
 use super::{CollectedNode, SemanticsCollector};
-use accesskit::{Node, NodeId, Rect, Role as AkRole, Tree, TreeId, TreeUpdate};
+use accesskit::{Node, NodeId, Rect, Role as AkRole, TreeId, TreeInfo, TreeUpdate};
 use iced_core::widget::Id;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -485,7 +485,7 @@ impl SemanticsCollector {
         (
             TreeUpdate {
                 nodes,
-                tree: Some(Tree::new(ROOT_ID)),
+                tree: Some(TreeInfo::new(ROOT_ID)),
                 tree_id: TreeId::ROOT,
                 focus,
             },

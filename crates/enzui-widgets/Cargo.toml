@@ -18,7 +18,7 @@ description = "enzUI widget library: styled components built on iced."
 [features]
 default = ["wayland", "desktop-portal"]
 x11 = ["iced/x11", "enzui-clipboard-runtime/x11"]
-wayland = ["iced/wayland", "enzui-clipboard-runtime/wayland"]
+wayland = ["iced/wayland", "iced/wayland-dlopen", "iced/wayland-decorations", "enzui-clipboard-runtime/wayland"]
 # Forwards `enzui-core/portal-dbus` so an app enabling this feature on
 # the *widgets* crate gets the real D-Bus backend (`DbusBackend`) and the file
 # chooser re-exports below become drivable, WITHOUT the app taking a direct
@@ -167,7 +167,7 @@ enzui-frame-check.workspace = true
 # its window compositor presents them into aged buffers.
 iced_tiny_skia.workspace = true
 iced_graphics.workspace = true
-tiny-skia = { version = "0.11", default-features = false, features = ["std"] }
+tiny-skia = { version = "0.12", default-features = false, features = ["std"] }
 bytemuck = "1"
 # The action-advertisement tests assert the *AccessKit* node a widget
 # publishes (`supports_action(Action::Click)`), not the `Semantics` field that
@@ -185,7 +185,7 @@ bytemuck = "1"
 # dev-dependency of this crate (see above), so this enables an existing
 # optional dep rather than adding a crate to the graph.
 enzui-core = { workspace = true, features = ["accesskit", "test-frame", "secret-observer", "activation-native-iced"] }
-accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.24" }
+accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.25" }
 # The *resolved Linux adapter*, so a test can assert what an AT-SPI client
 # (Orca) actually receives rather than what our collector produced. The two can
 # disagree — a property the collector sets can still be dropped on the way to
@@ -203,7 +203,7 @@ accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4
 # resolves the one instance the product path publishes through. A version
 # requirement would resolve a second, unpatched registry copy, so these tests
 # would assert against code no window ever uses.
-accesskit_atspi_common = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "e9da4a8da1825e65356f35c94325fb9438cf90d0", version = "0.19.1" }
+accesskit_atspi_common = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.21.1" }
 # The AT-SPI interface names a registration reports (already in the lock
 # through `accesskit_atspi_common`).
 atspi-common = "0.13"

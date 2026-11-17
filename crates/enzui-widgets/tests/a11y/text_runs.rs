@@ -5,7 +5,7 @@
 //! would: the text, the caret offset, the selection and character extents.
 
 use accesskit_atspi_common::{
-    Adapter, AdapterCallback, AppContext, CoordType, Event, InterfaceSet, NodeId as AtspiNodeId,
+    Adapter, AdapterCallback, AppContext, CoordType, Event, InterfaceSet, FullNodeId as AtspiNodeId,
     WindowBounds,
 };
 use enzui_core::a11y_action::{AccessibilityAction, resolve_action};
