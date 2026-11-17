@@ -1,13 +1,19 @@
-use super::{AppProcess, OwnedChild, PrivateWayland, PrivateX11, app_command, report};
+use super::{AppProcess, PrivateWayland, app_command, report};
+#[cfg(feature = "x11")]
+use super::{OwnedChild, PrivateX11};
 use enzui_core::activation::{
     ActivateWindowError, ActivationBroker, ActivationPlatform, ActivationResponse,
     InboundActivationToken, NativeActivationError,
 };
 use iced::{Element, Subscription, Task, event, window};
+#[cfg(feature = "x11")]
 use std::io::Read as _;
-use std::process::{Command, Stdio};
+#[cfg(feature = "x11")]
+use std::process::Command;
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
+#[cfg(feature = "x11")]
 pub(super) fn x11_startup_and_generated_context_keep_their_protocol() {
     let display = PrivateX11::start();
     let mut command = app_command(
@@ -92,6 +98,7 @@ pub(super) fn wayland_selects_its_field_and_rejects_x11_context() {
     }
 }
 
+#[cfg(feature = "x11")]
 fn peer_output(mut command: Command) -> String {
     let mut child = OwnedChild::spawn(
         command.stdout(Stdio::piped()).stderr(Stdio::inherit()),

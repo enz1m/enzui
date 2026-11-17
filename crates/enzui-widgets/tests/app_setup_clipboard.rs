@@ -90,6 +90,7 @@ fn main() {
             name: "native_drag_rejects_mime_actions_and_source_cancellation",
             run: native_drag::rejections_and_cancellation,
         },
+        #[cfg(feature = "x11")]
         Case {
             name: "native_activation_x11_startup_and_generated_context_keep_their_protocol",
             run: native_activation::x11_startup_and_generated_context_keep_their_protocol,
@@ -114,6 +115,7 @@ fn main() {
             name: "explicit_code_default_survives_automatic_app_setup",
             run: explicit_code_default_survives_automatic_app_setup,
         },
+        #[cfg(feature = "x11")]
         Case {
             name: "x11_app_setup_keeps_the_runtime_clipboard_path",
             run: x11_app_setup_keeps_the_runtime_clipboard_path,
@@ -320,6 +322,7 @@ impl PrivateWayland {
     }
 }
 
+#[cfg(feature = "x11")]
 struct PrivateX11 {
     _child: OwnedChild,
     display: String,
@@ -327,6 +330,7 @@ struct PrivateX11 {
     bus: PrivateBus,
 }
 
+#[cfg(feature = "x11")]
 impl PrivateX11 {
     fn start() -> Self {
         let runtime = ScratchDir::new_restricted("appx11");
@@ -580,6 +584,7 @@ fn explicit_code_default_survives_automatic_app_setup() {
     );
 }
 
+#[cfg(feature = "x11")]
 fn x11_app_setup_keeps_the_runtime_clipboard_path() {
     let display = PrivateX11::start();
     let writer = display.app("writer");
