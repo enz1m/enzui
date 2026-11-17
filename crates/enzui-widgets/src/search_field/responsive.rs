@@ -1324,6 +1324,17 @@ impl<Message> crate::overlay_adapter::LegacyOverlay<Message, iced::Theme, iced::
         } else {
             (4.0, 4.0)
         };
+        // Filters are form controls, not list rows: they keep a card's inset
+        // on every side, where results run close to the edge like a menu.
+        const FILTERS_PAD: f32 = 12.0;
+        let filters_index = self.filters_index;
+        let inset = |index: usize| {
+            if Some(index) == filters_index {
+                FILTERS_PAD.max(pad)
+            } else {
+                pad
+            }
+        };
 
         // The wide rung anchors under a field the user can see, so the
         // surface matches that field's width rather than the popover's fixed
@@ -1335,12 +1346,16 @@ impl<Message> crate::overlay_adapter::LegacyOverlay<Message, iced::Theme, iced::
             self.anchor.width.max(0.0)
         };
         let panel_width = target.min((bounds.width - 2.0 * EDGE_MARGIN).max(0.0));
-        let inner_width = (panel_width - 2.0 * pad).max(0.0);
-        let max_child_height = (bounds.height - 2.0 * EDGE_MARGIN - 2.0 * pad).max(0.0);
         let indices = self.indices();
         let mut nodes = Vec::with_capacity(indices.len());
-        let mut y = pad;
+        let first_inset = indices.first().map_or(pad, |index| inset(*index));
+        let last_inset = indices.last().map_or(pad, |index| inset(*index));
+        let max_child_height =
+            (bounds.height - 2.0 * EDGE_MARGIN - first_inset - last_inset).max(0.0);
+        let mut y = first_inset;
         for index in &indices {
+            let child_pad = inset(*index);
+            let inner_width = (panel_width - 2.0 * child_pad).max(0.0);
             let limits = layout::Limits::new(Size::ZERO, Size::new(inner_width, max_child_height))
                 .width(Length::Fixed(inner_width))
                 .height(Length::Shrink);
@@ -1350,13 +1365,13 @@ impl<Message> crate::overlay_adapter::LegacyOverlay<Message, iced::Theme, iced::
                 &limits,
             );
             let height = node.size().height;
-            nodes.push(node.move_to(Point::new(pad, y)));
+            nodes.push(node.move_to(Point::new(child_pad, y)));
             y += height + gap;
         }
         if !nodes.is_empty() {
             y -= gap;
         }
-        let intrinsic = Size::new(panel_width, y + pad);
+        let intrinsic = Size::new(panel_width, y + last_inset);
         // The legacy popover stays viewport-centred; anchored surfaces follow their trigger.
         let mut placement =
             enzui_core::placement::Placement::new(enzui_core::placement::Side::Bottom)
