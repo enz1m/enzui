@@ -747,10 +747,13 @@ impl<'a, Message: Clone + 'a> EnzPreferencesRow<'a, Message> {
                 .style_focus(move |theme: &iced::Theme, status| {
                     use crate::focus_button::FocusStatus;
                     let p = crate::theme_lookup::palette(theme);
+                    // An open menu keeps its trigger lit, so the picker reads
+                    // as the source of the menu below it.
                     let bg = match status {
                         FocusStatus::Hovered | FocusStatus::Pressed => {
                             iced::Background::Color(p.surface_hover)
                         }
+                        _ if open => iced::Background::Color(p.surface_hover),
                         _ => iced::Background::Color(iced::Color::TRANSPARENT),
                     };
                     iced::widget::button::Style {
