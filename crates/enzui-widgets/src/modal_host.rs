@@ -1486,9 +1486,6 @@ impl<'a, Message: Clone + 'a> EnzModalHost<'a, Message> {
             SurfacePlacement::Centred => DIALOG_WINDOW_MARGIN,
             SurfacePlacement::BottomEdge => 0.0,
         };
-        // A centred dialog opens centred and then keeps its top edge while
-        // its content changes size, so switching settings pages does not
-        // move the tabs under the pointer; an edge sheet stays attached.
         let mut placed = match self.placement {
             SurfacePlacement::Centred => container(stable_top::StableTop::new(surface, margin))
                 .width(Length::Fill)

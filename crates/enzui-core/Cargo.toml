@@ -45,7 +45,7 @@ enzui-test-support = { workspace = true, optional = true }
 # Optional AccessKit mapping. Off by default so the token/action/shortcut
 # vocabulary stays renderer- and platform-neutral; the winit adapter turns it
 # on to build the AT-SPI tree. Version matches the vendored iced's
-# accesskit_winit 0.33, which depends on accesskit 0.24.
+# accesskit_winit 0.34, which depends on accesskit 0.25.
 accesskit = { git = "https://github.com/enz1m/enzim-accesskit.git", rev = "7da7ac7b800fabf0bd2ba62eef23fa9117a684f4", version = "0.25", optional = true }
 image = { version = "0.25", optional = true, default-features = false, features = ["png", "jpeg"] }
 roxmltree = { version = "0.20", optional = true }

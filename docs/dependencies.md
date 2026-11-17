@@ -8,30 +8,31 @@ Cargo fetches the pinned sources automatically.
 
 | Source | Revision |
 | --- | --- |
-| [iced](https://github.com/enz1m/enzim-iced) | `de6159248c487dddaeec639fe4ec0e7c41c1de2b` |
-| [wgpu family](https://github.com/enz1m/enzim-wgpu) | `7f040c8501f6838262c90ede4edfa40940fe2de8` |
+| [iced](https://github.com/enz1m/enzim-iced) | `a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6` |
+| [wgpu family](https://github.com/enz1m/enzim-wgpu) | `c62972c9be1326882c4b4f1939d8a2713e42d210` |
 | [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `ad474131e52c0fde5979f8def2889489b50a0480` |
-| [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `eeaaa5585fbb1bac004ca398cfad957fec6be5f3` |
+| [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `0617a49e7b8a5c5c4cc572a3e98cda70ff1be89f` |
 | [winit](https://github.com/enz1m/enzim-winit) | `40eeb41f8637ef1620afa377ba006874224b6d65` |
-| [AccessKit family](https://github.com/enz1m/enzim-accesskit) | `e9da4a8da1825e65356f35c94325fb9438cf90d0` |
-| [zbus family](https://github.com/enz1m/enzim-zbus) | `815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a` |
+| [AccessKit family](https://github.com/enz1m/enzim-accesskit) | `7da7ac7b800fabf0bd2ba62eef23fa9117a684f4` |
+| [zbus family](https://github.com/enz1m/enzim-zbus) | `e182645b56d15e637bb6c8144f99ebfa7f900716` |
 
 The patched softbuffer source is bundled by the iced fork. The bounded native
 media source is bundled here under `vendor/gst-curl`, with input hashes and
 licenses. Neither needs a separate checkout.
 
-## An application using Alpha 0.1
+## An application using the reviewed development sources
 
-Use the `v0.1.0-alpha.1` tag for the published alpha release. Keep all enzUI
-dependencies on the same Git URL and tag, and commit the application's Cargo.lock.
-The lockfile records the resolved commit so subsequent builds reuse that snapshot.
+Keep all enzUI dependencies on the same Git URL and revision, and commit the
+application's Cargo.lock. The example pins the reviewed development snapshot.
+For the original `v0.1.0-alpha.1` release, use the dependency guide from that
+tag; its older foundation pins must remain together.
 
 ```toml
 [dependencies]
-enzui-core = { git = "https://github.com/enz1m/enzui.git", tag = "v0.1.0-alpha.1", features = ["accesskit"] }
-enzui-theme = { git = "https://github.com/enz1m/enzui.git", tag = "v0.1.0-alpha.1" }
-enzui-widgets = { git = "https://github.com/enz1m/enzui.git", tag = "v0.1.0-alpha.1" }
-iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "67f991b7442cbd79821141069c3b864cc12413f2", default-features = false, features = ["wgpu", "tokio", "advanced", "a11y", "wayland"] }
+enzui-core = { git = "https://github.com/enz1m/enzui.git", rev = "b6ad24371da9ae5088063a0a6079dab1da47cb83", features = ["accesskit"] }
+enzui-theme = { git = "https://github.com/enz1m/enzui.git", rev = "b6ad24371da9ae5088063a0a6079dab1da47cb83" }
+enzui-widgets = { git = "https://github.com/enz1m/enzui.git", rev = "b6ad24371da9ae5088063a0a6079dab1da47cb83" }
+iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6", default-features = false, features = ["wgpu", "tokio", "advanced", "a11y", "wayland", "wayland-dlopen", "wayland-decorations"] }
 ```
 
 A local application can instead use paths such as
@@ -59,12 +60,12 @@ the application's root Cargo.toml (merge with an existing table):
 ```toml
 [patch.crates-io]
 winit = { git = "https://github.com/enz1m/enzim-winit.git", rev = "40eeb41f8637ef1620afa377ba006874224b6d65" }
-zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
-zbus_macros = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
-zbus_names = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
-zvariant = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
-zvariant_derive = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
-zvariant_utils = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "815a9ca7b64aa24e14ccb6ea3f7eda97ef7bbc8a" }
+zbus = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716" }
+zbus_macros = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716" }
+zbus_names = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716" }
+zvariant = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716" }
+zvariant_derive = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716" }
+zvariant_utils = { git = "https://github.com/enz1m/enzim-zbus.git", rev = "e182645b56d15e637bb6c8144f99ebfa7f900716" }
 ```
 
 The winit override keeps AccessKit and iced on one `Window` type. The zbus

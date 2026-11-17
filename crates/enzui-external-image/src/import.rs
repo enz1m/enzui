@@ -363,8 +363,7 @@ pub(crate) fn import(
                 usage: wgpu::TextureUsages::TEXTURE_BINDING,
                 view_formats: &[],
             },
-            // The freshly created image's state, as wgpu 29 assumed for every
-            // adopted texture.
+            // Match the Vulkan image's initial layout before wgpu transitions it.
             wgpu::TextureUses::UNINITIALIZED,
         )
     };

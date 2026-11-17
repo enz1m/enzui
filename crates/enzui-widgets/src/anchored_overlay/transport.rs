@@ -429,9 +429,6 @@ impl<'b, Message> crate::overlay_adapter::LegacyOverlay<Message, iced::Theme, ic
             self.state.popup = Some(rect);
         }
         let popup = self.state.popup;
-        // An outside click closes the popup and still reaches what it was
-        // aimed at, so a sidebar row or another menu's trigger acts on the
-        // same click instead of needing a second one.
         if backdrop_step(self.state, event, cursor, self.anchor, popup) {
             shell.publish((self.on_dismiss)());
         }

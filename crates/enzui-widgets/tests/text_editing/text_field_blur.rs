@@ -90,9 +90,9 @@ fn a_focus_operation_publishes_one_blur() {
     ui.operate(&mut focusable::focus::<()>(first));
     ui.operate(&mut focusable::focus::<()>(second));
     for _ in 0..2 {
-        let _ = ui.simulate([iced::Event::Window(
-            iced::window::Event::RedrawRequested(iced::time::Instant::now()),
-        )]);
+        let _ = ui.simulate([iced::Event::Window(iced::window::Event::RedrawRequested(
+            iced::time::Instant::now(),
+        ))]);
     }
     assert_eq!(ui.into_messages().filter(|m| *m == Msg::Blurred).count(), 1);
 }

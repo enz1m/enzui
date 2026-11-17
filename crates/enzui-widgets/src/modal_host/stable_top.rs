@@ -1,10 +1,4 @@
-//! A centred dialog whose top edge stays put while its content changes size.
-//!
-//! The surface opens centred. When its height then changes (another settings
-//! page, a validation message) its top edge stays where it was and the surface
-//! grows or shrinks downward, so headers and tabs stay under the pointer. It
-//! moves up only as far as needed to keep its bottom inside the margin, never
-//! above the top margin. A new window size centres it again.
+//! Keeps dialog headers stationary across content-height changes and recentres on resize.
 
 use iced::advanced::layout::Measure as _;
 use iced::advanced::layout::{self, Layout};
@@ -15,16 +9,12 @@ use iced::advanced::widget::{Operation, Tree, tree};
 use iced::advanced::{Shell, Widget};
 use iced::{Element, Event, Length, Rectangle, Size, Vector};
 
-/// The top edge kept from the previous layout, and the space it was in.
 #[derive(Debug, Default, Clone, Copy)]
 struct Anchor {
     top: Option<f32>,
     space: Size,
 }
 
-/// The vertical offset of a `height`-tall surface in `space` with `margin`
-/// on each edge: centred when nothing is kept, otherwise the kept `top`,
-/// raised only as far as the bottom margin demands and never above the top.
 pub(super) fn stable_top(previous: Option<f32>, height: f32, space: f32, margin: f32) -> f32 {
     let centred = ((space - height) / 2.0).max(margin);
     let Some(top) = previous else {
@@ -79,7 +69,6 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for StableTop<'_, Mes
         );
         let size = node.size();
         let anchor = tree.state.downcast_mut::<Anchor>();
-        // A resized window centres the surface again.
         let previous = (anchor.space == space).then_some(anchor.top).flatten();
         let top = stable_top(previous, size.height, space.height, margin);
         *anchor = Anchor {
@@ -189,29 +178,17 @@ impl<'a, Message: 'a> From<StableTop<'a, Message>> for Element<'a, Message> {
 mod tests {
     use super::stable_top;
 
-    const SPACE: f32 = 800.0;
-    const MARGIN: f32 = 16.0;
-
     #[test]
-    fn a_new_surface_opens_centred() {
-        assert_eq!(stable_top(None, 400.0, SPACE, MARGIN), 200.0);
-    }
-
-    #[test]
-    fn a_shorter_page_keeps_the_top_edge() {
-        assert_eq!(stable_top(Some(200.0), 250.0, SPACE, MARGIN), 200.0);
-    }
-
-    #[test]
-    fn a_taller_page_grows_down_until_the_bottom_margin() {
-        assert_eq!(stable_top(Some(200.0), 500.0, SPACE, MARGIN), 200.0);
-        // 700 tall from 200 would end at 900: it rises to end at 784.
-        assert_eq!(stable_top(Some(200.0), 700.0, SPACE, MARGIN), 84.0);
-    }
-
-    #[test]
-    fn a_surface_taller_than_the_space_stays_at_the_top_margin() {
-        assert_eq!(stable_top(Some(200.0), 900.0, SPACE, MARGIN), MARGIN);
-        assert_eq!(stable_top(None, 900.0, SPACE, MARGIN), MARGIN);
+    fn placement_preserves_the_header_within_window_margins() {
+        for (previous, height, expected) in [
+            (None, 400.0, 200.0),
+            (Some(200.0), 250.0, 200.0),
+            (Some(200.0), 500.0, 200.0),
+            (Some(200.0), 700.0, 84.0),
+            (Some(200.0), 900.0, 16.0),
+            (None, 900.0, 16.0),
+        ] {
+            assert_eq!(stable_top(previous, height, 800.0, 16.0), expected);
+        }
     }
 }

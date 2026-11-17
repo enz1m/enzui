@@ -13,8 +13,8 @@
 )]
 
 use accesskit_atspi_common::{
-    Adapter, AdapterCallback, AppContext, Event, InterfaceSet, FullNodeId as AtspiNodeId, ObjectEvent,
-    WindowBounds,
+    Adapter, AdapterCallback, AppContext, Event, FullNodeId as AtspiNodeId, InterfaceSet,
+    ObjectEvent, WindowBounds,
 };
 use enzui_core::collect::SemanticsCollector;
 use enzui_terminal::{Cell, Cursor, CursorShape, Rgba, Selection, TerminalScreen, enz_terminal};

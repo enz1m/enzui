@@ -332,8 +332,7 @@ impl<'a, Message: 'a> EnzPreferencesGroup<'a, Message> {
     }
 }
 
-/// Stack a settings page's groups with a hairline divider between each pair,
-/// so the page reads as distinct sections rather than one long list.
+/// Stacks settings groups with a hairline divider between each pair.
 ///
 /// Groups keep their own titles and padding; the divider sits `Sm` from the
 /// group on either side and spans the page width. An empty iterator yields an

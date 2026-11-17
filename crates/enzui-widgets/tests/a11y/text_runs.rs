@@ -5,8 +5,8 @@
 //! would: the text, the caret offset, the selection and character extents.
 
 use accesskit_atspi_common::{
-    Adapter, AdapterCallback, AppContext, CoordType, Event, InterfaceSet, FullNodeId as AtspiNodeId,
-    WindowBounds,
+    Adapter, AdapterCallback, AppContext, CoordType, Event, FullNodeId as AtspiNodeId,
+    InterfaceSet, WindowBounds,
 };
 use enzui_core::a11y_action::{AccessibilityAction, resolve_action};
 use enzui_core::collect::{NodeIdMap, SemanticsCollector};

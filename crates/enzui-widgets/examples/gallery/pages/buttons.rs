@@ -302,7 +302,7 @@ impl Gallery {
         controls.push(k.flag_control("button.fill", "Fill width", false));
         specimen(
             "enz_button",
-            "Runs an action. The kind says how much it matters; the size follows the surrounding controls. Buttons are flat, set apart by their fill; the theme's elevation.button level (0 by default) lifts the filled kinds with a faint shadow.",
+            "Runs an action. The kind says how much it matters; the size follows the surrounding controls. Filled buttons rest on a faint contact shadow by default; elevation.button = 0 makes them flat.",
             button.into_element(),
         )
         .controls(controls)
