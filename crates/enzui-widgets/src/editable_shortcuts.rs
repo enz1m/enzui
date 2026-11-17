@@ -13,8 +13,8 @@ use std::rc::Rc;
 
 use enzui_core::EditableShortcutCatalog;
 use enzui_core::live_region::Announcement;
-use iced::widget::{column, container, row};
-use iced::{Alignment, Element, Length};
+use iced::widget::{column, container};
+use iced::{Element, Length};
 
 use crate::button::{ButtonKind, ButtonSize, enz_button_with};
 use crate::enz_text::{TextTone, enz_text};
@@ -107,7 +107,9 @@ impl<'a, Message: Clone + 'a, Command: Clone, Context>
     /// Build the pane body accepted directly by `EnzSettingsDialog::page`.
     #[must_use]
     pub fn into_element(self) -> Element<'a, Message> {
-        let mut rows = column![].spacing(8).width(Length::Fill);
+        // Rows sit edge to edge like any settings list; each keeps its own
+        // padding and hover fill.
+        let mut rows = column![].width(Length::Fill);
 
         for item in self.catalog.rows() {
             let action = item.id.to_owned();
@@ -132,38 +134,27 @@ impl<'a, Message: Clone + 'a, Command: Clone, Context>
             .into();
 
             // An icon-only reset beside a changed shortcut, as GNOME's
-            // shortcut editor does: the text button did not fit the control
-            // slot next to the key chip and showed as "Res…", and a disabled
-            // button on every unchanged row was noise. Unchanged rows keep
-            // the same width free so the key chips stay in one column.
-            let reset_slot = ButtonSize::Sm.tokens().height;
-            let reset: Element<'a, Message> = if item.overridden {
-                enz_button_with(String::new(), move || {
-                    on_reset(EditableShortcutsEvent::Reset {
-                        action: reset_action.clone(),
-                    })
-                })
-                .icon("rotate-ccw")
-                .kind(ButtonKind::Ghost)
-                .size(ButtonSize::Sm)
-                .tooltip(enzui_core::localization::text("enzui-editable-shortcuts-reset"))
-                .aria_label(enzui_core::localized!("enzui-editable-shortcuts-reset-shortcut", "action" => item.name))
-                .into()
-            } else {
-                iced::widget::Space::new()
-                    .width(Length::Fixed(reset_slot))
-                    .height(Length::Fixed(reset_slot))
-                    .into()
-            };
-
-            let controls: Element<'a, Message> = row![capture, reset]
-                .spacing(8)
-                .align_y(Alignment::Center)
-                .into();
-            let row: Element<'a, Message> = enz_preferences_row(item.name)
+            // shortcut editor does, in the row's suffix slot before the key
+            // chip. The chips keep the trailing edge, so they stay in one
+            // column without unchanged rows reserving the reset's width.
+            let mut row = enz_preferences_row(item.name)
                 .subtitle(item.section)
-                .control(controls)
-                .into();
+                .control(capture);
+            if item.overridden {
+                row = row.suffix(
+                    enz_button_with(String::new(), move || {
+                        on_reset(EditableShortcutsEvent::Reset {
+                            action: reset_action.clone(),
+                        })
+                    })
+                    .icon("rotate-ccw")
+                    .kind(ButtonKind::Ghost)
+                    .size(ButtonSize::Sm)
+                    .tooltip(enzui_core::localization::text("enzui-editable-shortcuts-reset"))
+                    .aria_label(enzui_core::localized!("enzui-editable-shortcuts-reset-shortcut", "action" => item.name)),
+                );
+            }
+            let row: Element<'a, Message> = row.into();
             let mut block = column![row].width(Length::Fill);
             if let Some((id, message)) = self.feedback
                 && id == item.id
