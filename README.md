@@ -5,8 +5,8 @@ enzUI is a Linux GUI framework for Rust, built on
 an application shell, keyboard navigation, accessibility integration and optional
 desktop services. Rendering uses wgpu with a tiny-skia software fallback.
 
-**Alpha 0.1 — `v0.1.0-alpha.1`.** Wayland is the primary platform; X11 has a reduced
-feature set. APIs may change. This first source snapshot is distributed through
+**Alpha 0.2 — `v0.2.0-alpha.1`.** Wayland is the primary platform; X11 has a reduced
+feature set. APIs may change. This source release is distributed through
 Git, not crates.io.
 
 ## Try it
@@ -19,7 +19,7 @@ public fork dependencies; no private checkout, global helper or SDK installation
 is required.
 
 ```sh
-git clone --branch v0.1.0-alpha.1 https://github.com/enz1m/enzui.git
+git clone --branch v0.2.0-alpha.1 https://github.com/enz1m/enzui.git
 cd enzui
 cargo run --locked --example app
 ```

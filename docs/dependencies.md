@@ -20,18 +20,18 @@ The patched softbuffer source is bundled by the iced fork. The bounded native
 media source is bundled here under `vendor/gst-curl`, with input hashes and
 licenses. Neither needs a separate checkout.
 
-## An application using the reviewed development sources
+## An application using Alpha 0.2
 
-Keep all enzUI dependencies on the same Git URL and revision, and commit the
-application's Cargo.lock. The example pins the reviewed development snapshot.
-For the original `v0.1.0-alpha.1` release, use the dependency guide from that
-tag; its older foundation pins must remain together.
+Keep all enzUI dependencies on the same Git URL and the `v0.2.0-alpha.1` tag,
+and commit the application's Cargo.lock. The lockfile pins the resolved source.
+For the original `v0.1.0-alpha.1` release, use that tag's dependency guide;
+its older foundation pins must remain together.
 
 ```toml
 [dependencies]
-enzui-core = { git = "https://github.com/enz1m/enzui.git", rev = "b6ad24371da9ae5088063a0a6079dab1da47cb83", features = ["accesskit"] }
-enzui-theme = { git = "https://github.com/enz1m/enzui.git", rev = "b6ad24371da9ae5088063a0a6079dab1da47cb83" }
-enzui-widgets = { git = "https://github.com/enz1m/enzui.git", rev = "b6ad24371da9ae5088063a0a6079dab1da47cb83" }
+enzui-core = { git = "https://github.com/enz1m/enzui.git", tag = "v0.2.0-alpha.1", features = ["accesskit"] }
+enzui-theme = { git = "https://github.com/enz1m/enzui.git", tag = "v0.2.0-alpha.1" }
+enzui-widgets = { git = "https://github.com/enz1m/enzui.git", tag = "v0.2.0-alpha.1" }
 iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6", default-features = false, features = ["wgpu", "tokio", "advanced", "a11y", "wayland", "wayland-dlopen", "wayland-decorations"] }
 ```
 

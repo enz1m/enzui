@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0-alpha.1 — 2026-11-17
+
+- Update the pinned rendering and accessibility stack to wgpu 30, AccessKit 0.25
+  and zbus 5.19, retaining the framework's native and rendering extensions.
+- Improve retained GPU frames, external-image reuse and media seek/playback state.
+- Align dark input fills, buttons, desktop font sizing and accent handling.
+- Add compact preferences pages, group dividers, suffix controls and editable
+  formatted steppers; stabilize dialog headers across content-size changes.
+- Let menu triggers toggle their popup and outside clicks reach their target.
+- Commit inline text edits when focus moves, including keyboard traversal.
+- Refine search popovers and resolve uncurated file type names from host metadata.
+- Correct the widget catalog API link rejected by strict documentation builds.
+
 ## 0.1.0-alpha.1 — 2026-11-08
 
 Initial public source snapshot. The API is alpha and distributed through Git;

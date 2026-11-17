@@ -1,8 +1,7 @@
-# Alpha 0.1 validation
+# Alpha 0.2 validation
 
-This alpha is distributed from the public GitHub repository with one signed
-initial commit and the signed `v0.1.0-alpha.1` tag. The framework has no crates.io
-release; `publish = false` remains until registry packaging is qualified.
+This alpha is a signed Git source release tagged `v0.2.0-alpha.1`. The framework
+has no crates.io release; `publish = false` remains until registry packaging is qualified.
 
 Rust foundations are public, revision-pinned dependencies. The bounded native
 media source and its provenance remain under `vendor/gst-curl`. See

@@ -1,6 +1,6 @@
 [package]
 name = "enzui-clipboard-runtime"
-version = "0.1.0"
+version = "0.2.0-alpha.1"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -13,7 +13,7 @@ description = "Installs the enzUI Wayland clipboard into an iced application's r
 
 
 [dependencies]
-enzui-clipboard = { version = "0.1.0", path = "../enzui-clipboard" }
+enzui-clipboard = { version = "0.2.0-alpha.1", path = "../enzui-clipboard" }
 enzui-core.workspace = true
 enzui-security.workspace = true
 # The root workspace table keeps iced_winit defaults off. Backend forwarding
