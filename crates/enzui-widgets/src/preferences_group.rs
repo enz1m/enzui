@@ -16,6 +16,8 @@
 //! stable [`EnzPreferencesGroup::owner`] for assistive-technology activation;
 //! an explicit group ID alone does not identify the action.
 //!
+//! [`enz_preferences_page`] stacks a page's groups with a divider between them.
+//!
 //! Related: [`crate::preferences_row`], [`crate::card`], [`crate::settings_dialog`].
 
 use crate::card::{CardRhythm, CardTone, enz_card};
@@ -328,6 +330,26 @@ impl<'a, Message: 'a> EnzPreferencesGroup<'a, Message> {
             .id(group_id)
             .into()
     }
+}
+
+/// Stack a settings page's groups with a hairline divider between each pair,
+/// so the page reads as distinct sections rather than one long list.
+///
+/// Groups keep their own titles and padding; the divider sits `Sm` from the
+/// group on either side and spans the page width. An empty iterator yields an
+/// empty column, and a single group draws no divider.
+pub fn enz_preferences_page<'a, Message: 'a>(
+    groups: impl IntoIterator<Item = Element<'a, Message>>,
+) -> Element<'a, Message> {
+    let gap = SpaceToken::Sm.resolve(&SpacingScale::default());
+    let mut page = iced::widget::Column::new().spacing(gap).width(Length::Fill);
+    for (index, group) in groups.into_iter().enumerate() {
+        if index > 0 {
+            page = page.push(crate::divider::enz_divider());
+        }
+        page = page.push(group);
+    }
+    page.into()
 }
 
 impl<'a, Message: Clone + 'a> From<EnzPreferencesGroup<'a, Message>> for Element<'a, Message> {

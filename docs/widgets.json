@@ -557,8 +557,8 @@
     "tier": 1,
     "group": "Text input and forms",
     "summary": "settings group (title + description) card.",
-    "api": ["enz_preferences_group", "EnzPreferencesGroup"],
-    "keywords": ["AdwPreferencesGroup", "choose an option in preferences", "compact preferences group", "pick a value", "preferences card", "preferences group", "settings group", "settings group heading weight", "settings picker", "settings row with a menu", "settings section", "value button", "week start"],
+    "api": ["enz_preferences_group", "enz_preferences_page", "EnzPreferencesGroup"],
+    "keywords": ["AdwPreferencesGroup", "choose an option in preferences", "compact preferences group", "divider between settings groups", "pick a value", "preferences card", "preferences group", "separate setting groups", "settings group", "settings group heading weight", "settings page sections", "settings picker", "settings row with a menu", "settings section", "value button", "week start"],
     "composes_with": ["preferences_row"],
     "wiring_contract": false
   },
