@@ -80,6 +80,27 @@ else:
         widget.drag_get_data(context, target, time)
         return True
 
+    pending_contexts = set()
+
+    def accepted(widget, context, _x, _y, _time):
+        target = widget.drag_dest_find_target(context, None)
+        if target is None or not (context.get_actions() & action):
+            return False
+        key = hash(context)
+        if key not in pending_contexts:
+            pending_contexts.add(key)
+
+            def ready():
+                if context.get_selected_action() != action:
+                    return True
+                widget.get_display().sync()
+                report("peer-drop-ready")
+                return False
+
+            GLib.timeout_add(5, ready)
+        return False
+
+    surface.connect("drag-motion", accepted)
     surface.connect("drag-drop", dropped)
     surface.connect("drag-data-received", receive)
 

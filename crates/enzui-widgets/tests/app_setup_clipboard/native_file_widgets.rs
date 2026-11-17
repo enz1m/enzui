@@ -91,7 +91,11 @@ pub(super) fn both_ways() {
             app.expect_line("widget-prepared");
         }
         input.move_to(destination);
-        std::thread::sleep(Duration::from_millis(150));
+        if outgoing && !protected && selection != 3 {
+            peer.expect_line("peer-drop-ready");
+        } else {
+            std::thread::sleep(Duration::from_millis(150));
+        }
         input.button(false);
         if selection == 3 {
             let deadline = std::time::Instant::now() + Duration::from_millis(400);

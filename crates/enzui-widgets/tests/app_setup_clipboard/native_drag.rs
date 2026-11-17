@@ -60,7 +60,7 @@ pub(super) fn copy_and_move_both_ways() {
             if !outgoing {
                 app.expect_line("native-accepted");
             } else {
-                std::thread::sleep(Duration::from_millis(150));
+                peer.expect_line("peer-drop-ready");
             }
             input.button(false);
             if outgoing {
@@ -247,7 +247,7 @@ fn gtk(display: &PrivateWayland, role: &str, action: &str) -> AppProcess {
         .env_remove("XAUTHORITY")
         .env_remove("AT_SPI_BUS_ADDRESS")
         .stdin(Stdio::null());
-    AppProcess::spawn(command, "GTK native peer")
+    AppProcess::spawn(command, &format!("GTK native peer ({role}, {action})"))
 }
 
 fn positions(display: &PrivateWayland, outgoing: bool) -> ((u32, u32), (u32, u32)) {
