@@ -1147,18 +1147,130 @@ pub fn kind_label(entry: &FileEntry) -> String {
 /// use enzui_widgets::file_browser::label_for_mime;
 /// assert_eq!(label_for_mime("image/png"), "PNG Image");
 /// assert_eq!(label_for_mime("text/plain; charset=utf-8"), "Plain Text");
-/// // Unknown types get a readable generated name, never the raw MIME string.
-/// // The `x-` registration-tree prefix is dropped — it is IANA bookkeeping,
-/// // not something to show a user as the word "X".
+/// // A type the table does not curate takes the host's shared-mime-info
+/// // description (`text/x-log` is "Application log"). One the host does
+/// // not know either gets a readable generated name, never the raw MIME
+/// // string; the `x-` registration-tree prefix is dropped — it is IANA
+/// // bookkeeping, not something to show a user as the word "X".
 /// assert_eq!(label_for_mime("application/x-madeup"), "Madeup");
-/// assert_eq!(label_for_mime("text/x-log"), "LOG");
 /// ```
 pub fn label_for_mime(mime: &str) -> String {
     let base = mime.split(';').next().unwrap_or(mime).trim();
     if let Some(name) = MIME_MESSAGES.iter().find(|(m, _)| *m == base) {
         return enzui_core::localization::text(name.1);
     }
+    if let Some(description) = host_mime_description(base) {
+        return description;
+    }
     fallback_mime_label(base)
+}
+
+/// The host shared-mime-info description of `mime` (its `<comment>`), in the
+/// user's language where the database has it, with the first letter raised;
+/// `None` when no database on the data path describes the type. Read once per
+/// type and cached.
+fn host_mime_description(mime: &str) -> Option<String> {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+    static CACHE: OnceLock<Mutex<HashMap<String, Option<String>>>> = OnceLock::new();
+    let (major, minor) = mime.split_once('/')?;
+    let safe = |part: &str| {
+        !part.is_empty()
+            && part
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '+' | '.' | '_'))
+            && part != "."
+            && part != ".."
+    };
+    if !safe(major) || !safe(minor) {
+        return None;
+    }
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Some(known) = cache
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(mime)
+    {
+        return known.clone();
+    }
+    let languages: Vec<String> = enzui_core::localization::preferred_locales()
+        .iter()
+        .map(ToString::to_string)
+        .collect();
+    let description = mime_data_dirs()
+        .into_iter()
+        .map(|dir| dir.join("mime").join(major).join(format!("{minor}.xml")))
+        .find_map(|path| std::fs::read_to_string(path).ok())
+        .and_then(|xml| mime_comment(&xml, &languages));
+    cache
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .insert(mime.to_owned(), description.clone());
+    description
+}
+
+fn mime_data_dirs() -> Vec<std::path::PathBuf> {
+    let mut dirs = Vec::new();
+    if let Some(home) = std::env::var_os("XDG_DATA_HOME").filter(|v| !v.is_empty()) {
+        dirs.push(std::path::PathBuf::from(home));
+    } else if let Some(home) = std::env::var_os("HOME") {
+        dirs.push(std::path::PathBuf::from(home).join(".local/share"));
+    }
+    let system = std::env::var("XDG_DATA_DIRS")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "/usr/local/share:/usr/share".to_owned());
+    dirs.extend(system.split(':').filter(|d| !d.is_empty()).map(Into::into));
+    dirs
+}
+
+/// The `<comment>` of a shared-mime-info type file for the first of
+/// `languages` it has (`de-AT` matches `de_AT`, then `de`), else the
+/// untranslated one.
+fn mime_comment(xml: &str, languages: &[String]) -> Option<String> {
+    let mut plain = None;
+    let mut localized: Vec<(String, String)> = Vec::new();
+    let mut rest = xml;
+    while let Some((_, after)) = rest.split_once("<comment") {
+        let Some((attrs, body_and_rest)) = after.split_once('>') else {
+            break;
+        };
+        let Some((body, tail)) = body_and_rest.split_once("</comment>") else {
+            break;
+        };
+        let text = decode_xml_text(body.trim());
+        if let Some(lang) = attrs
+            .split_once("xml:lang=\"")
+            .and_then(|(_, tail)| tail.split_once('"'))
+            .map(|(lang, _)| lang)
+        {
+            localized.push((lang.to_owned(), text));
+        } else if plain.is_none() {
+            plain = Some(text);
+        }
+        rest = tail;
+    }
+    let pick = languages.iter().find_map(|language| {
+        let full = language.replace('-', "_");
+        let short = full.split('_').next().unwrap_or(&full).to_owned();
+        localized
+            .iter()
+            .find(|(lang, _)| *lang == full)
+            .or_else(|| localized.iter().find(|(lang, _)| *lang == short))
+            .map(|(_, text)| text.clone())
+    });
+    let text = pick.or(plain)?;
+    let mut chars = text.chars();
+    let first = chars.next()?;
+    Some(first.to_uppercase().chain(chars).collect())
+}
+
+fn decode_xml_text(text: &str) -> String {
+    text.replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&amp;", "&")
 }
 
 fn fallback_mime_label(mime: &str) -> String {
@@ -1291,3 +1403,40 @@ const MIME_MESSAGES: &[(&str, &str)] = &[
     ("video/webm", "enzui-file-kind-webm-video"),
     ("video/x-matroska", "enzui-file-kind-matroska-video"),
 ];
+
+#[cfg(test)]
+mod mime_description_tests {
+    use super::mime_comment;
+
+    const XML: &str = r#"<?xml version="1.0"?>
+<mime-type xmlns="http://www.freedesktop.org/standards/shared-mime-info" type="text/x-log">
+  <comment>application log</comment>
+  <comment xml:lang="de">Anwendungsprotokoll</comment>
+  <comment xml:lang="pt_BR">Log de aplicativo</comment>
+</mime-type>"#;
+
+    #[test]
+    fn the_untranslated_comment_is_the_fallback() {
+        assert_eq!(
+            mime_comment(XML, &["fr-FR".to_owned()]).as_deref(),
+            Some("Application log")
+        );
+    }
+
+    #[test]
+    fn a_language_matches_by_region_then_language() {
+        assert_eq!(
+            mime_comment(XML, &["de-AT".to_owned()]).as_deref(),
+            Some("Anwendungsprotokoll")
+        );
+        assert_eq!(
+            mime_comment(XML, &["pt-BR".to_owned()]).as_deref(),
+            Some("Log de aplicativo")
+        );
+    }
+
+    #[test]
+    fn a_file_without_comments_has_none() {
+        assert_eq!(mime_comment("<mime-type/>", &[]), None);
+    }
+}
