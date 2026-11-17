@@ -110,6 +110,8 @@ pub struct EnzTextField<'a, Message> {
     /// A submit factory run when Enter is pressed, rather than a message built
     /// on every view. [`on_submit`](Self::on_submit) wins if both are set.
     on_submit_lazy: Option<Box<dyn Fn() -> Message + 'a>>,
+    /// Published when an editable field loses focus other than by Escape.
+    on_blur: Option<Message>,
     size: TextFieldSize,
     /// A text size overriding the size tier's, in logical pixels before the
     /// desktop text scale.
@@ -194,6 +196,7 @@ pub fn enz_text_field_owned<'a, Message: Clone + 'a>(
         on_input: Box::new(on_input),
         on_submit: None,
         on_submit_lazy: None,
+        on_blur: None,
         size: TextFieldSize::Md,
         text_px: None,
         radius: None,
@@ -411,6 +414,16 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
     /// [`on_submit`](Self::on_submit) wins if both are set.
     pub fn on_submit_with(mut self, on_submit: impl Fn() -> Message + 'a) -> Self {
         self.on_submit_lazy = Some(Box::new(on_submit));
+        self
+    }
+
+    /// Publish `message` when the field loses focus: a click anywhere else,
+    /// or Tab to another control. An in-place editor commits with it, so the
+    /// edit settles without Enter. Escape does not blur-commit (it is the
+    /// cancel key), and neither does the window losing focus, which leaves
+    /// the field focused. Only an editable field publishes it.
+    pub fn on_blur(mut self, message: Message) -> Self {
+        self.on_blur = Some(message);
         self
     }
 
@@ -743,6 +756,11 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
         // submit at all — the `TextFieldSemantics` wrapper produces the message
         // at the moment Enter is pressed instead.
         let on_submit_lazy = self.on_submit_lazy;
+        let blur_message = self.on_blur.filter(|_| editable);
+        let on_blur = || -> Option<Box<dyn Fn() -> Message + 'a>> {
+            let message = blur_message.clone()?;
+            Some(Box::new(move || message.clone()))
+        };
         let has_slots = self.leading.is_some() || self.trailing.is_some();
         // A read-only input always reports `Status::Disabled` to its own style
         // closure (iced derives that status from `on_input.is_none()`,
@@ -945,6 +963,7 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
             )
             .on_input_when(owns_routed_set, move |s| routed(s))
             .on_submit_with_maybe(lazy_submit)
+            .on_blur_with_maybe(on_blur())
             .into()
         } else if editable {
             // Editable path: a real, focusable TextInput.
@@ -1005,6 +1024,7 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
             )
             .on_input_when(owns_routed_set, move |s| routed(s))
             .on_submit_with_maybe(on_submit_lazy)
+            .on_blur_with_maybe(on_blur())
             .into()
         } else {
             // Disabled path: a NON-interactive display. Rendering the

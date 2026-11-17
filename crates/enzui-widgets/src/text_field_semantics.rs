@@ -37,6 +37,7 @@ pub struct TextFieldSemantics<'a, Message, Theme = iced::Theme, Renderer = iced:
     on_input: Option<Box<dyn Fn(String) -> Vec<Message> + 'a>>,
     editable: bool,
     on_submit: Option<Box<dyn Fn() -> Message + 'a>>,
+    on_blur: Option<Box<dyn Fn() -> Message + 'a>>,
 }
 
 impl<'a, Message, Theme, Renderer> TextFieldSemantics<'a, Message, Theme, Renderer> {
@@ -59,6 +60,7 @@ impl<'a, Message, Theme, Renderer> TextFieldSemantics<'a, Message, Theme, Render
             on_input: None,
             editable,
             on_submit: None,
+            on_blur: None,
         }
     }
 
@@ -116,6 +118,43 @@ impl<'a, Message, Theme, Renderer> TextFieldSemantics<'a, Message, Theme, Render
         self.on_submit = on_submit;
         self
     }
+
+    /// Run a factory when an editable child loses focus: a click elsewhere,
+    /// Tab to another control. Escape is excluded, because it means cancel,
+    /// and so is the window losing focus, which keeps the field focused.
+    pub fn on_blur_with_maybe(mut self, on_blur: Option<Box<dyn Fn() -> Message + 'a>>) -> Self {
+        self.on_blur = on_blur;
+        self
+    }
+
+    fn probe_focus(&mut self, tree: &mut Tree, layout: Layout, renderer: &Renderer) -> bool
+    where
+        Renderer: iced::advanced::Renderer,
+    {
+        let mut probe = FocusProbe {
+            target: &self.probe_id,
+            is_focused: None,
+        };
+        self.child.as_widget_mut().operate(
+            &mut tree.children[0],
+            layout,
+            &layout.bounds(),
+            renderer,
+            &mut probe,
+        );
+        probe.is_focused.unwrap_or(false)
+    }
+}
+
+/// An Escape press, which unfocuses a field to cancel rather than to leave it.
+fn is_escape(event: &Event) -> bool {
+    matches!(
+        event,
+        Event::Keyboard(iced::keyboard::Event::KeyPressed {
+            key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+            ..
+        })
+    )
 }
 
 struct FocusProbe<'a> {
@@ -277,6 +316,8 @@ where
             }
         }
 
+        let watch_blur = self.on_blur.is_some() && self.editable && !is_escape(event);
+        let focused_before = watch_blur && self.probe_focus(tree, layout, renderer);
         self.child.as_widget_mut().update(
             &mut tree.children[0],
             event,
@@ -287,6 +328,13 @@ where
             viewport,
         );
         crate::frame_routing::refresh_opaque_child(&self.child, tree, 0);
+        if focused_before
+            && !self.probe_focus(tree, layout, renderer)
+            && let Some(on_blur) = self.on_blur.as_ref()
+        {
+            shell.publish(on_blur());
+            shell.request_redraw();
+        }
         if let Some(indicator) = &self.composition_indicator {
             let mut probe = FocusProbe {
                 target: &self.probe_id,

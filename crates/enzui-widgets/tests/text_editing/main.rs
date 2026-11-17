@@ -41,6 +41,7 @@ mod spell_check_menu;
 
 mod text_area_host_hooks;
 mod text_area_paste_hook;
+mod text_field_blur;
 mod text_field_interaction;
 mod text_field_paste;
 
