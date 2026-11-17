@@ -22,6 +22,7 @@ use iced::{Element, Event, Length, Rectangle, Size, Vector};
 #[derive(Debug, Clone, Default)]
 struct SemanticsState {
     pending_value: Option<ValueIntent>,
+    pending_blur: bool,
     composing: bool,
 }
 
@@ -125,6 +126,16 @@ impl<'a, Message, Theme, Renderer> TextFieldSemantics<'a, Message, Theme, Render
     pub fn on_blur_with_maybe(mut self, on_blur: Option<Box<dyn Fn() -> Message + 'a>>) -> Self {
         self.on_blur = on_blur;
         self
+    }
+
+    fn flush_blur(&self, tree: &mut Tree, shell: &mut Shell<'_, Message>) {
+        if std::mem::take(&mut tree.state.downcast_mut::<SemanticsState>().pending_blur)
+            && self.editable
+            && let Some(on_blur) = self.on_blur.as_ref()
+        {
+            shell.publish(on_blur());
+            shell.request_redraw();
+        }
     }
 
     fn probe_focus(&mut self, tree: &mut Tree, layout: Layout, renderer: &Renderer) -> bool
@@ -257,6 +268,13 @@ where
                 operation,
             );
         });
+        if focused
+            && self.editable
+            && self.on_blur.is_some()
+            && !self.probe_focus(tree, layout, renderer)
+        {
+            tree.state.downcast_mut::<SemanticsState>().pending_blur = true;
+        }
     }
 
     fn update(
@@ -269,6 +287,7 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        self.flush_blur(tree, shell);
         {
             // Take before checking editability so disabled rebuilds discard rather than defer edits.
             let pending = tree
@@ -387,6 +406,7 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        self.flush_blur(tree, shell);
         let pending = tree
             .state
             .downcast_mut::<SemanticsState>()

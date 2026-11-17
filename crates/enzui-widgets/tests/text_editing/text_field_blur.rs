@@ -74,3 +74,25 @@ fn a_read_only_field_does_not_blur_commit() {
     });
     assert_eq!(count, 0);
 }
+
+#[test]
+fn a_focus_operation_publishes_one_blur() {
+    use iced::advanced::widget::{Id, operation::focusable};
+    let first = Id::new("blur-first");
+    let second = Id::new("blur-second");
+    let view = column![
+        enz_text_field("", "First", "draft", Msg::Changed)
+            .id(first.clone())
+            .on_blur(Msg::Blurred),
+        enz_text_field("", "Second", "", Msg::Changed).id(second.clone()),
+    ];
+    let mut ui = simulator(view);
+    ui.operate(&mut focusable::focus::<()>(first));
+    ui.operate(&mut focusable::focus::<()>(second));
+    for _ in 0..2 {
+        let _ = ui.simulate([iced::Event::Window(
+            iced::window::Event::RedrawRequested(iced::time::Instant::now()),
+        )]);
+    }
+    assert_eq!(ui.into_messages().filter(|m| *m == Msg::Blurred).count(), 1);
+}
