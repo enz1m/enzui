@@ -77,12 +77,15 @@ impl Default for PreferencesRowTokens {
         let ramp = enzui_theme::TypographyScale::ambient();
         let ui = enzui_theme::text_scale::ui_px;
         Self {
-            row_height: ui(sizing.control_height + 10.0),
-            row_height_with_subtitle: ui(sizing.control_height + 22.0),
+            // Compact desktop rhythm, as macOS System Settings rows: a
+            // control keeps a few pixels above and below, and rows read as a
+            // list rather than spaced-out cards.
+            row_height: ui(sizing.control_height + 4.0),
+            row_height_with_subtitle: ui(sizing.control_height + 14.0),
             row_radius: 6.0,
             padding_x: 10.0,
             gap: 10.0,
-            wrap_vertical_padding: 16.0,
+            wrap_vertical_padding: 10.0,
             icon_size: ui(18.0),
             icon_slot: ui(24.0),
             chevron_size: ui(12.0),
