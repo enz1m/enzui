@@ -100,6 +100,16 @@ impl LoopbackRedirect {
     /// # Errors
     /// Returns [`LoopbackError::Io`] for an invalid path or socket setup failure.
     pub fn bind(path: &str) -> Result<Self, LoopbackError> {
+        Self::bind_port(path, 0)
+    }
+
+    /// Binds a specific loopback port for a registered redirect URI.
+    /// A `port` of zero lets the kernel choose, as [`Self::bind`] does.
+    ///
+    /// # Errors
+    /// Returns [`LoopbackError::Io`] for an invalid path, a port already in
+    /// use, or socket setup failure.
+    pub fn bind_port(path: &str, port: u16) -> Result<Self, LoopbackError> {
         let path_ok = path.starts_with('/')
             && !path.contains(['?', '#'])
             && path.bytes().all(|b| b.is_ascii_graphic());
@@ -109,7 +119,7 @@ impl LoopbackRedirect {
                 "redirect path must be an absolute path with no query or fragment",
             )));
         }
-        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, port))?;
         listener.set_nonblocking(true)?;
         let address = listener.local_addr()?;
         Ok(Self {
@@ -427,4 +437,53 @@ fn respond(stream: &mut TcpStream, status: &str, body: &str) {
         body.len()
     );
     let _ = stream.flush();
+}
+
+#[cfg(test)]
+mod bind_port_tests {
+    use super::*;
+    use std::io::{Read, Write};
+
+    #[test]
+    fn a_fixed_port_receives_callbacks_and_stays_exclusively_bound() {
+        // Another process can claim an ephemeral port between releasing and binding it.
+        let redirect = (0..16)
+            .find_map(|_| {
+                let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+                let port = listener.local_addr().unwrap().port();
+                drop(listener);
+                LoopbackRedirect::bind_port("/callback", port)
+                    .ok()
+                    .map(|redirect| (redirect, port))
+            })
+            .expect("an available loopback port");
+        let (redirect, port) = redirect;
+        assert_eq!(
+            redirect.redirect_uri(),
+            format!("http://127.0.0.1:{port}/callback")
+        );
+        assert!(LoopbackRedirect::bind_port("/callback", port).is_err());
+        let browser = std::thread::spawn(move || {
+            let mut stream = TcpStream::connect((Ipv4Addr::LOCALHOST, port)).unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(3)))
+                .unwrap();
+            write!(
+                stream,
+                "GET /callback?code=sample HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
+            )
+            .unwrap();
+            let mut response = String::new();
+            stream.read_to_string(&mut response).unwrap();
+            assert!(response.starts_with("HTTP/1.1 200"));
+        });
+        let callback = redirect
+            .wait(Instant::now() + Duration::from_secs(3))
+            .unwrap();
+        assert_eq!(
+            callback.expose_secret(),
+            format!("http://127.0.0.1:{port}/callback?code=sample")
+        );
+        browser.join().unwrap();
+    }
 }
