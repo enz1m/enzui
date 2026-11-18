@@ -330,3 +330,51 @@ fn pressing_a_tile_selects_it_and_deselects_its_siblings() {
         "and the application's own selection set must hold exactly one key"
     );
 }
+
+#[test]
+fn stretched_art_tiles_keep_label_height_and_caller_geometry() {
+    let library = Library::new(4);
+    let grid = TileGrid::new(160.0, 220.0).with_spacing(28.0, 28.0);
+    let mut renderer = renderer();
+    for (grow, caller) in [
+        (false, None),
+        (true, None),
+        (true, Some(grid.stretch_for_width(402.0))),
+    ] {
+        let geometry = std::cell::Cell::new(grid.stretch_for_width(402.0));
+        let mut widget = enz_virtual_grid(&library, grid, |_, _: &Photo| -> Element<'_, u64> {
+            iced::widget::text("Album").into()
+        })
+        .adaptive_stretch(&geometry)
+        .stretch_height_with_width(grow)
+        .semantics("Albums");
+        if let Some(caller) = caller {
+            widget = widget.resolved(caller);
+        }
+        let element: Element<'_, u64> = widget.into();
+        let mut ui = iced_test::runtime::user_interface::UserInterface::build(
+            element,
+            Size::new(402.0, 600.0),
+            iced_test::runtime::user_interface::Cache::default(),
+            &mut renderer,
+        );
+        ui = ui.relayout(Size::new(402.0, 600.0), &mut renderer);
+        let expected = if grow && caller.is_none() {
+            247.0
+        } else {
+            220.0
+        };
+        assert_eq!(geometry.get().tile_height, expected);
+        let mut collector = SemanticsCollector::new();
+        ui.operate(&renderer, &mut collector as &mut dyn Operation);
+        let nodes = collector.into_collected();
+        let cells: Vec<_> = nodes
+            .iter()
+            .filter(|n| n.semantics.role == Role::GridCell)
+            .collect();
+        assert!(!cells.is_empty());
+        for cell in cells {
+            assert_eq!(cell.bounds.height, expected);
+        }
+    }
+}

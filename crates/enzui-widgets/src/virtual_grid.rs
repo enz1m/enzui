@@ -55,6 +55,7 @@ pub struct EnzVirtualGrid<'a, Message, Tile: Clone> {
     provider: &'a dyn TileProvider<Tile>,
     grid: TileGrid,
     adaptive_stretch: bool,
+    stretch_height: bool,
     resolved_geometry: Option<&'a std::cell::Cell<enzui_core::virtual_grid::ResolvedTileGrid>>,
     preresolved: Option<ResolvedTileGrid>,
     tile_builder: TileBuilder<'a, Message, Tile>,
@@ -79,6 +80,34 @@ pub struct EnzVirtualGrid<'a, Message, Tile: Clone> {
     on_scroll: Option<Rc<dyn Fn(Viewport) -> Message + 'a>>,
 }
 
+fn resolve_geometry(
+    grid: TileGrid,
+    width: f32,
+    preresolved: Option<ResolvedTileGrid>,
+    adaptive_stretch: bool,
+    stretch_height: bool,
+) -> ResolvedTileGrid {
+    match preresolved {
+        // Re-resolving stretched tiles can disagree with the caller's column allocation.
+        Some(caller) if caller.is_resolved() => caller,
+        _ if adaptive_stretch => {
+            let mut stretched = grid.stretch_for_width(width);
+            if stretch_height {
+                stretched.tile_height += (stretched.tile_width - grid.tile_width()).max(0.0);
+            }
+            stretched
+        }
+        _ => ResolvedTileGrid {
+            width,
+            columns: grid.columns_for_width(width),
+            tile_width: grid.tile_width(),
+            tile_height: grid.tile_height(),
+            gap_x: grid.gap_x(),
+            gap_y: grid.gap_y(),
+        },
+    }
+}
+
 /// Construct a virtual grid over fixed-size provider tiles.
 ///
 /// The builder runs for each available realised tile on every layout pass.
@@ -98,6 +127,7 @@ where
         provider,
         grid,
         adaptive_stretch: false,
+        stretch_height: false,
         resolved_geometry: None,
         preresolved: None,
         tile_builder: Box::new(tile_builder),
@@ -134,6 +164,15 @@ impl<'a, Message, Tile: Clone> EnzVirtualGrid<'a, Message, Tile> {
     ) -> Self {
         self.adaptive_stretch = true;
         self.resolved_geometry = Some(resolved);
+        self
+    }
+
+    /// Grow each tile's height by as much as [`Self::adaptive_stretch`] widens
+    /// it, for a tile whose square art sits over a fixed-height label: the
+    /// label stays inside the tile however wide the columns stretch. Has no
+    /// effect without adaptive stretch.
+    pub fn stretch_height_with_width(mut self, on: bool) -> Self {
+        self.stretch_height = on;
         self
     }
 
@@ -345,6 +384,7 @@ where
             provider,
             grid,
             adaptive_stretch,
+            stretch_height,
             resolved_geometry,
             preresolved,
             tile_builder,
@@ -370,19 +410,13 @@ where
         } = self;
 
         let body = responsive(move |size| {
-            // Re-resolving stretched tiles can disagree with the caller's column allocation.
-            let resolved = match preresolved {
-                Some(caller) if caller.is_resolved() => caller,
-                _ if adaptive_stretch => grid.stretch_for_width(size.width),
-                _ => ResolvedTileGrid {
-                    width: size.width,
-                    columns: grid.columns_for_width(size.width),
-                    tile_width: grid.tile_width(),
-                    tile_height: grid.tile_height(),
-                    gap_x: grid.gap_x(),
-                    gap_y: grid.gap_y(),
-                },
-            };
+            let resolved = resolve_geometry(
+                grid,
+                size.width,
+                preresolved,
+                adaptive_stretch,
+                stretch_height,
+            );
             if let Some(cell) = resolved_geometry {
                 cell.set(resolved);
             }
