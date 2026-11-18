@@ -630,19 +630,16 @@ impl<'a, Message> IndicatorLayer<'a, Message> {
                     bounds.width += radius.top_left.max(radius.bottom_left).min(cap);
                 }
             }
+            // Only edges adjoining the selected pill remain square.
+            let joins_left = i == self.selected.saturating_add(1);
+            let joins_right = i.saturating_add(1) == self.selected;
+            let left = if joins_left { 0.0 } else { tokens.pill_radius };
+            let right = if joins_right { 0.0 } else { tokens.pill_radius };
             let radius = iced::border::Radius {
-                top_left: if i == 0 { tokens.pill_radius } else { 0.0 },
-                bottom_left: if i == 0 { tokens.pill_radius } else { 0.0 },
-                top_right: if i + 1 == self.count {
-                    tokens.pill_radius
-                } else {
-                    0.0
-                },
-                bottom_right: if i + 1 == self.count {
-                    tokens.pill_radius
-                } else {
-                    0.0
-                },
+                top_left: left,
+                bottom_left: left,
+                top_right: right,
+                bottom_right: right,
             };
             // The selected pill draws above this wash, exposing only its corner cutouts.
             paint_selection_thumb(
