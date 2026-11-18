@@ -6,9 +6,12 @@ Cargo fetches the pinned sources automatically.
 
 ## Pinned foundations
 
+These revisions describe the current `main` branch. Tagged releases keep
+the foundation revisions recorded in their own dependency guides.
+
 | Source | Revision |
 | --- | --- |
-| [iced](https://github.com/enz1m/enzim-iced) | `a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6` |
+| [iced](https://github.com/enz1m/enzim-iced) | `7a1d747489d779ad55d341ef9dd91cc250004388` |
 | [wgpu family](https://github.com/enz1m/enzim-wgpu) | `c62972c9be1326882c4b4f1939d8a2713e42d210` |
 | [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `ad474131e52c0fde5979f8def2889489b50a0480` |
 | [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `0617a49e7b8a5c5c4cc572a3e98cda70ff1be89f` |
@@ -19,6 +22,10 @@ Cargo fetches the pinned sources automatically.
 The patched softbuffer source is bundled by the iced fork. The bounded native
 media source is bundled here under `vendor/gst-curl`, with input hashes and
 licenses. Neither needs a separate checkout.
+
+Applications tracking `main` should use `main` for every enzUI crate and the
+iced revision listed above, with a committed application lockfile. Keep the
+SDK and iced sources aligned with the same SDK revision.
 
 ## An application using Alpha 0.2
 
