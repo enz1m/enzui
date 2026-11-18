@@ -232,22 +232,27 @@ fn dialog_stack_owns_dismissal_replacement_and_focus_2() {
         use enzui_widgets::modal_host::SurfacePlacement;
         let mut dialogs = DialogStack::new();
         let _ = dialogs.open::<Msg>(Dialog::Settings, None);
-        let bottom_of = |placement: SurfacePlacement| {
+        let bounds_of = |placement: SurfacePlacement| {
             let view = dialogs.view_with(
                 text("page"),
                 |key| text(format!("{key:?} dialog")).into(),
                 Msg::Dialog,
                 move |_, host| host.placement(placement),
             );
-            let node = enzui_core::collect::collect_frame(view, SIZE)
+            enzui_core::collect::collect_frame(view, SIZE)
                 .collected()
                 .iter()
                 .find(|node| node.semantics.label.as_deref() == Some("Settings dialog"))
                 .map(|node| node.bounds)
-                .expect("the dialog is published");
-            node.y + node.height
+                .expect("the dialog is published")
         };
-        assert!(bottom_of(SurfacePlacement::Centred) < SIZE.height - 100.0);
-        assert!(bottom_of(SurfacePlacement::BottomEdge) > SIZE.height - 1.0);
+        let centred = bounds_of(SurfacePlacement::Centred);
+        assert!(centred.y + centred.height < SIZE.height - 100.0);
+        let bottom = bounds_of(SurfacePlacement::BottomEdge);
+        assert!(bottom.y + bottom.height > SIZE.height - 1.0);
+        let inset = bounds_of(SurfacePlacement::TopInset(80));
+        assert_eq!(inset.y, 80.0);
+        assert!((inset.center_x() - SIZE.width / 2.0).abs() < 1.0);
+        assert_eq!(bounds_of(SurfacePlacement::TopInset(0)).y, 16.0);
     }
 }

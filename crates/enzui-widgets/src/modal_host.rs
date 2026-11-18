@@ -140,6 +140,9 @@ pub enum SurfacePlacement {
     /// Flush against the bottom edge, centred horizontally. What an
     /// edge-attached sheet needs so a drag translates 1:1.
     BottomEdge,
+    /// Horizontally centred at a top inset in logical pixels, clamped to the
+    /// window margin. Content grows downward as its height changes.
+    TopInset(u16),
 }
 
 impl SurfacePlacement {
@@ -153,6 +156,7 @@ impl SurfacePlacement {
         match self {
             Self::Centred => iced::alignment::Vertical::Center,
             Self::BottomEdge => iced::alignment::Vertical::Bottom,
+            Self::TopInset(_) => iced::alignment::Vertical::Top,
         }
     }
 }
@@ -1246,8 +1250,9 @@ impl<'a, Message> EnzModalHost<'a, Message> {
         self
     }
 
-    /// Where the surface sits. Defaults to [`SurfacePlacement::Centred`];
-    /// an edge-attached sheet wants [`SurfacePlacement::BottomEdge`].
+    /// Where the surface sits. Defaults to [`SurfacePlacement::Centred`].
+    /// Use [`SurfacePlacement::TopInset`] for a command palette or
+    /// [`SurfacePlacement::BottomEdge`] for an edge-attached sheet.
     #[must_use]
     pub const fn placement(mut self, placement: SurfacePlacement) -> Self {
         self.placement = placement;
@@ -1304,8 +1309,7 @@ impl<'a, Message> EnzModalHost<'a, Message> {
         self.dialog.is_some()
     }
 
-    /// Where the surface sits: [`SurfacePlacement::Centred`] or
-    /// [`SurfacePlacement::BottomEdge`].
+    /// Placement used to align the surface within the window.
     #[must_use]
     pub const fn surface_placement(&self) -> SurfacePlacement {
         self.placement
@@ -1483,7 +1487,7 @@ impl<'a, Message: Clone + 'a> EnzModalHost<'a, Message> {
         // A centred dialog keeps a margin from the window edge, as phone
         // alerts and adaptive desktop dialogs do; an edge sheet attaches.
         let margin = match self.placement {
-            SurfacePlacement::Centred => DIALOG_WINDOW_MARGIN,
+            SurfacePlacement::Centred | SurfacePlacement::TopInset(_) => DIALOG_WINDOW_MARGIN,
             SurfacePlacement::BottomEdge => 0.0,
         };
         let mut placed = match self.placement {
@@ -1496,6 +1500,15 @@ impl<'a, Message: Clone + 'a> EnzModalHost<'a, Message> {
                 .padding(margin)
                 .center_x(Length::Fill)
                 .align_y(self.placement.vertical_alignment()),
+            SurfacePlacement::TopInset(top) => container(surface)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .padding(iced::Padding {
+                    top: f32::from(top).max(margin),
+                    ..iced::Padding::new(margin)
+                })
+                .center_x(Length::Fill)
+                .align_y(self.placement.vertical_alignment()),
         };
 
         if let Some(scope) = self.scope {
@@ -1503,7 +1516,9 @@ impl<'a, Message: Clone + 'a> EnzModalHost<'a, Message> {
         }
 
         let effect = match self.placement {
-            SurfacePlacement::Centred => crate::motion::MotionEffect::Scale,
+            SurfacePlacement::Centred | SurfacePlacement::TopInset(_) => {
+                crate::motion::MotionEffect::Scale
+            }
             SurfacePlacement::BottomEdge => {
                 crate::motion::MotionEffect::Slide(crate::motion::SlideDirection::Down)
             }
