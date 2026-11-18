@@ -291,6 +291,25 @@ fn a_quiet_field_still_edits_selects_and_copies() {
 /// iced's `text_input`; the first keystroke is inserted into the value.
 #[test]
 fn an_address_field_selects_all_on_the_focusing_click() {
+    let action_bounds = |padding| {
+        let field = enz_text_field("", "", VALUE, Msg::Draft)
+            .padding_x(padding)
+            .trailing(
+                focus_button(enz_icon("action.confirm").size(16.0), Msg::Apply)
+                    .semantics(Semantics::new(SemRole::Button).label("Apply")),
+            );
+        let view = container(field).width(Length::Fixed(FIELD_W));
+        enzui_core::collect::collect_frame(view.into(), Size::new(VIEW_W as f32, VIEW_H as f32))
+            .collected()
+            .iter()
+            .find(|node| node.semantics.label.as_deref() == Some("Apply"))
+            .expect("the trailing action is accessible")
+            .bounds
+    };
+    let tight = action_bounds(4.0);
+    let roomy = action_bounds(12.0);
+    assert!((tight.x - roomy.x - 8.0).abs() < 0.01);
+    assert_eq!(tight.size(), roomy.size());
     let field = enz_text_field("Address", "", VALUE, Msg::Draft)
         .id(Id::new(FIELD_ID))
         .select_all_on_focus(true)

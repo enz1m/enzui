@@ -116,6 +116,7 @@ pub struct EnzTextField<'a, Message> {
     /// A text size overriding the size tier's, in logical pixels before the
     /// desktop text scale.
     text_px: Option<f32>,
+    padding_x_px: Option<f32>,
     radius: Option<f32>,
     error_text: Option<Cow<'a, str>>,
     description: Option<Cow<'a, str>>,
@@ -199,6 +200,7 @@ pub fn enz_text_field_owned<'a, Message: Clone + 'a>(
         on_blur: None,
         size: TextFieldSize::Md,
         text_px: None,
+        padding_x_px: None,
         radius: None,
         error_text: None,
         description: None,
@@ -256,10 +258,22 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
         self
     }
 
-    /// The size tokens this field lays out with: the tier's, with an
-    /// independent text size and the height that fits it.
+    /// Override horizontal field padding in logical pixels.
+    ///
+    /// Defaults to the size tier's padding. Non-finite or negative values
+    /// leave the current setting unchanged.
+    pub fn padding_x(mut self, px: f32) -> Self {
+        if px.is_finite() && px >= 0.0 {
+            self.padding_x_px = Some(px);
+        }
+        self
+    }
+
     fn size_tokens(&self) -> crate::tokens::FieldSizeTokens {
-        let tier = self.size.tokens();
+        let mut tier = self.size.tokens();
+        if let Some(padding_x) = self.padding_x_px {
+            tier.padding_x = padding_x;
+        }
         let Some(px) = self.text_px else {
             return tier;
         };
