@@ -9,8 +9,10 @@ use std::rc::Rc;
 /// Theme-aware presentation of the selected tab indicator.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum TabSelectionStyle {
-    /// Opaque accent fill with contrasting ink; the default.
+    /// Neutral surface and ink with a soft shadow; the default.
     #[default]
+    RaisedNeutral,
+    /// Opaque accent fill with contrasting ink.
     FilledAccent,
     /// A tinted pill: a translucent accent wash with no outline, its label in
     /// the accent's own ink, kept readable on the wash.
@@ -43,6 +45,7 @@ fn resolve_selection_tokens(
     }
     let palette = crate::theme_lookup::palette(theme);
     let fill = match selection {
+        TabSelectionStyle::RaisedNeutral => crate::color::with_alpha(palette.surface, 1.0),
         TabSelectionStyle::TranslucentAccent => {
             crate::color::with_alpha(palette.accent, if palette.is_dark() { 0.26 } else { 0.16 })
         }
@@ -81,11 +84,23 @@ fn resolve_selection_tokens(
     tokens.selected_fg = ink;
     tokens.segment_selected_fg = ink;
     tokens.selected_edge = match selection {
-        // A tint marks the selection on its own; an outline reads as a web
-        // form control.
-        TabSelectionStyle::TranslucentAccent => iced::Color::TRANSPARENT,
+        // A tint or a lift marks the selection on its own; an outline reads
+        // as a web form control.
+        TabSelectionStyle::TranslucentAccent | TabSelectionStyle::RaisedNeutral => {
+            iced::Color::TRANSPARENT
+        }
         _ => palette.field_border_strong,
     };
+    if selection == TabSelectionStyle::RaisedNeutral {
+        tokens.selected_shadow = iced::Color::from_rgba(
+            0.0,
+            0.0,
+            0.0,
+            if palette.is_dark() { 0.35 } else { 0.18 },
+        );
+        // The choice reads in full ink; the others step back.
+        tokens.unselected_fg = palette.text_muted;
+    }
     tokens
 }
 
@@ -1104,7 +1119,15 @@ where
                     },
                     radius,
                 },
-                shadow: Shadow::default(),
+                shadow: if tokens.selected_shadow.a > 0.0 {
+                    Shadow {
+                        color: tokens.selected_shadow,
+                        offset: iced::Vector::new(0.0, 1.0),
+                        blur_radius: 3.0,
+                    }
+                } else {
+                    Shadow::default()
+                },
                 snap: false,
             },
             thumb_fill,

@@ -99,10 +99,10 @@ impl SwitcherTokens {
     /// Default rounded-rectangle strip geometry.
     pub const ROUNDED_STRIP: Self = Self {
         strip_height: crate::tokens::FieldSizeTokens::MD.height,
-        tab_height: crate::tokens::FieldSizeTokens::MD.height - 2.0 * 2.0,
+        tab_height: crate::tokens::FieldSizeTokens::MD.height - 2.0 * 3.0,
         strip_radius: 10.0,
-        tab_radius: 9.0,
-        padding: 2.0,
+        tab_radius: 7.0,
+        padding: 3.0,
         tab_padding_x: 14.0,
         label_size: 13.0,
         tab_min_width: 84.0,
@@ -111,10 +111,10 @@ impl SwitcherTokens {
         focus_ring_outset: 2.0,
     };
 
-    /// Default pill-shaped track with a two-pixel indicator inset.
+    /// Default pill-shaped track with a three-pixel indicator inset.
     pub const PILL_STRIP: Self = Self {
         strip_radius: 16.0,
-        tab_radius: 14.0,
+        tab_radius: 13.0,
         ..Self::ROUNDED_STRIP
     };
 
@@ -229,7 +229,7 @@ impl SwitcherTokens {
             text_size: self.label_size,
             icon_size: 16.0,
             radius: self.tab_radius,
-            gap: 8.0,
+            gap: 6.0,
         }
     }
 
@@ -702,7 +702,8 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
         self
     }
 
-    /// Choose theme-aware selected-indicator paint; filled accent is the default.
+    /// Choose theme-aware selected-indicator paint; a raised neutral pill on a
+    /// grey track is the default.
     /// Translucent accent exposes an enclosing glass surface. Neutral material
     /// filters its backdrop when supported and uses an opaque fallback when nested.
     pub fn selection_indicator(mut self, style: TabSelectionStyle) -> Self {
@@ -890,8 +891,11 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
             list.into()
         };
 
-        // Glass provides its own rim.
-        let border = if live && material.is_none() {
+        // A raised selection sits in a grey well, without a rim; otherwise
+        // glass provides its own rim.
+        let raised =
+            self.selection_indicator == TabSelectionStyle::RaisedNeutral && material.is_none();
+        let border = if live && material.is_none() && !raised {
             BorderStyle::Thin
         } else {
             BorderStyle::None
@@ -910,6 +914,14 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
             .border_style(border)
             .radius(t.strip_radius)
             .padding(Padding::from(t.padding));
+            let strip = if raised {
+                strip.fill_resolved(|theme| {
+                    let p = crate::theme_lookup::palette(theme);
+                    crate::color::mix(p.background, p.text, 0.08)
+                })
+            } else {
+                strip
+            };
             let strip: Element<'a, Message> = match material {
                 Some(style) => strip
                     .material(style)

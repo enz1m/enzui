@@ -50,7 +50,7 @@ The generated table below records each setter's *resolution mode* as parsed from
 
 The `from_palette` constructor is the canonical way to seed a palette-backed snapshot; `light()`/`dark()` are convenience presets, not the runtime-theme path.
 
-Source-derived counts: **86 structs, 859 public fields**.
+Source-derived counts: **86 structs, 860 public fields**.
 
 ## Token index
 
@@ -129,7 +129,7 @@ Source-derived counts: **86 structs, 859 public fields**.
 | [`StreamingTextTokens`](#streamingtexttokens) | `streaming_text` | 5 | no | yes | override |
 | [`SurfaceTokens`](#surfacetokens) | `surface` | 12 | yes | no | pin |
 | [`SwitcherTokens`](#switchertokens) | `view_switcher` | 11 | no | yes | override |
-| [`TabPillTokens`](#tabpilltokens) | `tab_pill` | 26 | yes | no | pin |
+| [`TabPillTokens`](#tabpilltokens) | `tab_pill` | 27 | yes | no | pin |
 | [`TextAreaTokens`](#textareatokens) | `text_area` | 13 | yes | no | pin |
 | [`TextGridTokens`](#textgridtokens) | `text_grid` | 5 | no | yes | pin |
 | [`TextPairTokens`](#textpairtokens) | `text_pair` | 2 | yes | no | pin |
@@ -1536,10 +1536,11 @@ Three component-owned token types have names shorter than their `<ModuleStem>Tok
 - **Palette constructor:** yes
 - **Default / preset:** no
 - **Setter resolution mode:** pin
-- **Fields (26):**
+- **Fields (27):**
   - `selected_bg`: `Color`
   - `selected_edge`: `Color`
   - `selected_fg`: `Color`
+  - `selected_shadow`: `Color`
   - `unselected_fg`: `Color`
   - `disabled_fg`: `Color`
   - `disabled_bg`: `Color`

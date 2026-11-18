@@ -11,6 +11,9 @@ pub struct TabPillTokens {
     pub selected_edge: Color,
     /// Selected-pill label + icon colour.
     pub selected_fg: Color,
+    /// Shadow under the selected pill, which lifts it off its track;
+    /// transparent for none.
+    pub selected_shadow: Color,
     /// Unselected-pill label + icon colour.
     pub unselected_fg: Color,
     /// Disabled-pill label + icon colour.
@@ -86,6 +89,7 @@ impl TabPillTokens {
                 Color::TRANSPARENT
             },
             selected_fg: selected.text,
+            selected_shadow: Color::TRANSPARENT,
             unselected_fg: p.text,
             disabled_fg: p.disabled,
             disabled_bg: p.surface_alt,
