@@ -70,15 +70,24 @@ fn narrow_cell_floor(
     };
     let padding = if fill { 0.0 } else { 2.0 * geo.pill_padding_x };
     (body
-        + busy_width(item.busy, geo.icon_size, geo.icon_gap)
+        + busy_width(
+            item.busy,
+            !item.icon.is_empty(),
+            geo.icon_size,
+            geo.icon_gap,
+        )
         + super::badge_width(&item.badge, geo.icon_gap)
         + padding)
         .max(NARROW_TAB_MIN_TARGET)
 }
 
-/// The room a busy tab's spinner takes after its label.
-pub(crate) fn busy_width(busy: bool, icon_size: f32, icon_gap: f32) -> f32 {
-    if busy { icon_gap + icon_size } else { 0.0 }
+// Icon tabs reuse their glyph slot instead of widening when busy.
+pub(crate) fn busy_width(busy: bool, has_icon: bool, icon_size: f32, icon_gap: f32) -> f32 {
+    if busy && !has_icon {
+        icon_gap + icon_size
+    } else {
+        0.0
+    }
 }
 
 /// A cell's natural width: its full label with the same chrome
@@ -106,7 +115,12 @@ fn natural_cell_width(
     };
     let padding = if fill { 0.0 } else { 2.0 * geo.pill_padding_x };
     (body
-        + busy_width(item.busy, geo.icon_size, geo.icon_gap)
+        + busy_width(
+            item.busy,
+            !item.icon.is_empty(),
+            geo.icon_size,
+            geo.icon_gap,
+        )
         + super::badge_width(&item.badge, geo.icon_gap)
         + padding)
         .max(NARROW_TAB_MIN_TARGET)
@@ -149,7 +163,8 @@ pub struct TabPillItem {
     /// The panel this tab shows, published as the tab's `controls`
     /// relation.
     panel: Option<iced::advanced::widget::Id>,
-    /// A spinner after the label while the page works on something.
+    /// A spinner while the page works on something: in the icon's place, or
+    /// after the label of a tab without one.
     busy: bool,
     /// A count after the label, drawn as a small badge.
     badge: String,
@@ -223,7 +238,8 @@ impl TabPillItem {
         self.icon = name.into();
         self
     }
-    /// Show a small spinner after the label, and report the tab busy to
+    /// Show a small spinner in place of the icon (after the label when there
+    /// is none), and report the tab busy to
     /// assistive technology, while its page works on something. The tab
     /// measures it, so the strip leaves room for it.
     pub fn busy(mut self, busy: bool) -> Self {

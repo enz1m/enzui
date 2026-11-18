@@ -466,6 +466,23 @@ pub(crate) fn badge_width(badge: &str, icon_gap: f32) -> f32 {
             .max(BADGE_HEIGHT)
 }
 
+fn tab_glyph<'a, Message: 'a>(
+    icon: &str,
+    busy: bool,
+    size: f32,
+    fg: PillInkResolver,
+) -> Element<'a, Message> {
+    if busy {
+        return crate::spinner::enz_spinner()
+            .size(size)
+            .into_element::<Message>();
+    }
+    crate::icon::enz_icon(icon)
+        .size(size)
+        .tint_resolved(move |theme: &iced::Theme| fg.color(theme))
+        .into()
+}
+
 fn build_pill<'a, Message: Clone + 'a>(
     label: &str,
     icon: &str,
@@ -538,20 +555,9 @@ fn build_pill<'a, Message: Clone + 'a>(
     } else if label.is_empty() {
         // An icon paired with an empty label renders icon-only, reserving no
         // label gap.
-        crate::icon::enz_icon(icon)
-            .size(geometry.icon_size)
-            .tint_resolved({
-                let fg = fg.clone();
-                move |theme: &iced::Theme| fg.color(theme)
-            })
-            .into()
+        tab_glyph(icon, busy, geometry.icon_size, fg.clone())
     } else {
-        let icon_el = crate::icon::enz_icon(icon)
-            .size(geometry.icon_size)
-            .tint_resolved({
-                let fg = fg.clone();
-                move |theme: &iced::Theme| fg.color(theme)
-            });
+        let icon_el = tab_glyph(icon, busy, geometry.icon_size, fg.clone());
         match label_layout {
             // Collapsed: the label and its gap slide open as the cell is
             // selected and closed as it is left, so only the chosen cell
@@ -625,8 +631,8 @@ fn build_pill<'a, Message: Clone + 'a>(
             .into()
     };
 
-    // A busy page's spinner follows its label, inside the cell.
-    let body: Element<'a, Message> = if busy {
+    // Icon tabs replace their glyph; label-only tabs reserve an additional spinner.
+    let body: Element<'a, Message> = if busy && icon.is_empty() {
         row![
             body,
             crate::spinner::enz_spinner()

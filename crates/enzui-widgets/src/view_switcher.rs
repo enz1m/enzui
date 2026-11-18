@@ -272,8 +272,8 @@ pub struct SwitcherPage {
     /// selection paint but are skipped by keyboard navigation and expose
     /// disabled tab semantics.
     pub enabled: bool,
-    /// Whether the page is working on something: a small spinner follows
-    /// its label and the tab is reported busy (default false).
+    /// Report the tab busy and replace its icon with a spinner.
+    /// Label-only tabs place the spinner after the label. Defaults to `false`.
     pub busy: bool,
 }
 
@@ -304,7 +304,7 @@ impl SwitcherPage {
         self
     }
 
-    /// Show a spinner inside the tab, after its label, while the page works
+    /// Show a spinner inside the tab, in its icon's place, while the page works
     /// on something (an install, a sync); the tab is reported busy to
     /// assistive technology. The switcher sizes the tab for it.
     pub fn with_busy(mut self, busy: bool) -> Self {
@@ -755,7 +755,12 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
                     };
                     (t.tab_width(&label, !p.icon.is_empty()) + {
                         let geo = t.tab_pill_geometry();
-                        crate::tab_pill::busy_width(p.busy, geo.icon_size, geo.icon_gap)
+                        crate::tab_pill::busy_width(
+                            p.busy,
+                            !p.icon.is_empty(),
+                            geo.icon_size,
+                            geo.icon_gap,
+                        )
                     })
                     .max(cell_floor)
                 })
@@ -824,7 +829,12 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
             .map(|p| {
                 squeezed_tokens.tab_width(&p.display_label(), !p.icon.is_empty()) + {
                     let geo = squeezed_tokens.tab_pill_geometry();
-                    crate::tab_pill::busy_width(p.busy, geo.icon_size, geo.icon_gap)
+                    crate::tab_pill::busy_width(
+                        p.busy,
+                        !p.icon.is_empty(),
+                        geo.icon_size,
+                        geo.icon_gap,
+                    )
                 }
             })
             .sum();
