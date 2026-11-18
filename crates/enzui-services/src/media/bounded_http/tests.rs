@@ -549,3 +549,54 @@ fn bounded_https_disk_refuses_named_wrong_size_and_read_only_descriptors() {
     );
     pipeline.set_state(gst::State::Null).unwrap();
 }
+
+#[test]
+fn an_unapproved_redirect_fails_instead_of_becoming_media() {
+    use std::io::{BufRead, BufReader, Write};
+    ensure_initialised().unwrap();
+    register().unwrap();
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        let Ok((stream, _)) = listener.accept() else {
+            return;
+        };
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut line = String::new();
+        while reader.read_line(&mut line).is_ok_and(|n| n > 2) {
+            line.clear();
+        }
+        let body = "<html><body>Moved</body></html>";
+        let mut stream = stream;
+        let _ = write!(
+            stream,
+            "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:1/elsewhere\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+    });
+    let source = gst::ElementFactory::make(FACTORY)
+        .property("location", format!("http://127.0.0.1:{port}/audio.mp3"))
+        .property("automatic-redirect", false)
+        .build()
+        .unwrap();
+    let sink = gst_app::AppSink::builder().sync(false).build();
+    let pipeline = gst::Pipeline::new();
+    pipeline.add_many([&source, sink.upcast_ref()]).unwrap();
+    source.link(&sink).unwrap();
+    pipeline.set_state(gst::State::Playing).unwrap();
+    let message = pipeline.bus().unwrap().timed_pop_filtered(
+        gst::ClockTime::from_seconds(10),
+        &[gst::MessageType::Error, gst::MessageType::Eos],
+    );
+    let received = sink.try_pull_sample(gst::ClockTime::ZERO).is_some();
+    pipeline.set_state(gst::State::Null).unwrap();
+    let error = match message.as_ref().map(|m| m.view()) {
+        Some(gst::MessageView::Error(error)) => error.error().to_string(),
+        other => panic!("expected an error, got {other:?}"),
+    };
+    assert!(
+        error.contains("redirected the request unexpectedly"),
+        "the refusal names the redirect: {error}"
+    );
+    assert!(!received, "the redirect's body reached downstream");
+}

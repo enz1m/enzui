@@ -1417,6 +1417,16 @@ enzui_curl_http_src_handle_response (GstEnzCurlHttpSrc * src)
     src->retries_remaining = 0;
     CURL_HTTP_SRC_ERROR (src, RESOURCE, NOT_FOUND, (src->reason_phrase));
     return GST_FLOW_ERROR;
+  } else if (src->status_code >= 300 && src->status_code < 400) {
+    /* enzUI: redirects are walked and approved before the media request,
+     * which never follows one. A redirect here was not approved; its body
+     * (usually an HTML page) must not reach the decoder as media. */
+    GST_WARNING_OBJECT (src, "Transfer for URI %s was redirected (%u) after "
+        "approval", src->uri, src->status_code);
+    src->retries_remaining = 0;
+    CURL_HTTP_SRC_ERROR (src, RESOURCE, READ,
+        ("the media server redirected the request unexpectedly"));
+    return GST_FLOW_ERROR;
   } else if (src->status_code == 0) {
     if (curl_easy_getinfo (src->curl_handle, CURLINFO_TOTAL_TIME,
             &curl_info_dbl) != CURLE_OK) {
