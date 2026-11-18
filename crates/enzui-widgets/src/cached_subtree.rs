@@ -607,7 +607,11 @@ where
             cached.release_layout();
             let rebuilt = self.build(key);
             *cached = rebuilt;
-            children.clear();
+            // Retain matching widget state; Tree::diff resets incompatible widget types.
+            if let Some(child) = children.first_mut() {
+                child.diff(cached.element.as_widget_mut());
+                return;
+            }
         } else {
             self.size.set(cached.element.as_widget().size());
             STATS.with(|s| s.build_hits.set(s.build_hits.get() + 1));
@@ -857,5 +861,71 @@ where
 {
     fn from(subtree: EnzCachedSubtree<'a, Message, Theme, Renderer>) -> Self {
         Element::new(subtree)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct Counter;
+
+    impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Counter
+    where
+        Renderer: iced::advanced::Renderer,
+    {
+        fn tag(&self) -> tree::Tag {
+            tree::Tag::of::<u32>()
+        }
+        fn state(&self) -> tree::State {
+            tree::State::new(0u32)
+        }
+        fn size(&self) -> Size<Length> {
+            Size::new(Length::Shrink, Length::Shrink)
+        }
+        fn layout(&mut self, tree: &mut Tree, _: &Renderer, _: &layout::Limits) {
+            tree.size = Size::ZERO;
+        }
+        fn draw(
+            &self,
+            _: &Tree,
+            _: &mut Renderer,
+            _: &Theme,
+            _: &renderer::Style,
+            _: Layout,
+            _: mouse::Cursor,
+            _: &iced::Rectangle,
+        ) {
+        }
+    }
+
+    fn counter_of(tree: &Tree) -> u32 {
+        *tree.children[0].state.downcast_ref::<u32>()
+    }
+
+    #[test]
+    fn a_rebuild_keeps_the_state_of_widgets_inside() {
+        let handle = SubtreeHandle::new(SubtreeId::new("test-counter"));
+        let make = || -> Element<'static, (), iced::Theme, ()> {
+            enz_cached_subtree(&handle, || Element::new(Counter)).into()
+        };
+        let mut element = make();
+        let mut tree = Tree::new(element.as_widget());
+        tree.diff(element.as_widget_mut());
+        *tree.children[0].state.downcast_mut::<u32>() = 7;
+
+        handle.invalidate();
+        let mut rebuilt = make();
+        tree.diff(rebuilt.as_widget_mut());
+        assert_eq!(
+            counter_of(&tree),
+            7,
+            "the rebuilt subtree kept its widget's state"
+        );
+        handle.invalidate();
+        let mut replacement: Element<'static, (), iced::Theme, ()> =
+            enz_cached_subtree(&handle, || iced::widget::Space::new().into()).into();
+        tree.diff(replacement.as_widget_mut());
+        assert_eq!(tree.children[0].tag, tree::Tag::stateless());
     }
 }
