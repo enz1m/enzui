@@ -28,6 +28,7 @@ pub mod corner_probe;
 #[path = "../common/honest_frame_driver.rs"]
 pub mod honest_frame_driver;
 
+mod grid_stretch_rows;
 mod keyed_grid_reorder_identity;
 mod keyed_identity;
 

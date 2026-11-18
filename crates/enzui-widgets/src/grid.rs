@@ -8,7 +8,8 @@
 //! between the declared columns. Both modes give children tight width
 //! limits; a short final row keeps the same tracks without placeholder children.
 //! Content-derived tracks can together exceed the available width; the grid
-//! does not clip children to their cells.
+//! does not clip children to their cells. [`EnzGrid::stretch_rows`] gives
+//! every child its row's full height, so a row of cards ends level.
 //!
 //! Zero columns become one. Storage depends on the children rather than the
 //! declared column count, but all declared columns still contribute gaps and,
@@ -60,6 +61,7 @@ where
         width: Length::Fill,
         height: Length::Shrink,
         stretch_cells: false,
+        stretch_rows: false,
     }
 }
 
@@ -77,6 +79,7 @@ pub struct EnzGrid<'a, Message> {
     width: Length,
     height: Length,
     stretch_cells: bool,
+    stretch_rows: bool,
 }
 
 fn sane_gap(px: f32) -> f32 {
@@ -169,6 +172,15 @@ where
     /// Both modes give children tight width limits.
     pub fn stretch_cells(mut self, on: bool) -> Self {
         self.stretch_cells = on;
+        self
+    }
+
+    /// Stretch each cell to its row's tallest measured child.
+    ///
+    /// Defaults to `false`. Enabled cells receive tight row-height limits;
+    /// their internal alignment still controls content placement.
+    pub fn stretch_rows(mut self, on: bool) -> Self {
+        self.stretch_rows = on;
         self
     }
 }
@@ -291,6 +303,19 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for EnzGrid<'_, Messa
             let r = i / columns;
             row_heights[r] = row_heights[r].max(node.size().height);
             child_nodes.push(node);
+        }
+
+        if self.stretch_rows {
+            for (i, child) in self.children.iter_mut().enumerate() {
+                let (cw, rh) = (col_w[i % columns], row_heights[i / columns]);
+                if child_nodes[i].size().height < rh {
+                    let row_limits = layout::Limits::new(Size::new(cw, rh), Size::new(cw, rh));
+                    child_nodes[i] =
+                        child
+                            .as_widget_mut()
+                            .measure(&mut tree.children[i], renderer, &row_limits);
+                }
+            }
         }
 
         let mut positioned = Vec::with_capacity(n);
