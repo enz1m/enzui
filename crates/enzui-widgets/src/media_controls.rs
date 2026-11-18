@@ -482,11 +482,15 @@ fn transport_icon<'a>(
     button.size(control, glyph).into_element()
 }
 
-/// The control and glyph sizes of the transport icons for a button size:
-/// `(control, glyph)` for the secondary icons, then for play/pause, the
-/// one that leads.
+// Transport hit targets retain their own size ladder independently of text buttons.
 fn transport_sizes(size: ButtonSize) -> ((f32, f32), (f32, f32)) {
-    let height = size.tokens().height;
+    let height = enzui_theme::text_scale::ui_px(match size {
+        ButtonSize::Xs => 22.0,
+        ButtonSize::Sm => 26.0,
+        ButtonSize::Md => 28.0,
+        ButtonSize::Lg => 40.0,
+        ButtonSize::Xl => 52.0,
+    });
     (
         (height + 6.0, (height * 0.66).round()),
         (height + 12.0, (height * 0.86).round()),

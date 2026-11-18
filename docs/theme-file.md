@@ -267,15 +267,15 @@ The outline follows `palette.focus_ring`, `stroke.focus_ring` and `shape.row`.
 ## Button elevation
 
 `elevation.button` is the level, 0 to 5, that filled buttons (Primary,
-Secondary, Accent, Destructive, Success) are lifted to. The default is 1: a
-filled button casts a faint contact shadow in the palette's `shadow` colour,
-a little deeper per level above 1, and none while pressed. At 0 buttons are
-flat, set apart from the page by their fill. Outlined and quiet kinds, glass and
-high contrast stay flat.
+Secondary, Accent, Destructive, Success) are lifted to. The default is 0:
+buttons are flat, set apart from the page by their fill. From 1 a filled
+button casts a faint contact shadow in the palette's `shadow` colour, a little
+deeper per level above 1, and none while pressed. Outlined and quiet kinds,
+glass and high contrast stay flat.
 
 ```toml
 [elevation]
-button = 0             # flat buttons; the default 1 casts a faint contact shadow
+button = 1             # raised buttons on a faint contact shadow; the default 0 is flat
 ```
 
 An app raises or flattens one button with `enz_button(..).elevation(level)`.

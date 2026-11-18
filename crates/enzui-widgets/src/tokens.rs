@@ -666,11 +666,6 @@ impl ButtonSizeTokens {
     // inside the ~1.0-1.15 UI band, whole pixels only (fractional blurs when
     // snapped). Pinned in `button.rs`; re-run it before editing an `icon_size`.
     //
-    // `MD` is 28px tall: 32px would carry 2.4x the cap height in dead space and
-    // read as a tall pill, while 28px lands ~2.0x with GTK/macOS/Material. Its
-    // `radius` of 9 holds the corner proportion and keeps the ladder monotonic,
-    // and its `gap` of 6 keeps the glyph grouped with the label. Round icon
-    // controls carry their own `28.0`, which agrees with `MD.height`.
 
     /// These sizes at the effective desktop text scale: the label, the icon
     /// and the height that holds them grow together; padding, radius and gap
@@ -686,57 +681,57 @@ impl ButtonSizeTokens {
         }
     }
 
-    // Side padding is about 0.55x the height: a pill's round ends take room
-    // from the label, so it needs more than a rounded rectangle would.
+    // Side padding is about 0.55-0.6x the height: a pill's round ends take
+    // room from the label, so it needs more than a rounded rectangle would.
 
-    /// Extra-small: 22px height.
+    /// Extra-small: 20px height.
     pub const XS: Self = Self {
-        height: 22.0,
-        padding_x: 10.0,
+        height: 20.0,
+        padding_x: 11.0,
         text_size: 11.0,
         icon_size: 10.0, // 1.10x optical ratio
-        radius: 8.0,
+        radius: 7.0,
         gap: 4.0,
     };
 
-    /// Small: 26px height.
+    /// Small: 22px height.
     pub const SM: Self = Self {
-        height: 26.0,
-        padding_x: 13.0,
+        height: 22.0,
+        padding_x: 12.0,
         text_size: 12.0,
         icon_size: 11.0, // 1.11x optical ratio
-        radius: 9.0,
+        radius: 7.0,
+        gap: 5.0,
+    };
+
+    /// Medium (default): 24px height.
+    pub const MD: Self = Self {
+        height: 24.0,
+        padding_x: 14.0,
+        text_size: 13.0,
+        icon_size: 12.0, // 1.12x optical ratio
+        radius: 8.0,
         gap: 6.0,
     };
 
-    /// Medium (default): 28px height.
-    pub const MD: Self = Self {
-        height: 28.0, // 2.0x dead-space cap
-        padding_x: 15.0,
-        text_size: 13.0,
-        icon_size: 12.0, // 1.12x optical ratio
-        radius: 9.0,     // keeps the 10/32 corner proportion at 28px
-        gap: 6.0,        // keeps the glyph grouped with the label
-    };
-
-    /// Large: 40px height.
+    /// Large: 30px height.
     pub const LG: Self = Self {
-        height: 40.0,
-        padding_x: 20.0,
+        height: 30.0,
+        padding_x: 17.0,
         text_size: 14.0,
         icon_size: 13.0, // 1.13x optical ratio
-        radius: 12.0,
-        gap: 10.0,
+        radius: 10.0,
+        gap: 7.0,
     };
 
-    /// Extra-large: 52px height.
+    /// Extra-large: 36px height.
     pub const XL: Self = Self {
-        height: 52.0,
-        padding_x: 26.0,
+        height: 36.0,
+        padding_x: 20.0,
         text_size: 15.0,
         icon_size: 14.0, // 1.13x optical ratio
-        radius: 14.0,
-        gap: 12.0,
+        radius: 12.0,
+        gap: 8.0,
     };
 }
 

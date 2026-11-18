@@ -285,7 +285,8 @@ impl ElevationScale {
 
     /// The level filled buttons are raised to (0 to 5). At 0 a button is
     /// flat and its edge is drawn as a border; above it the button is
-    /// borderless and its shadow sets it apart. Defaults to 1.
+    /// borderless and its shadow sets it apart. Defaults to 0: buttons sit
+    /// flat on the page.
     pub fn button(&self) -> u8 {
         self.button
     }
@@ -350,8 +351,8 @@ impl Default for ElevationScale {
     }
 }
 
-/// Default filled-button elevation: a faint contact shadow; set `elevation.button = 0` to flatten it.
-pub const DEFAULT_BUTTON_ELEVATION: u8 = 1;
+/// Default filled-button elevation: flat; set `elevation.button` above 0 to raise buttons on a contact shadow.
+pub const DEFAULT_BUTTON_ELEVATION: u8 = 0;
 
 #[cfg(test)]
 mod tests {

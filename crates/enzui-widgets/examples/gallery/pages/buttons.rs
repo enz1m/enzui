@@ -302,7 +302,7 @@ impl Gallery {
         controls.push(k.flag_control("button.fill", "Fill width", false));
         specimen(
             "enz_button",
-            "Runs an action. The kind says how much it matters; the size follows the surrounding controls. Filled buttons rest on a faint contact shadow by default; elevation.button = 0 makes them flat.",
+            "Runs an action. The kind says how much it matters; the size follows the surrounding controls. Filled buttons sit flat by default; elevation.button = 1 raises them on a faint contact shadow.",
             button.into_element(),
         )
         .controls(controls)

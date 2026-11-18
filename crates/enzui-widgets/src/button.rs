@@ -63,16 +63,16 @@ pub enum ButtonKind {
 /// the preset fallback.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ButtonSize {
-    /// Nominal 22 px height.
+    /// Nominal 20 px height.
     Xs,
-    /// Nominal 26 px height.
+    /// Nominal 22 px height.
     Sm,
-    /// Nominal 28 px height; the default.
+    /// Nominal 24 px height; the default.
     #[default]
     Md,
-    /// Nominal 40 px height.
+    /// Nominal 30 px height.
     Lg,
-    /// Nominal 52 px height.
+    /// Nominal 36 px height.
     Xl,
 }
 
@@ -532,6 +532,7 @@ impl<'a, Message: Clone + 'a> EnzButton<'a, Message> {
             ButtonContentSpec {
                 position: self.icon_position,
                 text_size: size_tokens.text_size,
+                box_height: size_tokens.height,
                 icon_size: if self.icon_position == ButtonIconPosition::Only && !size_tokens_pinned
                 {
                     icon_only_glyph(size_tokens.height, size_tokens.icon_size)
@@ -1067,9 +1068,6 @@ fn button_fg_role(kind: ButtonKind) -> crate::icon::ButtonFgRole {
 fn label_font() -> Font {
     enzui_theme::text_defaults::font(enzui_theme::FontRole::Ui, enzui_theme::WeightRung::Medium)
 }
-fn label_optical_offset(text_size: f32) -> f32 {
-    crate::optical_centre::cap_centre_offset(label_font(), text_size, text::LineHeight::default())
-}
 fn label_only_padding(
     label: &str,
     icon: &str,
@@ -1112,6 +1110,7 @@ fn button_label<'a>(
 struct ButtonContentSpec {
     position: ButtonIconPosition,
     text_size: f32,
+    box_height: f32,
     icon_size: f32,
     gap: f32,
     fg_role: crate::icon::ButtonFgRole,
@@ -1135,6 +1134,7 @@ fn build_button_content<'a, Message: 'a>(
     let ButtonContentSpec {
         position,
         text_size,
+        box_height,
         icon_size,
         gap,
         fg_role,
@@ -1208,8 +1208,14 @@ fn build_button_content<'a, Message: 'a>(
     if icon_only(label, icon, position) {
         return icon_el.into();
     }
-    // Shift the label’s cap centre while the icon remains centred in its own box.
-    let span = 2.0 * label_optical_offset(text_size);
+    // Match label-only pixel snapping while leaving the icon centred.
+    let span = 2.0
+        * crate::optical_centre::snapped_cap_centre_offset(
+            label_font(),
+            text_size,
+            text::LineHeight::default(),
+            box_height,
+        );
     let line = text::LineHeight::default()
         .to_absolute(iced::Pixels(text_size))
         .0;
