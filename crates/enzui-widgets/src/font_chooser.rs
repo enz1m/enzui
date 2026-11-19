@@ -166,6 +166,25 @@ pub fn system_font_families() -> Vec<FontFamilyInfo> {
         .collect()
 }
 
+fn resolve_generic_family(name: &str) -> Option<String> {
+    use iced::advanced::graphics::text::cosmic_text::fontdb::{Family, Query};
+    let generic = match name.trim().to_ascii_lowercase().as_str() {
+        "sans-serif" | "sans" => Family::SansSerif,
+        "serif" => Family::Serif,
+        "monospace" | "mono" => Family::Monospace,
+        "cursive" => Family::Cursive,
+        "fantasy" => Family::Fantasy,
+        _ => return None,
+    };
+    let mut system = iced::advanced::graphics::text::font_system().write().ok()?;
+    let db = system.raw().db();
+    db.query(&Query {
+        families: &[generic],
+        ..Query::default()
+    })?;
+    Some(db.family_name(&generic).to_owned())
+}
+
 /// The font being chosen.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FontChoice {
@@ -178,10 +197,11 @@ pub struct FontChoice {
 }
 
 impl FontChoice {
-    /// `family` in its regular style at `size`.
+    /// Regular style at `size`, resolving generic names to installed families.
     pub fn new(family: impl Into<String>, size: f32) -> Self {
+        let family = family.into();
         Self {
-            family: family.into(),
+            family: resolve_generic_family(&family).unwrap_or(family),
             style: FontStyle::REGULAR,
             size,
         }
@@ -494,5 +514,24 @@ impl<'a, Message: Clone + 'a> EnzFontChooser<'a, Message> {
 impl<'a, Message: Clone + 'a> From<EnzFontChooser<'a, Message>> for Element<'a, Message> {
     fn from(chooser: EnzFontChooser<'a, Message>) -> Self {
         chooser.into_element()
+    }
+}
+
+#[cfg(test)]
+mod generic_family_tests {
+    use super::*;
+
+    #[test]
+    fn a_generic_name_opens_on_the_family_it_stands_for() {
+        assert_eq!(
+            resolve_generic_family("Cantarell"),
+            None,
+            "a real name is kept"
+        );
+        let Some(sans) = resolve_generic_family("sans-serif") else {
+            return;
+        };
+        assert_eq!(FontChoice::new("sans-serif", 15.0).family, sans);
+        assert_eq!(FontChoice::new("Cantarell", 15.0).family, "Cantarell");
     }
 }
