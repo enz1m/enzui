@@ -431,7 +431,7 @@ impl Player {
             .map(Stream::origin)
     }
 
-    pub(super) fn select_audio(&mut self, index: i32) {
+    pub(super) fn select_audio(&mut self, index: i32, shared: &Shared) {
         let chosen = usize::try_from(index)
             .ok()
             .and_then(|index| self.audio_streams().nth(index))
@@ -440,6 +440,19 @@ impl Player {
             self.audio_choice = chosen;
             self.apply_selection();
             self.resync_audio = self.phase == Phase::Ready;
+            self.preroll_paused_audio(shared);
+        }
+    }
+
+    fn preroll_paused_audio(&mut self, shared: &Shared) {
+        if self.resync_audio
+            && self.target == Target::Paused
+            && !self.seeking
+            && let Some(position) = self.position()
+        {
+            // A paused pipeline needs a fresh preroll to apply stream selection.
+            self.resync_audio = false;
+            self.seek(position, SeekMode::Accurate, shared);
         }
     }
 
@@ -587,7 +600,7 @@ impl Player {
             .audio_choice
             .as_ref()
             .is_some_and(|choice| ids.contains(choice));
-        if self.resync_audio && audio_live {
+        if self.resync_audio && audio_live && self.target == Target::Playing {
             self.resync_audio = false;
             if self.phase == Phase::Ready
                 && let Some(position) = self.position()
@@ -825,6 +838,7 @@ impl Player {
         {
             self.set_rate(rate);
         }
+        self.preroll_paused_audio(shared);
     }
 
     fn become_ready(&mut self, seekable: bool, duration: Option<Duration>, shared: &Shared) {

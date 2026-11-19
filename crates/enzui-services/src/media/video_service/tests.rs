@@ -165,6 +165,51 @@ fn text_pixels(frame: &Rgba8Frame) -> usize {
 }
 
 #[test]
+fn an_audio_switch_while_paused_applies_without_playing() {
+    let dir = {
+        static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir =
+            std::env::temp_dir().join(format!("enzui-video-paused-{}-{n}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("scratch dir");
+        Scratch(dir)
+    };
+    let Some(path) = encode_with(dir.path(), "black", 3) else {
+        return;
+    };
+    let mut h = Harness::new();
+    h.service.load(
+        MediaSource::local(&path),
+        LoadOptions {
+            autoplay: true,
+            ..quiet()
+        },
+    );
+    h.until("playing", |h| {
+        h.status.is_playing() && h.status.audio_tracks.len() == 2
+    });
+    h.service.pause();
+    h.until("paused", |h| h.status.playback == PlaybackState::Paused);
+    h.service.seek(Duration::ZERO, SeekMode::Accurate);
+    h.until("back at the start", |h| {
+        !h.status.seeking && h.status.position < Duration::from_millis(100)
+    });
+    h.service.select_audio(1);
+    h.until("audio switched while paused", |h| {
+        h.status.current_audio == Some(1) && !h.status.seeking
+    });
+    assert_eq!(
+        h.status.playback,
+        PlaybackState::Paused,
+        "the switch keeps it paused"
+    );
+    assert!(
+        h.status.position < Duration::from_millis(200),
+        "the switch stays at the paused frame"
+    );
+}
+
+#[test]
 fn track_switches_keep_playing_and_show_or_hide_subtitles() {
     let dir = {
         static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);

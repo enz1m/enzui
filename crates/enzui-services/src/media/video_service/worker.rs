@@ -277,7 +277,9 @@ impl Worker {
                 self.with_player(generation, |player, _| player.set_rate(rate));
             }
             Command::SelectAudio(generation, index) => {
-                self.with_player(generation, |player, _| player.select_audio(index));
+                self.with_player(generation, |player, shared| {
+                    player.select_audio(index, shared);
+                });
             }
             Command::SelectSubtitle(generation, index) => {
                 self.with_player(generation, |player, shared| {
