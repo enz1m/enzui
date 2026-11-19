@@ -138,6 +138,7 @@ struct State {
     pressed_finger: Option<touch::Finger>,
     activate_pending: bool,
     trigger_focus: FocusState,
+    window_key: u64,
     pending_focus: PendingFocus,
     retained_caret: Option<crate::focus_retention::RetainedCursor>,
     // Routed focus can precede layout; operations must use the child that was laid out.
@@ -842,6 +843,9 @@ impl<'a, Message: 'a> Widget<Message, iced::Theme, iced::Renderer>
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        let key = enzui_core::focus::window_key(shell.window());
+        enzui_core::focus::note_input_event_for(event, key);
+        tree.state.downcast_mut::<State>().window_key = key;
         // A key press that is not Escape re-opens a result surface the
         // user dismissed — typing after Escape must show results again, the
         // way mail's `SearchEdited` re-opens its dropdown. Run before dispatch
@@ -1226,7 +1230,10 @@ impl<'a, Message: 'a> ResponsiveSearch<'a, Message> {
                 Color::TRANSPARENT
             };
             let radius = bounds.width.min(bounds.height) / 2.0;
-            if state.trigger_focus.is_focused() {
+            if enzui_core::focus::focus_ring_visible_for(
+                state.trigger_focus.is_focused(),
+                state.window_key,
+            ) {
                 focus_ring = Some((
                     bounds,
                     Border {

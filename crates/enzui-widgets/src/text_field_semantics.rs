@@ -24,6 +24,9 @@ struct SemanticsState {
     pending_value: Option<ValueIntent>,
     pending_blur: bool,
     composing: bool,
+    ring: enzui_core::focus::FocusRingLatch,
+    ring_visible: bool,
+    window_key: u64,
 }
 
 /// Single-child semantics wrapper using the child's bounds and observed focus.
@@ -32,6 +35,7 @@ struct SemanticsState {
 pub struct TextFieldSemantics<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer> {
     child: Element<'a, Message, Theme, Renderer>,
     composition_indicator: Option<std::rc::Rc<std::cell::Cell<bool>>>,
+    focus_ring_indicator: Option<std::rc::Rc<std::cell::Cell<bool>>>,
     semantics: Semantics,
     probe_id: Id,
     published_id: Option<Id>,
@@ -55,6 +59,7 @@ impl<'a, Message, Theme, Renderer> TextFieldSemantics<'a, Message, Theme, Render
         Self {
             child: child.into(),
             composition_indicator: None,
+            focus_ring_indicator: None,
             semantics,
             probe_id,
             published_id,
@@ -62,6 +67,37 @@ impl<'a, Message, Theme, Renderer> TextFieldSemantics<'a, Message, Theme, Render
             editable,
             on_submit: None,
             on_blur: None,
+        }
+    }
+
+    pub(crate) fn focus_ring_indicator(
+        mut self,
+        indicator: Option<std::rc::Rc<std::cell::Cell<bool>>>,
+    ) -> Self {
+        self.focus_ring_indicator = indicator;
+        self
+    }
+
+    fn refresh_focus_ring<Message2>(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout,
+        renderer: &Renderer,
+        shell: &mut Shell<'_, Message2>,
+    ) where
+        Renderer: iced::advanced::Renderer,
+    {
+        let Some(indicator) = self.focus_ring_indicator.clone() else {
+            return;
+        };
+        let focused = self.probe_focus(tree, layout, renderer);
+        let state = tree.state.downcast_mut::<SemanticsState>();
+        let key = state.window_key;
+        let visible = state.ring.observe(focused, key);
+        indicator.set(visible);
+        if state.ring_visible != visible {
+            state.ring_visible = visible;
+            shell.request_redraw();
         }
     }
 
@@ -209,6 +245,9 @@ where
         if let Some(indicator) = &self.composition_indicator {
             indicator.set(tree.state.downcast_ref::<SemanticsState>().composing);
         }
+        if let Some(indicator) = &self.focus_ring_indicator {
+            indicator.set(tree.state.downcast_ref::<SemanticsState>().ring_visible);
+        }
     }
 
     fn is_void(&self) -> bool {
@@ -287,6 +326,10 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        // A pointer press must be recorded before the input acquires focus.
+        let key = enzui_core::focus::window_key(shell.window());
+        enzui_core::focus::note_input_event_for(event, key);
+        tree.state.downcast_mut::<SemanticsState>().window_key = key;
         self.flush_blur(tree, shell);
         {
             // Take before checking editability so disabled rebuilds discard rather than defer edits.
@@ -347,6 +390,7 @@ where
             viewport,
         );
         crate::frame_routing::refresh_opaque_child(&self.child, tree, 0);
+        self.refresh_focus_ring(tree, layout, renderer, shell);
         if focused_before
             && !self.probe_focus(tree, layout, renderer)
             && let Some(on_blur) = self.on_blur.as_ref()
@@ -432,6 +476,7 @@ where
             shell,
             viewport,
         );
+        self.refresh_focus_ring(tree, layout, renderer, shell);
     }
 
     fn draw(

@@ -74,6 +74,8 @@ struct State {
     painted: Option<ChromeStatus>,
     /// An event changed the status since the last frame.
     frame_owed: bool,
+    ring: enzui_core::focus::FocusRingLatch,
+    window_key: u64,
 }
 
 type PaintFn<'a> = Box<dyn Fn(&iced::Theme, ChromeStatus) -> ChromePaint + 'a>;
@@ -182,9 +184,11 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     fn status(&self, tree: &Tree, bounds: Rectangle, cursor: mouse::Cursor) -> ChromeStatus {
+        let state = tree.state.downcast_ref::<State>();
+        let focused = focused_field_in::<Renderer>(tree).unwrap_or(false);
         if !self.interactive {
             ChromeStatus::Inert
-        } else if focused_field_in::<Renderer>(tree).unwrap_or(false) {
+        } else if state.ring.visible(focused, state.window_key) {
             ChromeStatus::Focused
         } else if cursor.is_over(bounds) {
             ChromeStatus::Hovered
@@ -203,6 +207,12 @@ where
         cursor: mouse::Cursor,
         shell: &mut Shell<'_, Message2>,
     ) {
+        let focused = focused_field_in::<Renderer>(tree).unwrap_or(false);
+        {
+            let state = tree.state.downcast_mut::<State>();
+            let key = state.window_key;
+            state.ring.observe(focused, key);
+        }
         let status = self.status(tree, bounds, cursor);
         let state = tree.state.downcast_mut::<State>();
         if let Event::Window(iced::window::Event::RedrawRequested(now)) = event {
@@ -292,10 +302,9 @@ where
         viewport: &Rectangle,
     ) {
         // Record before child capture so sibling controls in this window see the input source.
-        enzui_core::focus::note_input_event_for(
-            event,
-            enzui_core::focus::window_key(shell.window()),
-        );
+        let key = enzui_core::focus::window_key(shell.window());
+        enzui_core::focus::note_input_event_for(event, key);
+        tree.state.downcast_mut::<State>().window_key = key;
 
         let child_layout = layout
             .children(&tree.children)

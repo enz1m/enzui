@@ -192,22 +192,87 @@ pub fn note_input_event(event: &iced_core::Event) {
 /// window's.
 pub fn note_input_event_for(event: &iced_core::Event, key: u64) {
     use iced_core::{Event, mouse, touch};
-    let modality = match event {
-        Event::Keyboard(keyboard_event) if signals_keyboard_modality(keyboard_event) => {
-            InputModality::Keyboard
+    let tab = match event {
+        Event::Keyboard(keyboard_event) => {
+            let navigation = signals_keyboard_modality(keyboard_event);
+            if navigation {
+                set_modality_for(key, InputModality::Keyboard);
+            }
+            let iced_core::keyboard::Event::KeyPressed { key: pressed, .. } = keyboard_event else {
+                return;
+            };
+            navigation && *pressed == iced_core::keyboard::Key::Named(key::Named::Tab)
         }
-        Event::Keyboard(_) => return,
         Event::Mouse(
             mouse::Event::ButtonPressed(_)
             | mouse::Event::ButtonReleased(_)
             | mouse::Event::WheelScrolled { .. },
         )
         | Event::Touch(touch::Event::FingerPressed { .. } | touch::Event::FingerLifted { .. }) => {
-            InputModality::Pointer
+            set_modality_for(key, InputModality::Pointer);
+            false
         }
         _ => return,
     };
-    set_modality_for(key, modality);
+    set_tab_navigation_for(key, tab);
+}
+
+static TAB_NAVIGATION: Mutex<Vec<u64>> = Mutex::new(Vec::new());
+
+thread_local! {
+    static TAB_NAVIGATION_UNKEYED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+fn set_tab_navigation_for(key: u64, tab: bool) {
+    if key == KEY_UNKEYED {
+        TAB_NAVIGATION_UNKEYED.set(tab);
+        return;
+    }
+    let mut windows = TAB_NAVIGATION
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    windows.retain(|window| *window != key);
+    if tab {
+        if windows.len() >= MAX_TRACKED_WINDOW_MODALITIES {
+            windows.remove(0);
+        }
+        windows.push(key);
+    }
+}
+
+fn tab_navigation_for(key: u64) -> bool {
+    if key == KEY_UNKEYED {
+        TAB_NAVIGATION_UNKEYED.get()
+    } else {
+        TAB_NAVIGATION
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .contains(&key)
+    }
+}
+
+/// Keeps a text field's focus ring tied to how it acquired focus.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FocusRingLatch {
+    latched: Option<bool>,
+}
+
+impl FocusRingLatch {
+    /// Updates focus and returns whether the field gained it through Tab.
+    pub fn observe(&mut self, focused: bool, key: u64) -> bool {
+        if !focused {
+            self.latched = None;
+            return false;
+        }
+        *self.latched.get_or_insert_with(|| tab_navigation_for(key))
+    }
+
+    /// Whether the ring shows for `focused`, without latching: an input
+    /// focused since the last observation follows the latest navigation.
+    #[must_use]
+    pub fn visible(&self, focused: bool, key: u64) -> bool {
+        focused && self.latched.unwrap_or_else(|| tab_navigation_for(key))
+    }
 }
 
 /// Per-widget keyboard-focus state. Embed one in a widget's tree state and implement
@@ -1099,4 +1164,56 @@ pub fn count_focused() -> impl operation::Operation<usize> {
     }
 
     CountFocused { focused: 0 }
+}
+
+#[cfg(test)]
+mod focus_ring_latch_tests {
+    use super::*;
+
+    #[test]
+    fn a_text_input_shows_its_ring_only_when_tab_brought_focus() {
+        let key = 0x5EED_F0C5;
+        let mut latch = FocusRingLatch::default();
+        let press = |named| {
+            iced_core::Event::Keyboard(iced_core::keyboard::Event::KeyPressed {
+                key: iced_core::keyboard::Key::Named(named),
+                modified_key: iced_core::keyboard::Key::Named(named),
+                physical_key: iced_core::keyboard::key::Physical::Unidentified(
+                    iced_core::keyboard::key::NativeCode::Unidentified,
+                ),
+                location: iced_core::keyboard::Location::Standard,
+                modifiers: iced_core::keyboard::Modifiers::default(),
+                text: None,
+                repeat: false,
+            })
+        };
+        let click = iced_core::Event::Mouse(iced_core::mouse::Event::ButtonPressed(
+            iced_core::mouse::Button::Left,
+        ));
+
+        note_input_event_for(&click, key);
+        assert!(!latch.observe(true, key), "a click focuses without a ring");
+        note_input_event_for(&press(key::Named::Space), key);
+        assert!(
+            !latch.observe(true, key),
+            "typing after the click adds none"
+        );
+
+        assert!(!latch.observe(false, key), "an unfocused input has none");
+        note_input_event_for(&press(key::Named::Enter), key);
+        assert!(
+            !latch.observe(true, key),
+            "Enter moving to the next field adds none"
+        );
+
+        assert!(!latch.observe(false, key));
+        note_input_event_for(&press(key::Named::Tab), key);
+        assert!(latch.observe(true, key), "Tab focuses with the ring");
+        note_input_event_for(&click, key);
+        assert!(
+            latch.observe(true, key),
+            "it stays while the input is focused"
+        );
+        assert!(!latch.visible(false, key));
+    }
 }

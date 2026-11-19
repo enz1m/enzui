@@ -1002,9 +1002,21 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
                 input = input.on_submit(msg);
             }
             let style_pinned = pinned_palette.clone();
+            let ring = std::rc::Rc::new(std::cell::Cell::new(false));
+            let ring_shown = std::rc::Rc::clone(&ring);
             input = input.style(move |theme: &iced::Theme, status: Status| {
                 let palette = pick(theme, style_pinned.clone());
                 let size_tokens = paint_tokens(theme);
+                let status = match status {
+                    Status::Focused { is_hovered } if !subtle_focus && !ring_shown.get() => {
+                        if is_hovered {
+                            Status::Hovered
+                        } else {
+                            Status::Active
+                        }
+                    }
+                    status => status,
+                };
                 text_field_style_with(
                     subtle_focus,
                     &palette,
@@ -1039,6 +1051,7 @@ impl<'a, Message: Clone + 'a> EnzTextField<'a, Message> {
             .on_input_when(owns_routed_set, move |s| routed(s))
             .on_submit_with_maybe(on_submit_lazy)
             .on_blur_with_maybe(on_blur())
+            .focus_ring_indicator(Some(ring))
             .into()
         } else {
             // Disabled path: a NON-interactive display. Rendering the
