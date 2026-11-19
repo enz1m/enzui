@@ -399,14 +399,11 @@ impl AppShellState {
                 .is_some_and(|motion| motion.is_animating(now))
     }
 
-    /// Whether the overlay drawer is travelling open. An opening drawer
-    /// exposes ink its recording may not hold, so it publishes no track and
-    /// each of its frames is drawn.
-    fn overlay_opening(&self) -> bool {
+    fn overlay_needs_paint(&self, layout: ShellLayout) -> bool {
         let now = self.clock.get();
-        self.overlay_motion
-            .as_ref()
-            .is_some_and(|motion| motion.target() && motion.is_animating(now))
+        self.overlay_motion.as_ref().is_some_and(|motion| {
+            motion.is_animating(now) && (layout != ShellLayout::FloatingSidebar || motion.target())
+        })
     }
 
     fn motion_needs_local_layout(&self) -> bool {
@@ -847,13 +844,11 @@ impl<Message> AppShellWidget<'_, Message> {
             // under the riders' tracks would show the old layout moved
             // rigidly, its trailing edge off the window's (enzUI-ICED #3660).
             shell.request_redraw();
-        } else if state.overlay_opening() {
-            // Without a track of its own, a track frame would let the scrim's
-            // fade hand the opening to the render lane, which replays the
-            // drawer where its first frame left it.
+        } else if state.overlay_needs_paint(self.shell.layout) {
+            // Modal drawers paint their scrim and slide together from the same sample.
             shell.request_redraw();
         } else if state.motion_needs_frame() {
-            // A closing overlay drawer only moves: its reveal's tracks carry it.
+            // The closing floating sidebar has no scrim, so its reveal can replay.
             shell.request_track_frame();
         }
         // Thread-local overrides keep negative-control tests independent of process environment races.

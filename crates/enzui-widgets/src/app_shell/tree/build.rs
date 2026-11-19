@@ -197,6 +197,7 @@ impl<'a, Message: Clone + 'a> EnzAppShell<'a, Message> {
                     self.overlay_drawer(resolved_geometry, &motion),
                     drawer_active,
                     [0.0; 4],
+                    &motion,
                 )
             }
 
@@ -381,6 +382,7 @@ impl<'a, Message: Clone + 'a> EnzAppShell<'a, Message> {
                     self.overlay_drawer(resolved_geometry, &motion),
                     drawer_active,
                     geometry.content_corner_radii,
+                    &motion,
                 );
 
                 let sidebar = if geometry.sidebar_full_height {

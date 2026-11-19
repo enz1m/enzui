@@ -1654,6 +1654,7 @@ impl<'a, Message: Clone + 'a> EnzAppShell<'a, Message> {
         drawer: Option<Element<'a, Message>>,
         drawer_active: bool,
         corners: [f32; 4],
+        motion: &SidebarMotionFrame,
     ) -> Element<'a, Message> {
         // Keep the base parent chain stable while optional drawer layers enter and leave.
         let drawer_mounted = drawer.is_some();
@@ -1663,14 +1664,17 @@ impl<'a, Message: Clone + 'a> EnzAppShell<'a, Message> {
         // Modal input follows state, not exit animation mounting; dismissals release the base immediately.
         layers.push(crate::inert::Inert::new(base, drawer_active).into());
 
-        // The scrim fades with the drawer: in as it opens, out while it slides
-        // away, taking no input once dismissed.
         if drawer_active || drawer_mounted {
+            let progress = std::rc::Rc::clone(&motion.overlay_live_progress);
             let body = container(Space::new().width(Length::Fill).height(Length::Fill))
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .style(move |theme: &iced::Theme| container::Style {
-                    background: Some(scrim_color(&crate::theme_lookup::palette(theme)).into()),
+                    background: Some(
+                        scrim_color(&crate::theme_lookup::palette(theme))
+                            .scale_alpha(progress.get())
+                            .into(),
+                    ),
                     border: iced::Border {
                         radius: iced::border::Radius {
                             top_left: corners[0],
@@ -1692,10 +1696,7 @@ impl<'a, Message: Clone + 'a> EnzAppShell<'a, Message> {
                 (true, None) => ScrimClick::shield(body).into(),
                 (false, _) => crate::inert::Inert::new(body, true).into(),
             };
-            let scrim = crate::motion::animated(scrim)
-                .enters_from(iced::Vector::ZERO, 0.0)
-                .opacity(if drawer_active { 1.0 } else { 0.0 });
-            layers.push(scrim.into());
+            layers.push(scrim);
         }
 
         if let Some(drawer) = drawer {

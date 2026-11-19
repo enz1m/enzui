@@ -40,6 +40,7 @@ pub mod scratch;
 
 mod settled_widgets_leave_frame_routes;
 
+mod sidebar_drawer_motion;
 mod sidebar_route_availability;
 mod sidebar_tree_scroll_retention;
 
