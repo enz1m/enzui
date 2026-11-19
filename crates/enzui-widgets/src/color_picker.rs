@@ -841,8 +841,26 @@ impl<Message> SaturationValuePlane<'_, Message> {
             .focused(focused)
     }
 
+    fn handle_radius(&self, bounds: Rectangle) -> f32 {
+        self.geometry
+            .handle_radius
+            .min(bounds.width / 4.0)
+            .min(bounds.height / 4.0)
+    }
+
+    fn travel(&self, bounds: Rectangle) -> Rectangle {
+        let inset = self.handle_radius(bounds);
+        Rectangle {
+            x: bounds.x + inset,
+            y: bounds.y + inset,
+            width: bounds.width - 2.0 * inset,
+            height: bounds.height - 2.0 * inset,
+        }
+    }
+
     /// Map a pointer position inside `bounds` onto the two axes.
     fn value_at(&self, position: iced::Point, bounds: Rectangle) -> Hsva {
+        let bounds = self.travel(bounds);
         let w = bounds.width.max(1.0);
         let h = bounds.height.max(1.0);
         let saturation = ((position.x - bounds.x) / w).clamp(0.0, 1.0);
@@ -875,6 +893,7 @@ impl<Message> SaturationValuePlane<'_, Message> {
 
     /// Where the handle's centre sits for the current value.
     fn handle_centre(&self, bounds: Rectangle) -> iced::Point {
+        let bounds = self.travel(bounds);
         let v = self.value.sanitised();
         iced::Point::new(
             bounds.x + v.saturation * bounds.width,
@@ -1075,12 +1094,13 @@ where
         let palette = crate::theme_lookup::palette(theme);
         let radius = crate::theme_lookup::radius(theme).sm;
 
-        // Saturation: white on the left, the pure hue on the right.
-        // `Degrees(90)` runs the gradient left→right in iced's quad space.
+        let travel = self.travel(bounds);
+        let across = (travel.x - bounds.x) / bounds.width.max(1.0);
+        let down = (travel.y - bounds.y) / bounds.height.max(1.0);
         let saturation = Gradient::Linear(
             iced::gradient::Linear::new(Degrees(90.0))
-                .add_stop(0.0, Color::WHITE)
-                .add_stop(1.0, self.value.pure_hue()),
+                .add_stop(across, Color::WHITE)
+                .add_stop(1.0 - across, self.value.pure_hue()),
         );
         renderer.fill_quad(
             renderer::Quad {
@@ -1099,8 +1119,8 @@ where
         // Brightness: transparent at the top, black at the bottom.
         let brightness = Gradient::Linear(
             iced::gradient::Linear::new(Degrees(180.0))
-                .add_stop(0.0, Color::TRANSPARENT)
-                .add_stop(1.0, Color::BLACK),
+                .add_stop(down, Color::TRANSPARENT)
+                .add_stop(1.0 - down, Color::BLACK),
         );
         renderer.fill_quad(
             renderer::Quad {
@@ -1120,7 +1140,10 @@ where
         // The handle: a ring whose interior shows the chosen colour, so it is
         // legible on both a white and a black corner of the plane.
         let centre = self.handle_centre(bounds);
-        let radius = self.geometry.handle_radius;
+        let radius = self.handle_radius(bounds);
+        if radius <= 1.0 {
+            return;
+        }
         let handle = Rectangle {
             x: centre.x - radius,
             y: centre.y - radius,
@@ -1278,5 +1301,42 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for Swatch {
             },
             Background::Color(self.color),
         );
+    }
+}
+
+#[cfg(test)]
+mod plane_tests {
+    use super::*;
+
+    #[test]
+    fn the_handle_stays_inside_the_plane_and_picks_the_colour_under_it() {
+        let bounds = Rectangle::new(iced::Point::new(10.0, 20.0), Size::new(300.0, 140.0));
+        for (saturation, value) in [(0.0, 1.0), (1.0, 0.0), (0.0, 0.0), (1.0, 1.0), (0.4, 0.7)] {
+            let plane = SaturationValuePlane::<()> {
+                value: Hsva {
+                    hue: 200.0,
+                    saturation,
+                    value,
+                    alpha: 1.0,
+                },
+                geometry: ColorPickerSizeTokens::default(),
+                height: bounds.height,
+                label: String::new(),
+                id: iced::advanced::widget::Id::new("plane"),
+                on_change: None,
+            };
+            let centre = plane.handle_centre(bounds);
+            let radius = HANDLE_RADIUS;
+            assert!(
+                centre.x - radius >= bounds.x - 0.01
+                    && centre.x + radius <= bounds.x + bounds.width + 0.01
+                    && centre.y - radius >= bounds.y - 0.01
+                    && centre.y + radius <= bounds.y + bounds.height + 0.01,
+                "the handle for ({saturation}, {value}) stays inside the plane"
+            );
+            let picked = plane.value_at(centre, bounds);
+            assert!((picked.saturation - saturation).abs() < 1e-4);
+            assert!((picked.value - value).abs() < 1e-4);
+        }
     }
 }
