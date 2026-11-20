@@ -153,11 +153,13 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for PreferencesRespon
                 Size::new(false, false),
                 Size::new(true, false),
             );
-            self.children[1]
+            let natural = self.children[1]
                 .as_widget_mut()
                 .measure(&mut tree.children[1], renderer, &probe_limits)
                 .size()
-                .width
+                .width;
+            // Leave room for rounding when a control subtracts its padding again.
+            natural.next_up()
         });
         let threshold = self.label_min_width.unwrap_or(trailing_min) + trailing_min + self.gap;
         // Unbounded probes report a finite healthy width rather than a stacked viewport.

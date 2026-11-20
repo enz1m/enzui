@@ -29,6 +29,7 @@ mod disable_cancels_press;
 
 mod live_button_radius;
 
+mod preferences_row_button_width;
 mod preferences_row_suffix;
 mod range_slider;
 mod slider_interaction;

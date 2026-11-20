@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Keep button labels from truncating when preferences rows measure their controls.
+
 ## 0.2.0-alpha.1 — 2026-11-17
 
 - Update the pinned rendering and accessibility stack to wgpu 30, AccessKit 0.25
