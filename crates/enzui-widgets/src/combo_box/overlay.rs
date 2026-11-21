@@ -7,6 +7,8 @@ pub(crate) struct ComboPopupOverlay<'a, 'b, Message> {
     pub(crate) tree: &'b mut iced::advanced::widget::Tree,
     pub(crate) scroll_id: &'b Id,
     pub(crate) anchor: iced::Rectangle,
+    /// The popup's width: the trigger's, or more.
+    pub(crate) width: f32,
     pub(crate) direction: enzui_core::placement::Direction,
     pub(crate) state: &'b mut ComboState,
     pub(crate) options: &'b [String],
@@ -149,7 +151,7 @@ where
             bounds,
             self.anchor,
             &popup_placement(self.direction),
-            Some(self.anchor.width),
+            Some(self.width),
         )
     }
 

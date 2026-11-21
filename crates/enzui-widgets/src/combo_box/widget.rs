@@ -30,6 +30,8 @@ pub(crate) struct ComboBoxWidget<'a, Message> {
     search: Option<(String, QueryCallback<'a, Message>)>,
     /// Whether the list is open, for the chevron in the trigger.
     chevron_open: std::rc::Rc<std::cell::Cell<bool>>,
+    /// The popup's least width; it is never narrower than the trigger.
+    popup_width: f32,
 }
 
 /// Receives a searchable field's edited query.
@@ -129,10 +131,15 @@ impl<'a, Message: Clone + 'a> ComboBoxWidget<'a, Message> {
             .or(value)
             .unwrap_or_else(|| placeholder.into_owned());
         // Elision needs the remaining bounded width rather than the text's intrinsic width.
+        let hug = builder.hug;
         let trigger_text = enz_text(shown)
             .size_px(tokens.text_size)
-            .single_line_elided()
-            .full_width()
+            .single_line_elided();
+        let trigger_text = match hug {
+            Some(max) => trigger_text.text_max_width(max),
+            None => trigger_text.full_width(),
+        };
+        let trigger_text = trigger_text
             .color_resolved(move |theme: &iced::Theme| {
                 let p = label_resolve(theme);
                 if !available {
@@ -201,14 +208,22 @@ impl<'a, Message: Clone + 'a> ComboBoxWidget<'a, Message> {
         let chrome_resolve = resolve.clone();
         let size = builder.size;
         let radius_pin = builder.radius;
+        // An inline field has no body, edge or inset; an error still draws its edge.
+        let inline = variant == crate::tokens::FieldVariant::Inline;
+        let inset = if inline { 0.0 } else { tokens.padding_x };
         let trigger = container(trigger_row)
-            .padding(Padding::ZERO.left(tokens.padding_x).right(tokens.padding_x))
+            .padding(Padding::ZERO.left(inset).right(inset))
             .height(tokens.height)
             .center_y(tokens.height)
-            .width(Length::Fill)
+            .width(if hug.is_some() {
+                Length::Shrink
+            } else {
+                Length::Fill
+            })
             .style(move |theme: &iced::Theme| {
                 let p = chrome_resolve(theme);
                 let border_color = if has_error { p.error } else { p.field_border };
+                let border_width = if inline && !has_error { 0.0 } else { 1.0 };
                 let fill = crate::tokens::field_fill_for(&p, variant);
                 container::Style {
                     background: Some(Background::Color(if available {
@@ -221,7 +236,7 @@ impl<'a, Message: Clone + 'a> ComboBoxWidget<'a, Message> {
                     })),
                     border: Border {
                         color: border_color,
-                        width: 1.0,
+                        width: border_width,
                         radius: size.resolve_radius(theme, radius_pin).into(),
                     },
                     ..container::Style::default()
@@ -277,6 +292,7 @@ impl<'a, Message: Clone + 'a> ComboBoxWidget<'a, Message> {
             scroll_cell: builder.scroll_cell,
             icons,
             search,
+            popup_width: builder.popup_width,
         }
     }
 
@@ -541,7 +557,7 @@ impl<'a, Message: Clone + 'a> ComboBoxWidget<'a, Message> {
             viewport.size(),
             trigger - Vector::new(viewport.x, viewport.y),
             &popup_placement(self.direction),
-            Some(trigger.width),
+            Some(trigger.width.max(self.popup_width)),
         );
         let layout = iced::advanced::Layout::of(&node);
 
@@ -1066,6 +1082,7 @@ where
                         tree: popup_tree,
                         scroll_id: &self.scroll_id,
                         anchor,
+                        width: anchor.width.max(self.popup_width),
                         direction: self.direction,
                         state: combo_state,
                         options: &self.options,

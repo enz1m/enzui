@@ -16,6 +16,11 @@
 //! [`EnzComposer::trailing_in_field`] overlays a 40-pixel cell at the field's
 //! trailing edge; it does not reserve editor text width, so text can run under
 //! it. Rail leading/trailing items and the status strip are caller-supplied.
+//!
+//! [`EnzComposer::card`] draws one field around the status, input and rail,
+//! as chat apps do: the input itself has no edge. The card does not move
+//! focus; a caller that wants a press on its empty parts to focus the input
+//! wraps it in a `mouse_area`.
 
 use enzui_theme::Palette;
 use iced::advanced::widget::Id;
@@ -92,6 +97,7 @@ pub struct EnzComposer<'a, Message> {
     status: Option<Element<'a, Message>>,
     id: Option<Id>,
     aria_label: Option<String>,
+    card: bool,
 }
 
 /// Build a composer over caller-owned Content, forwarding editor actions.
@@ -124,10 +130,18 @@ pub fn enz_composer<'a, Message: Clone + 'a>(
         status: None,
         id: None,
         aria_label: None,
+        card: false,
     }
 }
 
 impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
+    /// Draw one field, with the field's body and edge, around the status,
+    /// input and rail instead of around the input alone.
+    pub fn card(mut self, card: bool) -> Self {
+        self.card = card;
+        self
+    }
+
     /// Placeholder shown while the buffer is empty.
     pub fn placeholder(mut self, p: impl Into<Cow<'a, str>>) -> Self {
         self.placeholder = p.into();
@@ -311,6 +325,9 @@ impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
             .placeholder(self.placeholder.clone())
             .size(self.size)
             .area_height(height);
+        if self.card {
+            area = area.variant(crate::text_area::TextAreaVariant::Plain);
+        }
         if let Some(t) = self.tokens {
             area = area.tokens(t);
         }
@@ -423,7 +440,33 @@ impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
         }
         col = col.push(input);
         col = col.push(rail);
-        col.width(Length::Fill).into()
+        if !self.card {
+            return col.width(Length::Fill).into();
+        }
+        let pinned = self.palette.clone();
+        container(col.spacing(2.0))
+            .padding(iced::Padding {
+                top: 4.0,
+                right: 6.0,
+                bottom: 6.0,
+                left: 4.0,
+            })
+            .width(Length::Fill)
+            .style(move |theme: &iced::Theme| {
+                let p = pinned
+                    .clone()
+                    .unwrap_or_else(|| crate::theme_lookup::palette(theme));
+                container::Style {
+                    background: Some(p.field.into()),
+                    border: iced::Border {
+                        color: p.field_border,
+                        width: 1.0,
+                        radius: 14.0.into(),
+                    },
+                    ..container::Style::default()
+                }
+            })
+            .into()
     }
 }
 

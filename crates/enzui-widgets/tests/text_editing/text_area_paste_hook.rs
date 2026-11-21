@@ -189,3 +189,47 @@ fn composer_forwards_its_paste_hook() {
         "no hook, no message"
     );
 }
+
+/// A card composer draws its field around the input and the rail: both sit
+/// inside its edge, where a plain composer's reach the sides.
+#[test]
+fn a_card_composer_frames_its_input_and_rail() {
+    use enzui_core::collect::SemanticsCollector;
+    use enzui_core::semantics::Role;
+    let content = Content::new();
+    let mut renderer = crate::honest_frame_driver::new_renderer();
+    let mut bounds = |card: bool| {
+        let composer = enzui_widgets::composer::enz_composer(&content, Msg::Edit)
+            .on_send(Msg::Submit)
+            .id("card-composer")
+            .card(card);
+        let mut ui = UserInterface::build(
+            composer.into_element(),
+            Size::new(500.0, 180.0),
+            Cache::default(),
+            &mut renderer,
+        );
+        let mut c = SemanticsCollector::new();
+        ui.operate(&renderer, &mut c as &mut dyn Operation);
+        let nodes = c.into_collected();
+        let find = |role: Role| {
+            nodes
+                .iter()
+                .find(|n| n.semantics.role == role)
+                .expect("published")
+                .bounds
+        };
+        (find(Role::TextInput), find(Role::Button))
+    };
+    let (input, send) = bounds(false);
+    assert!(
+        input.x < 0.5 && send.x + send.width > 499.5,
+        "sanity: a plain composer reaches the sides"
+    );
+    let (input, send) = bounds(true);
+    assert!(input.x >= 1.0, "the input is inside the card: {input:?}");
+    assert!(
+        send.x + send.width <= 499.0,
+        "the rail is inside the card: {send:?}"
+    );
+}

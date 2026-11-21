@@ -30,6 +30,8 @@ pub struct EnzComboBox<'a, Message> {
     pub(crate) option_icon: Option<Box<dyn Fn(usize) -> Option<crate::icon::IconSource> + 'a>>,
     pub(crate) separators: Vec<usize>,
     pub(crate) search: Option<ComboSearch<'a, Message>>,
+    pub(crate) popup_width: f32,
+    pub(crate) hug: Option<f32>,
 }
 
 /// The query of a searchable combo box and where its edits go.
@@ -77,6 +79,8 @@ pub fn enz_combo_box<'a, Message: Clone + 'a>(
         option_icon: None,
         separators: Vec::new(),
         search: None,
+        popup_width: 0.0,
+        hug: None,
     }
 }
 
@@ -221,6 +225,24 @@ impl<'a, Message: Clone + 'a> EnzComboBox<'a, Message> {
     /// is set.
     pub fn id_prefix(mut self, prefix: impl Into<String>) -> Self {
         self.id_prefix = prefix.into();
+        self
+    }
+
+    /// Make the popup at least `width` logical pixels wide; it otherwise
+    /// matches the trigger. For a narrow trigger, such as one that
+    /// [hugs](Self::hug) its text.
+    pub fn popup_width(mut self, width: f32) -> Self {
+        self.popup_width = enzui_core::metrics::FiniteNonNeg::new_or(width, 0.0).get();
+        self
+    }
+
+    /// Size the trigger to what it shows, eliding text past `max` logical
+    /// pixels, instead of filling the width. With
+    /// [`FieldVariant::Inline`](crate::tokens::FieldVariant::Inline) this is a
+    /// bare text-and-chevron control for toolbars and composer rails.
+    pub fn hug(mut self, max: f32) -> Self {
+        self.width = Length::Shrink;
+        self.hug = Some(enzui_core::metrics::FiniteNonNeg::new_or(max, 0.0).get());
         self
     }
 

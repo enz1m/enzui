@@ -99,6 +99,8 @@ struct Host {
     /// A button above the field that captures its own presses, as a tab or
     /// toolbar button elsewhere in a window does.
     button_above: bool,
+    /// A bare trigger sized to its text, with a wider popup.
+    hug: bool,
     messages: Vec<Msg>,
     cursor: iced::advanced::mouse::Cursor,
 }
@@ -123,6 +125,7 @@ impl Host {
             query: None,
             id: None,
             button_above: false,
+            hug: false,
             messages: Vec::new(),
             cursor: iced::advanced::mouse::Cursor::Available(parked()),
         }
@@ -145,6 +148,12 @@ impl Host {
         }
         if let Some(id) = &self.id {
             cb = cb.id(id.clone());
+        }
+        if self.hug {
+            cb = cb
+                .variant(enzui_widgets::tokens::FieldVariant::Inline)
+                .hug(120.0)
+                .popup_width(260.0);
         }
         if self.button_above {
             return iced::widget::column![
@@ -274,3 +283,4 @@ impl Host {
 include!("combo_box_popup/highlight_identity.rs");
 include!("combo_box_popup/commit_identity.rs");
 include!("combo_box_popup/outside_press.rs");
+include!("combo_box_popup/hug.rs");
