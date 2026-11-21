@@ -281,6 +281,13 @@ where
             None => state.session.as_ref().and_then(LiveDrag::of),
         };
         let glide = state.motion.begin(theme, live.is_some());
+        if self.animate_changes {
+            state.motion.remember_rows(
+                &self.keys,
+                layout.children(&tree.children).map(|row| row.position()),
+                glide,
+            );
+        }
         if !glide {
             // At rest: every row in its laid-out place, nothing to track.
             state.motion.clear();
@@ -354,6 +361,9 @@ where
                     row.position() + offset,
                     lifted,
                 );
+                if self.animate_changes {
+                    state.motion.drawn_at(&self.keys[i], at);
+                }
                 (at - row.position(), lifted)
             })
             .collect();

@@ -141,6 +141,8 @@ pub struct EnzReorderList<'a, Message> {
     destination_operations: Vec<DragOperation>,
     /// Deadband in px.
     deadband: f32,
+    /// Whether rows glide to new places when the rows change outside a drag.
+    animate_changes: bool,
     /// Collection ID for the drag session.
     collection_id: String,
     /// The [`PayloadKind`](enzui_core::drag::PayloadKind)s a drag out of
@@ -234,6 +236,7 @@ pub fn enz_reorder_list<'a, Message>(
         source_capabilities: SourceCapabilities::move_only(),
         destination_operations: vec![DragOperation::Move],
         deadband: enzui_core::desktop_settings::input().drag_threshold,
+        animate_changes: false,
         collection_id: DEFAULT_COLLECTION_ID.to_owned(),
         offering: PayloadKinds::universal(),
         accepting: PayloadKinds::universal(),
@@ -404,6 +407,19 @@ impl<'a, Message> EnzReorderList<'a, Message> {
     /// literally; only inexpressible input degrades to the `0` default.
     pub fn spacing(mut self, px: f32) -> Self {
         self.spacing = enzui_core::metrics::FiniteNonNeg::new_or(px, 0.0).get();
+        self
+    }
+
+    /// Rows glide to their new places when rows are added or removed
+    /// outside a drag, over the theme's `motion-fast` duration, as they
+    /// settle after one: a row added or removed above pushes or pulls the
+    /// rows after it instead of moving them in one frame. A new row appears
+    /// in its place; give it an entrance of its own with
+    /// [`motion::animated`](crate::motion::animated)'s `enters_from`. A change
+    /// of layout alone (a resize, a scroll) does not animate, and reduced
+    /// motion snaps.
+    pub fn animate_changes(mut self) -> Self {
+        self.animate_changes = true;
         self
     }
 
@@ -1438,6 +1454,11 @@ where
                     .is_some(),
             };
             state.motion.note_frame(*at);
+            // Rows added or removed since the last frame: the rows that stay
+            // glide from where they were drawn.
+            if self.animate_changes && !live && state.motion.rows_changed(&self.keys, *at) {
+                shell.request_redraw();
+            }
             if state.motion.in_motion(*at) || state.motion.ended_since_drawn(live) {
                 shell.request_redraw();
             }

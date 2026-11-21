@@ -379,6 +379,11 @@ pub(super) struct RowMotion {
     duration_ms: Cell<f32>,
     easing: Cell<enzui_theme::MotionEasing>,
     was_live: Cell<bool>,
+    /// Where each row was last drawn, in list order, for a list that
+    /// animates its changes.
+    drawn: RefCell<Vec<(String, Point)>>,
+    /// The rows changed and their glides are seeded: the next draw glides.
+    changed: Cell<bool>,
 }
 
 impl RowMotion {
@@ -403,17 +408,79 @@ impl RowMotion {
     }
 
     /// Start a frame drawn with `theme`, with or without a live drag. Rows
-    /// glide only during a drag, on the frame it ends, and while a glide
-    /// from either is still running.
+    /// glide during or after a drag and after an opted-in change to the rows.
     pub(super) fn begin(&self, theme: &iced::Theme, live: bool) -> bool {
         let motion = crate::theme_lookup::motion(theme);
         self.duration_ms
             .set(motion.ms(enzui_theme::MotionToken::Fast));
         self.easing.set(motion.easing);
-        let glide =
-            live || self.was_live.get() || self.frame_at.get().is_some_and(|at| self.in_motion(at));
+        let rows_changed = self.changed.replace(false);
+        let glide = live
+            || self.was_live.get()
+            || rows_changed
+            || self.frame_at.get().is_some_and(|at| self.in_motion(at));
         self.was_live.set(live);
         glide
+    }
+
+    /// Note where the rows are this frame, `keys` with their laid-out
+    /// `places`. A frame that glides corrects the places it draws away from
+    /// layout through [`Self::drawn_at`].
+    pub(super) fn remember_rows(
+        &self,
+        keys: &[String],
+        places: impl Iterator<Item = Point>,
+        gliding: bool,
+    ) {
+        let mut drawn = self.drawn.borrow_mut();
+        let unchanged = drawn.len() == keys.len()
+            && drawn.iter().zip(keys).all(|((drawn, _), key)| drawn == key);
+        // Mid-glide the drawn places are written by `drawn_at`; an unchanged
+        // list keeps them until then.
+        if gliding && unchanged {
+            return;
+        }
+        drawn.clear();
+        drawn.extend(keys.iter().cloned().zip(places));
+    }
+
+    /// The row `key` was drawn at `at` this frame.
+    pub(super) fn drawn_at(&self, key: &str, at: Point) {
+        if let Some(entry) = self.drawn.borrow_mut().iter_mut().find(|(k, _)| k == key) {
+            entry.1 = at;
+        }
+    }
+
+    /// Whether the rows are other than when last drawn. If so, every row
+    /// still there starts gliding from where it was drawn, at `now`, and the
+    /// next draw glides. The first frame of a list has nothing to compare.
+    pub(super) fn rows_changed(&self, keys: &[String], now: Instant) -> bool {
+        let drawn = self.drawn.borrow();
+        if drawn.is_empty()
+            || (drawn.len() == keys.len() && drawn.iter().zip(keys).all(|((d, _), k)| d == k))
+        {
+            return false;
+        }
+        let mut glides = self.glides.borrow_mut();
+        for (key, at) in drawn.iter() {
+            if keys.contains(key) {
+                let glide = glides.entry(key.clone()).or_insert(Glide {
+                    from: *at,
+                    to: *at,
+                    start: now,
+                });
+                // A row already gliding carries on from where it is shown.
+                if glide.from == glide.to {
+                    *glide = Glide {
+                        from: *at,
+                        to: *at,
+                        start: now,
+                    };
+                }
+            }
+        }
+        self.changed.set(true);
+        true
     }
 
     /// Where the row `key` paints this frame, given where it is laid out
@@ -479,5 +546,53 @@ impl RowMotion {
             self.easing.get().apply(elapsed / duration)
         };
         glide.from + (glide.to - glide.from) * t
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn keys(names: &[&str]) -> Vec<String> {
+        names.iter().map(|name| (*name).to_owned()).collect()
+    }
+
+    #[test]
+    fn a_removed_row_starts_the_rows_after_it_where_they_were_drawn() {
+        let motion = RowMotion::default();
+        let now = Instant::now();
+        motion.duration_ms.set(150.0);
+        motion.note_frame(now);
+        let before = keys(&["a", "b", "c"]);
+        let places = [
+            Point::new(0.0, 0.0),
+            Point::new(0.0, 38.0),
+            Point::new(0.0, 76.0),
+        ];
+        motion.remember_rows(&before, places.into_iter(), false);
+
+        // The same rows again: nothing to animate.
+        assert!(!motion.rows_changed(&before, now));
+
+        // `b` closes: `c` is laid out at 38 but starts where it was drawn.
+        let after = keys(&["a", "c"]);
+        assert!(motion.rows_changed(&after, now));
+        assert!(motion.changed.get(), "the next draw glides");
+        let shown = motion.place("c", Point::new(0.0, 38.0), Point::new(0.0, 38.0), false);
+        assert_eq!(shown, Point::new(0.0, 76.0));
+        assert_eq!(
+            motion.place("a", Point::new(0.0, 0.0), Point::new(0.0, 0.0), false),
+            Point::new(0.0, 0.0),
+            "a row that did not move stays"
+        );
+        // Later in the glide `c` is on its way, and at its end in place.
+        motion.note_frame(now + std::time::Duration::from_millis(75));
+        let mid = motion.place("c", Point::new(0.0, 38.0), Point::new(0.0, 38.0), false);
+        assert!(mid.y > 38.0 && mid.y < 76.0, "{mid:?}");
+        motion.note_frame(now + std::time::Duration::from_millis(200));
+        assert_eq!(
+            motion.place("c", Point::new(0.0, 38.0), Point::new(0.0, 38.0), false),
+            Point::new(0.0, 38.0)
+        );
     }
 }
