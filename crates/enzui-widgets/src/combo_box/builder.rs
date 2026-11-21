@@ -32,6 +32,7 @@ pub struct EnzComboBox<'a, Message> {
     pub(crate) search: Option<ComboSearch<'a, Message>>,
     pub(crate) popup_width: f32,
     pub(crate) hug: Option<f32>,
+    pub(crate) shown_as: Option<String>,
 }
 
 /// The query of a searchable combo box and where its edits go.
@@ -81,6 +82,7 @@ pub fn enz_combo_box<'a, Message: Clone + 'a>(
         search: None,
         popup_width: 0.0,
         hug: None,
+        shown_as: None,
     }
 }
 
@@ -246,6 +248,14 @@ impl<'a, Message: Clone + 'a> EnzComboBox<'a, Message> {
         self
     }
 
+    /// Show `text` in the trigger for the selected option, such as a short
+    /// form of a long label; the list keeps the full labels. Ignored while
+    /// nothing is selected.
+    pub fn shown_as(mut self, text: impl Into<String>) -> Self {
+        self.shown_as = Some(text.into());
+        self
+    }
+
     /// Override the ambient writing direction used by popup placement.
     ///
     /// The popup matches the trigger width, so its leading-edge alignment normally
@@ -370,12 +380,13 @@ impl<'a, Message: Clone + 'a> EnzComboBox<'a, Message> {
     }
 
     pub(crate) fn resolved_value(&self) -> Option<String> {
-        if self.selected_index.is_some() {
-            return self
-                .resolved_selected_index()
-                .and_then(|index| self.options.get(index).cloned());
-        }
-        self.selected.clone()
+        let value = if self.selected_index.is_some() {
+            self.resolved_selected_index()
+                .and_then(|index| self.options.get(index).cloned())
+        } else {
+            self.selected.clone()
+        };
+        value.map(|value| self.shown_as.clone().unwrap_or(value))
     }
 
     /// Materialise the widget tree.

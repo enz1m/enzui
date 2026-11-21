@@ -98,6 +98,7 @@ pub struct EnzComposer<'a, Message> {
     id: Option<Id>,
     aria_label: Option<String>,
     card: bool,
+    wrapped_rows: bool,
 }
 
 /// Build a composer over caller-owned Content, forwarding editor actions.
@@ -131,6 +132,7 @@ pub fn enz_composer<'a, Message: Clone + 'a>(
         id: None,
         aria_label: None,
         card: false,
+        wrapped_rows: false,
     }
 }
 
@@ -139,6 +141,14 @@ impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
     /// input and rail instead of around the input alone.
     pub fn card(mut self, card: bool) -> Self {
         self.card = card;
+        self
+    }
+
+    /// Grow by laid-out rows, wrapped lines included, between
+    /// [`min_rows`](Self::min_rows) and [`max_rows`](Self::max_rows), instead
+    /// of by logical lines. An explicit [`rows`](Self::rows) still wins.
+    pub fn wrapped_rows(mut self, wrapped: bool) -> Self {
+        self.wrapped_rows = wrapped;
         self
     }
 
@@ -323,8 +333,12 @@ impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
         let on_action = std::mem::replace(&mut self.on_action, Box::new(|_| unreachable!()));
         let mut area = enz_text_area(content, on_action)
             .placeholder(self.placeholder.clone())
-            .size(self.size)
-            .area_height(height);
+            .size(self.size);
+        area = if self.wrapped_rows && self.rows_override.is_none() {
+            area.auto_grow(self.min_rows, self.max_rows)
+        } else {
+            area.area_height(height)
+        };
         if self.card {
             area = area.variant(crate::text_area::TextAreaVariant::Plain);
         }

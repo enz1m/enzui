@@ -233,3 +233,58 @@ fn a_card_composer_frames_its_input_and_rail() {
         "the rail is inside the card: {send:?}"
     );
 }
+
+/// With wrapped rows, a long single line grows the input as it wraps; by
+/// logical lines it stays one row.
+#[test]
+fn a_wrapping_line_grows_a_wrapped_rows_composer() {
+    use enzui_core::collect::SemanticsCollector;
+    use enzui_core::semantics::Role;
+    let content = Content::with_text(&"many words that wrap ".repeat(12));
+    let mut renderer = crate::honest_frame_driver::new_renderer();
+    let mut height = |wrapped: bool| {
+        let composer = enzui_widgets::composer::enz_composer(&content, Msg::Edit)
+            .on_send(Msg::Submit)
+            .id("wrap-composer")
+            .max_rows(8)
+            .wrapped_rows(wrapped);
+        let mut ui = UserInterface::build(
+            composer.into_element(),
+            Size::new(220.0, 400.0),
+            Cache::default(),
+            &mut renderer,
+        );
+        // Wrapped height settles once the editor has laid out its text.
+        ui.draw(
+            &mut renderer,
+            &iced::Theme::Dark,
+            &iced::advanced::renderer::Style::default(),
+            mouse::Cursor::Unavailable,
+        );
+        let mut ui = UserInterface::build(
+            enzui_widgets::composer::enz_composer(&content, Msg::Edit)
+                .on_send(Msg::Submit)
+                .id("wrap-composer")
+                .max_rows(8)
+                .wrapped_rows(wrapped)
+                .into_element(),
+            Size::new(220.0, 400.0),
+            ui.into_cache(),
+            &mut renderer,
+        );
+        let mut c = SemanticsCollector::new();
+        ui.operate(&renderer, &mut c as &mut dyn Operation);
+        c.into_collected()
+            .into_iter()
+            .find(|n| n.semantics.role == Role::TextInput)
+            .expect("published")
+            .bounds
+            .height
+    };
+    let one = height(false);
+    let grown = height(true);
+    assert!(
+        grown > one * 2.0,
+        "the wrapped line grows the input: {one} -> {grown}"
+    );
+}

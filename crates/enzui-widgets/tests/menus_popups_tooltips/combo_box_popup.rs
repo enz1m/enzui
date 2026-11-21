@@ -153,7 +153,8 @@ impl Host {
             cb = cb
                 .variant(enzui_widgets::tokens::FieldVariant::Inline)
                 .hug(120.0)
-                .popup_width(260.0);
+                .popup_width(260.0)
+                .shown_as("Ap");
         }
         if self.button_above {
             return iced::widget::column![

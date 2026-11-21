@@ -3,6 +3,10 @@
 ## Unreleased
 
 - Keep button labels from truncating when preferences rows measure their controls.
+- Let reorderable lists animate row changes and share a drag host across a scrollable sidebar.
+- Let composers grow with wrapped text, forward clipboard paste, and frame their action rail.
+- Support compact combo box labels and wider menus, and dismiss menus on outside presses.
+- Expose the animated width reveal and forward popups from its visible child.
 
 ## 0.2.0-alpha.1 — 2026-11-17
 
