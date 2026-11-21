@@ -10,7 +10,10 @@
 //! registration order. Hit tests also use registration order, independently of
 //! visual stacking; avoid overlapping participants. Registrations and cursor
 //! positions must share the host's coordinate space. Scrollables may enclose
-//! the host, but a scroll boundary between host and participant is unsupported.
+//! the host. A scrollable between host and participants must have a
+//! [`drag_scroll_boundary`] as its content: within it, registrations are
+//! moved into the host's space and clipped to what the scrollable shows, and
+//! [`DragHostChannel::live_drag`] answers in the scrolled content's space.
 //!
 //! The activation threshold defaults to 4 logical pixels. Escape, cursor leave,
 //! and window unfocus cancel the session. Release rechecks current geometry;
@@ -222,6 +225,11 @@ struct ChannelInner {
     live: Option<LiveDrag>,
 
     layout_live: Option<LiveDrag>,
+
+    /// The scroll boundaries entered and not yet left, innermost last: each
+    /// one's content offset from the host's space, and the part of the host's
+    /// space it shows.
+    scrolls: Vec<(Vector, Rectangle)>,
 }
 
 /// Share per-pass geometry and live-drag snapshots between a host and participants.
@@ -300,7 +308,26 @@ impl DragHostChannel {
     /// outside that window or with no drag past the deadband.
     #[must_use]
     pub fn live_drag(&self) -> Option<LiveDrag> {
-        self.inner.borrow().live.clone()
+        let inner = self.inner.borrow();
+        let mut live = inner.live.clone()?;
+        // Inside a scroll boundary the participant's pointer is in the
+        // scrolled content's space; the origin is given in the same space.
+        if let Some((translation, _)) = inner.scrolls.last() {
+            live.origin += *translation;
+        }
+        Some(live)
+    }
+
+    /// Enter a scroll boundary whose content is `translation` away from the
+    /// host's space and which shows `visible` (in the host's space). Pair
+    /// with [`Self::leave_scroll`]; [`drag_scroll_boundary`] does both.
+    pub fn enter_scroll(&self, translation: Vector, visible: Rectangle) {
+        self.inner.borrow_mut().scrolls.push((translation, visible));
+    }
+
+    /// Leave the innermost scroll boundary.
+    pub fn leave_scroll(&self) {
+        self.inner.borrow_mut().scrolls.pop();
     }
 
     /// Whether the claiming host had a drag past the deadband at this pass's
@@ -328,8 +355,19 @@ impl DragHostChannel {
     ///
     /// Duplicate collection ids across lists and item surfaces are rejected; the
     /// first registration wins. Rejections appear in [`Self::rejected_duplicates`].
-    pub fn register(&self, registration: CollectionRegistration) {
+    pub fn register(&self, mut registration: CollectionRegistration) {
         let mut inner = self.inner.borrow_mut();
+        if let Some((translation, visible)) = inner.scrolls.last().copied() {
+            registration.bounds = clip_to(registration.bounds - translation, visible);
+            for (_, row) in &mut registration.items {
+                *row -= translation;
+            }
+            for rects in registration.grab_regions.iter_mut().flatten() {
+                for rect in rects {
+                    *rect = clip_to(*rect - translation, visible);
+                }
+            }
+        }
         let duplicate = inner
             .registry
             .iter()
@@ -357,8 +395,15 @@ impl DragHostChannel {
     ///
     /// Duplicate collection ids across lists and item surfaces are rejected; the
     /// first registration wins. Rejections appear in [`Self::rejected_duplicates`].
-    pub fn register_item_surface(&self, registration: ItemSurfaceRegistration) {
+    pub fn register_item_surface(&self, mut registration: ItemSurfaceRegistration) {
         let mut inner = self.inner.borrow_mut();
+        if let Some((translation, visible)) = inner.scrolls.last().copied() {
+            registration.bounds = clip_to(registration.bounds - translation, visible);
+            for item in &mut registration.items {
+                item.bounds = clip_to(item.bounds - translation, visible);
+                item.feedback_bounds -= translation;
+            }
+        }
         let duplicate = inner
             .item_surfaces
             .iter()
@@ -1244,3 +1289,177 @@ where
 
 #[cfg(test)]
 mod tests;
+
+/// `rect` cut to `visible`; a rectangle scrolled out of sight becomes an empty
+/// one at the edge it left by, so it can be neither pressed nor dropped on.
+fn clip_to(rect: Rectangle, visible: Rectangle) -> Rectangle {
+    rect.intersection(&visible).unwrap_or_else(|| Rectangle {
+        x: rect.x.clamp(visible.x, visible.x + visible.width),
+        y: rect.y.clamp(visible.y, visible.y + visible.height),
+        width: 0.0,
+        height: 0.0,
+    })
+}
+
+/// The content of a scrollable that stands between a drag host and its
+/// participants (a list of tabs scrolling under a fixed list, both in one
+/// host).
+///
+/// It must be the scrollable's content itself, at the content's origin: its
+/// offset is read as the difference between the visible region the
+/// scrollable gives its content and where the content is laid out.
+pub fn drag_scroll_boundary<'a, Message: 'a>(
+    channel: &DragHostChannel,
+    content: impl Into<Element<'a, Message>>,
+) -> Element<'a, Message> {
+    Element::new(DragScrollBoundary {
+        channel: channel.clone(),
+        child: content.into(),
+    })
+}
+
+struct DragScrollBoundary<'a, Message> {
+    channel: DragHostChannel,
+    child: Element<'a, Message>,
+}
+
+impl<Message> DragScrollBoundary<'_, Message> {
+    /// The content's offset from the host's space and the part of the host's
+    /// space shown, from the region the scrollable shows (`viewport`, in the
+    /// content's space).
+    fn scope(layout: Layout, viewport: &Rectangle) -> (Vector, Rectangle) {
+        let origin = layout.bounds().position();
+        let translation = Vector::new(viewport.x - origin.x, viewport.y - origin.y);
+        (
+            translation,
+            Rectangle::new(origin, iced::Size::new(viewport.width, viewport.height)),
+        )
+    }
+}
+
+impl<Message> Widget<Message, iced::Theme, iced::Renderer> for DragScrollBoundary<'_, Message> {
+    fn tag(&self) -> tree::Tag {
+        self.child.as_widget().tag()
+    }
+
+    fn state(&self) -> tree::State {
+        self.child.as_widget().state()
+    }
+
+    fn diff(&mut self, tree: &mut Tree) {
+        self.child.as_widget_mut().diff(tree);
+    }
+
+    fn size(&self) -> Size<Length> {
+        self.child.as_widget().size()
+    }
+
+    fn layout(&mut self, tree: &mut Tree, renderer: &iced::Renderer, limits: &layout::Limits) {
+        self.child.as_widget_mut().layout(tree, renderer, limits);
+    }
+
+    fn frame_interest(&self, tree: &Tree) -> bool {
+        crate::frame_routing::interest_transparent(&self.child, tree)
+    }
+
+    fn update_frame(
+        &mut self,
+        tree: &mut Tree,
+        event: &Event,
+        layout: Layout,
+        cursor: mouse::Cursor,
+        renderer: &iced::Renderer,
+        shell: &mut Shell<'_, Message>,
+        viewport: &Rectangle,
+    ) {
+        let (translation, visible) = Self::scope(layout, viewport);
+        self.channel.enter_scroll(translation, visible);
+        crate::frame_routing::forward_frame_transparent(
+            &mut self.child,
+            tree,
+            event,
+            layout,
+            cursor,
+            renderer,
+            shell,
+            viewport,
+        );
+        self.channel.leave_scroll();
+    }
+
+    fn update(
+        &mut self,
+        tree: &mut Tree,
+        event: &Event,
+        layout: Layout,
+        cursor: mouse::Cursor,
+        renderer: &iced::Renderer,
+        shell: &mut Shell<'_, Message>,
+        viewport: &Rectangle,
+    ) {
+        let (translation, visible) = Self::scope(layout, viewport);
+        self.channel.enter_scroll(translation, visible);
+        self.child
+            .as_widget_mut()
+            .update(tree, event, layout, cursor, renderer, shell, viewport);
+        self.channel.leave_scroll();
+    }
+
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        layout: Layout,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+        renderer: &iced::Renderer,
+    ) -> mouse::Interaction {
+        self.child
+            .as_widget()
+            .mouse_interaction(tree, layout, cursor, viewport, renderer)
+    }
+
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut iced::Renderer,
+        theme: &iced::Theme,
+        style: &renderer::Style,
+        layout: Layout,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+    ) {
+        let (translation, visible) = Self::scope(layout, viewport);
+        self.channel.enter_scroll(translation, visible);
+        self.child
+            .as_widget()
+            .draw(tree, renderer, theme, style, layout, cursor, viewport);
+        self.channel.leave_scroll();
+    }
+
+    fn operate(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout,
+        viewport: &Rectangle,
+        renderer: &iced::Renderer,
+        operation: &mut dyn Operation,
+    ) {
+        self.child
+            .as_widget_mut()
+            .operate(tree, layout, viewport, renderer, operation);
+    }
+
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut Tree,
+        layout: Layout,
+        renderer: &iced::Renderer,
+        viewport: &Rectangle,
+        translation: Vector,
+        window: Size,
+    ) -> Vec<overlay::Element<'b, Message, iced::Theme, iced::Renderer>> {
+        self.child
+            .as_widget_mut()
+            .overlay(tree, layout, renderer, viewport, translation, window)
+    }
+}
