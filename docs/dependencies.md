@@ -27,18 +27,18 @@ Applications tracking `main` should use `main` for every enzUI crate and the
 iced revision listed above, with a committed application lockfile. Keep the
 SDK and iced sources aligned with the same SDK revision.
 
-## An application using Alpha 0.2
+## An application using Alpha 0.3
 
-Keep all enzUI dependencies on the same Git URL and the `v0.2.0-alpha.1` tag,
+Keep all enzUI dependencies on the same Git URL and the `v0.3.0-alpha.1` tag,
 and commit the application's Cargo.lock. The lockfile pins the resolved source.
 For the original `v0.1.0-alpha.1` release, use that tag's dependency guide;
 its older foundation pins must remain together.
 
 ```toml
 [dependencies]
-enzui-core = { git = "https://github.com/enz1m/enzui.git", tag = "v0.2.0-alpha.1", features = ["accesskit"] }
-enzui-theme = { git = "https://github.com/enz1m/enzui.git", tag = "v0.2.0-alpha.1" }
-enzui-widgets = { git = "https://github.com/enz1m/enzui.git", tag = "v0.2.0-alpha.1" }
+enzui-core = { git = "https://github.com/enz1m/enzui.git", tag = "v0.3.0-alpha.1", features = ["accesskit"] }
+enzui-theme = { git = "https://github.com/enz1m/enzui.git", tag = "v0.3.0-alpha.1" }
+enzui-widgets = { git = "https://github.com/enz1m/enzui.git", tag = "v0.3.0-alpha.1" }
 iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6", default-features = false, features = ["wgpu", "tokio", "advanced", "a11y", "wayland", "wayland-dlopen", "wayland-decorations"] }
 ```
 

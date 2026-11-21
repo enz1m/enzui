@@ -131,7 +131,7 @@ redundant_type_annotations = "warn"
 [workspace.dependencies]
 # The diagnostics facade: framework code logs, applications choose the logger.
 log = { version = "0.4", features = ["std"] }
-enzui-activity = { version = "0.2.0-alpha.1", path = "crates/enzui-activity" }
+enzui-activity = { version = "0.3.0-alpha.1", path = "crates/enzui-activity" }
 # Keep the shared facade baseline backend-neutral so leaf crates can expose
 # backend selection without forking the workspace dependency declaration.
 #
@@ -168,21 +168,21 @@ iced_wgpu = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591
 # it, so iced_winit is listed here for the widgets crate to enable clipboard
 # images without `image/default`.
 iced_winit = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev", default-features = false }
-enzui-center-protocol = { version = "0.2.0-alpha.1", path = "crates/enzui-center-protocol" }
-enzui-agent = { version = "0.2.0-alpha.1", path = "crates/enzui-agent" }
-enzui-agent-app = { version = "0.2.0-alpha.1", path = "crates/enzui-agent-app" }
-enzui-core = { version = "0.2.0-alpha.1", path = "crates/enzui-core" }
-enzui-services = { version = "0.2.0-alpha.1", path = "crates/enzui-services" }
-enzui-icons = { version = "0.2.0-alpha.1", path = "crates/enzui-icons" }
-enzui-parent-lease = { version = "0.2.0-alpha.1", path = "crates/enzui-parent-lease" }
-enzui-resources = { version = "0.2.0-alpha.1", path = "crates/enzui-resources" }
-enzui-security = { version = "0.2.0-alpha.1", path = "crates/enzui-security" }
-enzui-test-support = { version = "0.2.0-alpha.1", path = "crates/enzui-test-support" }
-enzui-frame-check = { version = "0.2.0-alpha.1", path = "crates/enzui-frame-check" }
-enzui-external-image = { version = "0.2.0-alpha.1", path = "crates/enzui-external-image" }
-enzui-theme = { version = "0.2.0-alpha.1", path = "crates/enzui-theme" }
-enzui-widgets = { version = "0.2.0-alpha.1", path = "crates/enzui-widgets" }
-enzui-terminal = { version = "0.2.0-alpha.1", path = "crates/enzui-terminal" }
+enzui-center-protocol = { version = "0.3.0-alpha.1", path = "crates/enzui-center-protocol" }
+enzui-agent = { version = "0.3.0-alpha.1", path = "crates/enzui-agent" }
+enzui-agent-app = { version = "0.3.0-alpha.1", path = "crates/enzui-agent-app" }
+enzui-core = { version = "0.3.0-alpha.1", path = "crates/enzui-core" }
+enzui-services = { version = "0.3.0-alpha.1", path = "crates/enzui-services" }
+enzui-icons = { version = "0.3.0-alpha.1", path = "crates/enzui-icons" }
+enzui-parent-lease = { version = "0.3.0-alpha.1", path = "crates/enzui-parent-lease" }
+enzui-resources = { version = "0.3.0-alpha.1", path = "crates/enzui-resources" }
+enzui-security = { version = "0.3.0-alpha.1", path = "crates/enzui-security" }
+enzui-test-support = { version = "0.3.0-alpha.1", path = "crates/enzui-test-support" }
+enzui-frame-check = { version = "0.3.0-alpha.1", path = "crates/enzui-frame-check" }
+enzui-external-image = { version = "0.3.0-alpha.1", path = "crates/enzui-external-image" }
+enzui-theme = { version = "0.3.0-alpha.1", path = "crates/enzui-theme" }
+enzui-widgets = { version = "0.3.0-alpha.1", path = "crates/enzui-widgets" }
+enzui-terminal = { version = "0.3.0-alpha.1", path = "crates/enzui-terminal" }
 sha2 = "0.10.9"
 # Unicode canonical composition (NFC) for `enzui_core::palette::normalize`,
 # the single fold every framework text match runs through. Lowercasing alone

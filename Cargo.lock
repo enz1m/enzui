@@ -1047,7 +1047,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-activity"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "enzui-core",
  "futures-util",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-agent"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "enzui-center-protocol",
  "enzui-security",
@@ -1076,7 +1076,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-agent-app"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "enzui-agent",
  "enzui-core",
@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-center-protocol"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "enzui-security",
  "hex",
@@ -1099,7 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-clipboard"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "arboard",
  "enzui-core",
@@ -1114,7 +1114,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-clipboard-runtime"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "enzui-clipboard",
  "enzui-core",
@@ -1130,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-core"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "accesskit",
  "accesskit_unix",
@@ -1186,7 +1186,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-external-image"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ash",
  "bytemuck",
@@ -1201,7 +1201,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-frame-check"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "iced",
  "iced_test",
@@ -1210,18 +1210,18 @@ dependencies = [
 
 [[package]]
 name = "enzui-icons"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "sha2",
 ]
 
 [[package]]
 name = "enzui-parent-lease"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 
 [[package]]
 name = "enzui-resources"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "curl",
  "enzui-core",
@@ -1239,14 +1239,14 @@ dependencies = [
 
 [[package]]
 name = "enzui-security"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "rustix",
 ]
 
 [[package]]
 name = "enzui-services"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ashpd",
  "cc",
@@ -1284,7 +1284,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-terminal"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -1302,7 +1302,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-test-support"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "iced_core",
  "syn 2.0.119",
@@ -1310,7 +1310,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-theme"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1319,7 +1319,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-wayland"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "enzui-core",
  "enzui-parent-lease",
@@ -1332,7 +1332,7 @@ dependencies = [
 
 [[package]]
 name = "enzui-widgets"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",

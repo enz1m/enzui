@@ -1,7 +1,7 @@
 [package]
 autoexamples = false
 name = "enzui-widgets"
-version = "0.2.0-alpha.1"
+version = "0.3.0-alpha.1"
 edition.workspace = true
 rust-version.workspace = true
 # Framework code is MIT; the emoji search keywords bundled in
@@ -128,8 +128,8 @@ image = { version = "0.25", default-features = false, features = [
     "bmp",
 ] }
 enzui-core.workspace = true
-enzui-clipboard-runtime = { version = "0.2.0-alpha.1", path = "../enzui-clipboard-runtime", default-features = false, features = ["image"] }
-enzui-clipboard = { version = "0.2.0-alpha.1", path = "../enzui-clipboard" }
+enzui-clipboard-runtime = { version = "0.3.0-alpha.1", path = "../enzui-clipboard-runtime", default-features = false, features = ["image"] }
+enzui-clipboard = { version = "0.3.0-alpha.1", path = "../enzui-clipboard" }
 enzui-icons.workspace = true
 enzui-theme.workspace = true
 # EnzTextGrid: one grapheme per cell (extended clusters, ZWJ emoji, VS16) and
@@ -150,7 +150,7 @@ futures-timer = "3"
 # The `operate_chained` helper that follows `Outcome::Chain` exactly as
 # the real iced runtime does. Already a workspace member, adds no crate.
 enzui-test-support.workspace = true
-enzui-clipboard = { version = "0.2.0-alpha.1", path = "../enzui-clipboard" }
+enzui-clipboard = { version = "0.3.0-alpha.1", path = "../enzui-clipboard" }
 enzui-services = { workspace = true, features = ["spell-check"] }
 emojis = "0.9"
 # `one_async_runtime` only, to ask the one question that decides whether the
@@ -235,7 +235,7 @@ workspace = true
 # The Wayland xdg-foreign parent exporter and the lease-lifetime rules the
 # parented portal task obeys. Linux-only, like the parenting they serve.
 [target.'cfg(target_os = "linux")'.dependencies]
-enzui-wayland = { version = "0.2.0-alpha.1", path = "../enzui-wayland" }
+enzui-wayland = { version = "0.3.0-alpha.1", path = "../enzui-wayland" }
 enzui-parent-lease.workspace = true
 
 [[example]]

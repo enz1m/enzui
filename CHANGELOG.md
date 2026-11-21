@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0-alpha.1 — 2026-11-21
 
 - Keep button labels from truncating when preferences rows measure their controls.
 - Let reorderable lists animate row changes and share a drag host across a scrollable sidebar.
