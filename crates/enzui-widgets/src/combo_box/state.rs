@@ -11,6 +11,10 @@ pub(crate) struct ComboState {
     pub(crate) pressed_row: Option<usize>,
     pub(crate) hovered_row: Option<usize>,
     pub(crate) keyboard_navigation: bool,
+    /// The open list saw the current pointer press land on it. The trigger
+    /// reads this rather than whether the press was captured: a control
+    /// elsewhere that captured it (a tab, a button) is an outside press.
+    pub(crate) press_on_popup: bool,
     pub(crate) window_key: u64,
     /// The search query the list was last filtered by.
     pub(crate) query: String,

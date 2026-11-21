@@ -185,6 +185,9 @@ where
         renderer: &iced::Renderer,
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) {
+        if let Some(Some(position)) = enzui_core::focus::pointer_press_position(event, cursor) {
+            self.state.press_on_popup = layout.bounds().contains(position);
+        }
         self.popup.as_widget_mut().update(
             self.tree,
             event,

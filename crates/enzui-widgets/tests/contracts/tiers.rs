@@ -5,7 +5,12 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 /// Tier-1 modules that are app-facing API without a widget constructor.
-pub(crate) const NON_WIDGET_TIER1: &[&str] = &["file_chooser", "match_ink", "window_lifecycle"];
+pub(crate) const NON_WIDGET_TIER1: &[&str] = &[
+    "file_chooser",
+    "match_ink",
+    "reveal_width",
+    "window_lifecycle",
+];
 
 const TIER2_MARKER: &str = "2. **Internal-composition";
 const TIER3_MARKER: &str = "3. **Audit";

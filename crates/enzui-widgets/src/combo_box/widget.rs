@@ -812,10 +812,9 @@ where
             use enzui_core::focus::PressFocus;
             let mut opened_at: Option<usize> = None;
             let state = tree.state.downcast_mut::<ComboState>();
-            // While the popup is open, a press it captured or one that reached the layer
-            // above is its own; any other press moves focus on.
-            let consumed_by_popup =
-                state.open && (shell.is_event_captured() || cursor.is_levitating());
+            // A press on the popup or an overlay above the trigger keeps it open.
+            let on_popup = std::mem::take(&mut state.press_on_popup);
+            let consumed_by_popup = state.open && (on_popup || cursor.is_levitating());
             let was_focused = state.focus.is_focused();
             let was_open = state.open;
 

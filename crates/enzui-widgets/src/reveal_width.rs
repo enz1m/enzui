@@ -19,7 +19,7 @@ use std::cell::Cell;
 
 /// `child`, as wide as it is while `open` and no width while closed, sliding
 /// between the two.
-pub(crate) fn reveal_width<'a, Message: 'a>(
+pub fn reveal_width<'a, Message: 'a>(
     child: impl Into<Element<'a, Message>>,
     open: bool,
 ) -> Element<'a, Message> {
@@ -31,7 +31,7 @@ pub(crate) fn reveal_width<'a, Message: 'a>(
 }
 
 /// [`reveal_width`], drawing nothing while `hidden` says so.
-pub(crate) fn reveal_width_unless<'a, Message: 'a>(
+pub fn reveal_width_unless<'a, Message: 'a>(
     child: impl Into<Element<'a, Message>>,
     open: bool,
     hidden: impl Fn() -> bool + 'a,
@@ -227,6 +227,35 @@ impl<Message> Widget<Message, iced::Theme, Renderer> for RevealWidth<'_, Message
             cursor,
             viewport,
             renderer,
+        )
+    }
+
+    /// The child's popups, such as a combo box's list, while any of it shows.
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut Tree,
+        layout: Layout,
+        renderer: &Renderer,
+        viewport: &Rectangle,
+        translation: iced::Vector,
+        window: Size,
+    ) -> Vec<iced::advanced::overlay::Element<'b, Message, iced::Theme, Renderer>> {
+        if tree.state.downcast_ref::<RevealState>().shown <= 0.0
+            || self.hidden.as_ref().is_some_and(|hidden| hidden())
+        {
+            return Vec::new();
+        }
+        let child_layout = layout
+            .children(&tree.children)
+            .next()
+            .expect("the reveal lays its child out under it");
+        self.child.as_widget_mut().overlay(
+            &mut tree.children[0],
+            child_layout,
+            renderer,
+            viewport,
+            translation,
+            window,
         )
     }
 }

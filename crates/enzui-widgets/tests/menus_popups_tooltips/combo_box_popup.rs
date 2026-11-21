@@ -96,6 +96,9 @@ struct Host {
     /// An explicit widget id, so a test that routes AT actions knows the
     /// combo box node's identity. `None` uses the derived id.
     id: Option<iced::advanced::widget::Id>,
+    /// A button above the field that captures its own presses, as a tab or
+    /// toolbar button elsewhere in a window does.
+    button_above: bool,
     messages: Vec<Msg>,
     cursor: iced::advanced::mouse::Cursor,
 }
@@ -119,6 +122,7 @@ impl Host {
             separator: None,
             query: None,
             id: None,
+            button_above: false,
             messages: Vec::new(),
             cursor: iced::advanced::mouse::Cursor::Available(parked()),
         }
@@ -141,6 +145,15 @@ impl Host {
         }
         if let Some(id) = &self.id {
             cb = cb.id(id.clone());
+        }
+        if self.button_above {
+            return iced::widget::column![
+                iced::widget::button("Other")
+                    .on_press(Msg::Pick("button".into()))
+                    .height(40),
+                cb.into_element(),
+            ]
+            .into();
         }
         cb.into()
     }
@@ -260,3 +273,4 @@ impl Host {
 
 include!("combo_box_popup/highlight_identity.rs");
 include!("combo_box_popup/commit_identity.rs");
+include!("combo_box_popup/outside_press.rs");

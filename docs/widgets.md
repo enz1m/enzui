@@ -12,7 +12,7 @@ block disagree. To change an entry, edit the doc block and regenerate:
 ENZUI_WRITE_WIDGET_DOC=1 cargo wt --test contracts widget_catalog_page
 ```
 
-This page lists all **240** tier-1 (supported public API) widget
+This page lists all **241** tier-1 (supported public API) widget
 modules, grouped by what you are trying to do. Tier 1 is derived, not
 typed: it is every `pub mod` in the crate minus the internal-composition
 and audit/probe lists, and `widget_catalog_partitions_tier1` makes a
@@ -473,6 +473,7 @@ responsive host.
 | `tree view` | [`tree_view`](../crates/enzui-widgets/src/tree_view.rs) - the prose name for the keyboard-navigable tree of flattened rows; the intent terms (`tree`, `outline`, `OutlineGroup`) are on its row above. For a folding sidebar *section* use `expander` instead. |
 | `window lifecycle` | [`window_lifecycle`](../crates/enzui-widgets/src/window_lifecycle.rs) - the prose name for the multi-window exit-policy `iced::Task` binding; the intent terms (`second window`, `multi-window`, `close last window`) are on its row above. |
 | `nav split` | [`nav_split`](../crates/enzui-widgets/src/nav_split.rs) - the collapse-rule *state* (inline pane / overlay drawer / hidden) for the adaptive navigation shell. For the shell widget itself see the `split view` row (`navigation_split_view`). |
+| `animated width`, `slide a control open`, `collapse control width` | [`reveal_width`](../crates/enzui-widgets/src/reveal_width.rs) - animate a child's reserved width while retaining its popups when visible. |
 | `collapse search on small screens`, `search collapses to an icon`, `search icon button`, `search popup`, `responsive search`, `narrow search`, `search in a popover`, `expanding search box`, `focus search field id when collapsed`, `routed focus to a collapsed search`, `Ctrl+F opens the collapsed search`, `focus(search_field_id) returns None`, `find_focused reports None for a collapsed search field` | [`search_field`](../crates/enzui-widgets/src/search_field.rs) - measured responsive search, **on by default**. It measures whether the field can still do its job against its own assigned width - search glyph + **six wide query characters** + clear slot + the selected size's padding - rather than consulting an app/window breakpoint or requiring the whole placeholder to fit. Verbose placeholder prose continues through the normal ellipsis path at usable widths. Below that content-derived usability threshold it renders one search icon button whose box follows [`TitlebarAffordanceTokens`](../crates/enzui-widgets/src/toolbar_icon.rs) and whose painted glyph reads the same 16 px [`icon::DEFAULT_ICON_SIZE`](../crates/enzui-widgets/src/icon.rs) as its titlebar siblings, independently of the expanded field-prefix ladder. The icon carries the same accessible name and native keyboard shortcut as the input, a non-empty query keeps its selected fill so a hidden filter remains visible, activation expands inline with focus already in the input, and Escape closes and restores focus to the icon. Value and exact caret survive collapse/reopen. **The collapsed field is also addressable by routed focus:** a caller's `iced::advanced::widget::operation::focusable::focus(field_id)` (or a `text_input::*` op) walks the responsive wrapper, reaches the input under the icon, and the wrapper opens synchronously so the next rendered tree carries the expanded `Role::TextInput`. Apps that publish an `.id(..)` on the field keep working after the shipped default collapses their layout width. Use `.responsive(false)` only when the field already lives inside another search surface (for example [`command_palette`](../crates/enzui-widgets/src/command_palette.rs)), which owns its own responsive presentation. |
 | `masonry`, `masonry grid`, `ragged grid`, `variable height tile grid`, `staggered grid`, `waterfall layout`, `Pinterest layout` | **not a widget - and no framework capability exists**. Nothing in this crate lays out a grid of variable-height tiles the ragged way Pinterest and Adwaita's `AdwWrapLayout` do; [`wrap`](../crates/enzui-widgets/src/wrap.rs) is a **fixed-cell** chip/badge inventory (identical cell heights) and [`flow`](../crates/enzui-widgets/src/flow.rs) is a flex-wrap **row** container (each row aligns to its tallest child, so tiles do not slot upward into gaps). Neither is masonry, and forcing either into that shape produces a broken thumbnail grid. The searcher who typed `masonry` recorded a **zero** hit in the index (not one wrong hit) so this row exists to say so honestly: if you actually need masonry, write it once as a new tier-1 widget with a tests entry, not per-app. Until then, prefer [`responsive_grid`](../crates/enzui-widgets/src/responsive_grid.rs) (equal-height cells with size-class breakpoints), whose visual is what most of these searches actually want. |
 | `workspace`, `open folder`, `open a folder as a workspace`, `root folder`, `opened folder`, `workspace root`, `workspace as a place` | **not a widget** - an app concept, not a framework primitive. "Workspace" in an editor-style app is the user-owned root a *host* opens; the framework ships **decoration for one** (`workspace favicon in sidebar` on [`sidebar_row`](../crates/enzui-widgets/src/sidebar_row.rs), `workspace section` on [`expander`](../crates/enzui-widgets/src/expander/mod.rs)) but no *workspace primitive*. That is on purpose - what "a workspace" is (a directory tree? an untitled project? a saved session?) is app vocabulary, and a framework workspace would either be the intersection (nothing useful) or the union (an untyped soup). For a **sidebar section** grouping a workspace's rows, reach for [`expander`](../crates/enzui-widgets/src/expander/mod.rs) with `.hover_scope(HoverScope::Group)`; for a **single workspace row** (name + favicon + right-click), reach for [`sidebar_row`](../crates/enzui-widgets/src/sidebar_row.rs) with `.icon_source(..)` and `.on_context(..)`. For the folder tree *inside* an opened workspace, reach for [`tree_view`](../crates/enzui-widgets/src/tree_view.rs). Recorded here so a search that ended in zero hits lands on a decision - which of the three near-misses does your case want - rather than in silence. |
@@ -551,7 +552,7 @@ provide. Each row links the available siblings and explains when to use them.
 - [Text input and forms](#text-input-and-forms) - 30 widgets
 - [Selection and pickers](#selection-and-pickers) - 12 widgets
 - [Navigation and app shell](#navigation-and-app-shell) - 31 widgets
-- [Layout and spacing](#layout-and-spacing) - 16 widgets
+- [Layout and spacing](#layout-and-spacing) - 17 widgets
 - [Containers, surfaces and scrolling](#containers-surfaces-and-scrolling) - 26 widgets
 - [Lists, tables and virtualisation](#lists-tables-and-virtualisation) - 21 widgets
 - [Charts and data visualisation](#charts-and-data-visualisation) - 9 widgets
@@ -748,6 +749,7 @@ than window width.
 | [`aspect_ratio`](../crates/enzui-widgets/src/aspect_ratio.rs) | a frame that keeps a fixed width-over-height ratio, deriving height from the resolved width. | `enz_aspect_ratio`, `EnzAspectRatio` |
 | [`center`](../crates/enzui-widgets/src/center.rs) | thin axis-specific centring recipes (both axes, vertical only, horizontal only). | `enz_center`, `enz_hcenter`, `enz_vcenter` |
 | [`clamp`](../crates/enzui-widgets/src/clamp.rs) | cap child width to a readable-width max, centre in the parent. | `enz_clamp`, `EnzClamp` |
+| [`reveal_width`](../crates/enzui-widgets/src/reveal_width.rs) | animate the space a child reserves horizontally and show its overlays while visible. | *not a widget - see module docs* |
 | [`flow`](../crates/enzui-widgets/src/flow.rs) | flex-wrap container. | `enz_flow`, `EnzFlow` |
 | [`flow_item`](../crates/enzui-widgets/src/flow_item.rs) | fixed-height child for a flow / wrap layout. | `enz_flow_item`, `EnzFlowItem` |
 | [`grid`](../crates/enzui-widgets/src/grid.rs) | fixed-column grid layout. | `enz_grid`, `grid::enz_keyed_grid`, `EnzGrid` |
@@ -967,7 +969,7 @@ not.
 
 ## What is not on this page
 
-The crate declares 315 `pub mod`s; 240 of them are tier 1 and listed
+The crate declares 316 `pub mod`s; 241 of them are tier 1 and listed
 above. The remainder are **internal-composition** modules (public only so
 widgets in this crate and the probe can compose them) and **audit/probe**
 modules (they power the test and A/B harness). Both lists, and the reason

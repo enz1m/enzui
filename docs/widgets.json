@@ -1010,6 +1010,15 @@
     "wiring_contract": false
   },
   {
+    "module": "reveal_width",
+    "tier": 1,
+    "group": "Layout and spacing",
+    "summary": "animate the space a child reserves horizontally and show its overlays while visible.",
+    "api": [],
+    "keywords": ["animated width", "collapse control width", "slide a control open"],
+    "wiring_contract": false
+  },
+  {
     "module": "flow",
     "tier": 1,
     "group": "Layout and spacing",

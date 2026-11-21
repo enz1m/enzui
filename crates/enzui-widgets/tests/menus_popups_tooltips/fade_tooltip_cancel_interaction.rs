@@ -793,3 +793,55 @@ fn control_tooltip_defaults_and_overrides_reach_the_native_overlay() {
         );
     }
 }
+
+#[test]
+fn a_revealed_childs_popups_stay_published() {
+    let hidden = std::rc::Rc::new(std::cell::Cell::new(false));
+    let mut element: Element<'static, Msg> =
+        enzui_widgets::reveal_width::reveal_width_unless(tooltip_over_button(), true, {
+            let hidden = std::rc::Rc::clone(&hidden);
+            move || hidden.get()
+        });
+    let mut tree = Tree::new(&element);
+    element.as_widget_mut().diff(&mut tree);
+    let renderer = make_renderer();
+    let node = element.as_widget_mut().measure_snapshot(
+        &mut tree,
+        &renderer,
+        &layout::Limits::new(Size::ZERO, Size::new(W, H)),
+    );
+    let t0 = time::Instant::now();
+    let _ = deliver(
+        &mut element,
+        &mut tree,
+        &node,
+        &renderer,
+        redraw_at(t0),
+        OVER,
+    );
+    let _ = deliver(
+        &mut element,
+        &mut tree,
+        &node,
+        &renderer,
+        move_to(OVER),
+        OVER,
+    );
+    let _ = deliver(
+        &mut element,
+        &mut tree,
+        &node,
+        &renderer,
+        redraw_at(t0 + settle()),
+        OVER,
+    );
+    assert!(
+        overlay_is_published(&mut element, &mut tree, &node, &renderer),
+        "a popup inside an open reveal reaches the window"
+    );
+    hidden.set(true);
+    assert!(
+        !overlay_is_published(&mut element, &mut tree, &node, &renderer),
+        "hiding the child also hides its popup"
+    );
+}
