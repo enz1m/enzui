@@ -77,6 +77,7 @@ pub struct EnzComposer<'a, Message> {
     on_send: Option<Message>,
     submit_key: crate::text_area::SubmitKey,
     on_stop: Option<Message>,
+    on_paste: Option<Message>,
     placeholder: Cow<'a, str>,
     size: FieldSize,
     tokens: Option<TextAreaTokens>,
@@ -108,6 +109,7 @@ pub fn enz_composer<'a, Message: Clone + 'a>(
         on_send: None,
         submit_key: crate::text_area::SubmitKey::Enter,
         on_stop: None,
+        on_paste: None,
         placeholder: Cow::Borrowed(""),
         size: FieldSize::default(),
         tokens: None,
@@ -198,6 +200,14 @@ impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
     /// check buffer content. Neither sends while busy.
     pub fn on_send(mut self, msg: Message) -> Self {
         self.on_send = Some(msg);
+        self
+    }
+    /// Notify before the focused input pastes, as
+    /// [`EnzTextArea::on_paste`](crate::text_area::EnzTextArea::on_paste)
+    /// does; the text paste still follows. A host that accepts pasted images
+    /// reads the clipboard's image here.
+    pub fn on_paste(mut self, msg: Message) -> Self {
+        self.on_paste = Some(msg);
         self
     }
     /// Message emitted when the stop button is pressed (only reachable while
@@ -315,6 +325,9 @@ impl<'a, Message: Clone + 'a> EnzComposer<'a, Message> {
         }
         if let Some(id) = self.effective_id() {
             area = area.id(id);
+        }
+        if let Some(paste) = self.on_paste.clone() {
+            area = area.on_paste(paste);
         }
         if let Some(name) = &self.aria_label {
             area = area.aria_label(name.clone());

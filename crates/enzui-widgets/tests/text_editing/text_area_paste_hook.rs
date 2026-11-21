@@ -134,3 +134,58 @@ fn paste_hook_composes_with_submit_and_shift_enter() {
     host.paste_reply();
     assert_eq!(host.content.text(), format!("\n{TEXT}"));
 }
+
+/// A composer hands its paste hook to its input, so a chat can read a pasted
+/// picture while the text paste goes on as before.
+#[test]
+fn composer_forwards_its_paste_hook() {
+    let content = Content::new();
+    let mut renderer = crate::honest_frame_driver::new_renderer();
+    let mut cache = Cache::default();
+    let mut frame = |hook: bool, focus: bool, events: &[Event]| {
+        let mut composer = enzui_widgets::composer::enz_composer(&content, Msg::Edit)
+            .on_send(Msg::Submit)
+            .id("paste-composer");
+        if hook {
+            composer = composer.on_paste(Msg::Paste);
+        }
+        let mut ui = UserInterface::build(
+            composer.into_element(),
+            Size::new(500.0, 180.0),
+            std::mem::take(&mut cache),
+            &mut renderer,
+        );
+        if focus {
+            ui.operate(
+                &renderer,
+                &mut iced::advanced::widget::operation::focusable::focus::<()>(Id::new(
+                    "paste-composer",
+                )) as &mut dyn Operation,
+            );
+        }
+        let mut messages = iced::advanced::shell::Bus::new();
+        let _ = ui.update(
+            &window::Headless,
+            &iced::advanced::graphics::core::shell::Waker::noop(),
+            events,
+            mouse::Cursor::Unavailable,
+            &mut renderer,
+            &mut messages,
+        );
+        cache = ui.into_cache();
+        messages.into_iter().collect::<Vec<_>>()
+    };
+    let paste = [key(Key::Character("v".into()), Modifiers::COMMAND)];
+    frame(true, true, &[]);
+    assert!(
+        matches!(frame(true, false, &paste).as_slice(), [Msg::Paste]),
+        "the hook is told"
+    );
+    frame(false, true, &[]);
+    assert!(
+        !frame(false, false, &paste)
+            .iter()
+            .any(|m| matches!(m, Msg::Paste)),
+        "no hook, no message"
+    );
+}
