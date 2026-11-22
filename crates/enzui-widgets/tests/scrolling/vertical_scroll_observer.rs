@@ -84,8 +84,7 @@ fn a_width_only_relayout_does_not_notify_a_vertical_observer() {
     );
     assert!(
         vertical[2..].iter().all(Vec::is_empty),
-        "a width-only relayout must not notify: {:?}",
-        vertical
+        "a width-only relayout must not notify: {vertical:?}"
     );
 }
 
