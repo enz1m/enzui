@@ -195,17 +195,25 @@ impl<'a, Message: Clone + 'a> EnzAppShell<'a, Message> {
 
     fn content_pane(&self, geometry: ShellGeometry) -> Element<'a, Message> {
         let tokens = self.tokens_normalized();
-        let page: Element<'a, Message> = container(crate::layout_memo::LayoutMemo::new(
-            self.content.build(&geometry),
-        ))
-        .padding(Padding::ZERO.top(if self.immersive_fullscreen() {
+        let inset = if self.immersive_fullscreen() {
             0.0
         } else {
             tokens.effective_page_inset()
-        }))
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into();
+        };
+        let slot = std::rc::Rc::clone(&self.content);
+        let page = move || -> Element<'a, Message> {
+            container(crate::layout_memo::LayoutMemo::new(slot.build(&geometry)))
+                .padding(Padding::ZERO.top(inset))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .into()
+        };
+        let page: Element<'a, Message> = match &self.page_handoff {
+            Some(signal) => {
+                super::page_handoff::PageHandoff::new(page, std::rc::Rc::clone(signal)).into()
+            }
+            None => page(),
+        };
         // The main content is the window's main landmark.
         SemanticsContainer::new(
             self.pane(

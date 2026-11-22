@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Keep the outgoing page visible through sidebar motion before laying out its replacement.
+- Settle expanding and collapsing sections at their final height.
+- Let scroll observers subscribe to vertical changes without reacting to width-only relayouts.
+
 ## 0.3.0-alpha.1 — 2026-11-21
 
 - Keep button labels from truncating when preferences rows measure their controls.

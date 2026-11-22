@@ -14,7 +14,7 @@ pub struct EnzAppShell<'a, Message> {
     pub(crate) split_axis_override: Option<SplitAxis>,
     pub(crate) breakpoints: BreakpointScale,
     pub(crate) state: NavSplitState,
-    pub(crate) content: ContentSlot<'a, Message>,
+    pub(crate) content: std::rc::Rc<ContentSlot<'a, Message>>,
     pub(crate) secondary_content: Option<ShellSlot<'a, Message>>,
     pub(crate) sidebar: Option<ShellSlot<'a, Message>>,
     pub(crate) titlebar: Option<ShellSlot<'a, Message>>,
@@ -64,6 +64,7 @@ pub struct EnzAppShell<'a, Message> {
     pub(crate) sidebar_toggle_side_inset: Option<f32>,
     /// The width the current build lays the shell out at.
     pub(crate) built_width: std::cell::Cell<f32>,
+    pub(crate) page_handoff: Option<std::rc::Rc<super::page_handoff::Signal>>,
 }
 
 /// Build a shell with a content closure and default tokens.
@@ -101,12 +102,12 @@ fn app_shell_with_content<'a, Message: Clone + 'a>(
     content: ContentSlot<'a, Message>,
 ) -> EnzAppShell<'a, Message> {
     EnzAppShell {
+        content: std::rc::Rc::new(content),
         layout: ShellLayout::default(),
         tokens: ShellTokens::default(),
         split_axis_override: None,
         breakpoints: BreakpointScale::default(),
         state: NavSplitState::new(),
-        content,
         secondary_content: None,
         footer: None,
         activity: None,
@@ -143,6 +144,7 @@ fn app_shell_with_content<'a, Message: Clone + 'a>(
         tooltip_delay: None,
         sidebar_toggle_side_inset: None,
         built_width: std::cell::Cell::new(0.0),
+        page_handoff: None,
     }
 }
 

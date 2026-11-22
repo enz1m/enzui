@@ -123,6 +123,7 @@ struct AppShellState {
     motion_edge: std::cell::Cell<Option<iced::time::Instant>>,
     // Ordinary layout clears this key; duplicate island passes may reuse unchanged geometry.
     last_island: std::cell::Cell<Option<([f32; 3], Size)>>,
+    page_handoff: std::rc::Rc<super::page_handoff::Signal>,
 }
 
 impl Default for AppShellState {
@@ -151,6 +152,7 @@ impl Default for AppShellState {
             pending_frame_anchor: None,
             motion_edge: std::cell::Cell::new(None),
             last_island: std::cell::Cell::new(None),
+            page_handoff: std::rc::Rc::default(),
         }
     }
 }
@@ -669,9 +671,11 @@ fn operate_child<Message>(
     renderer: &iced::Renderer,
     operation: &mut dyn Operation,
 ) {
-    content
-        .as_widget_mut()
-        .operate(tree, layout, &layout.bounds(), renderer, operation);
+    super::page_handoff::probing(|| {
+        content
+            .as_widget_mut()
+            .operate(tree, layout, &layout.bounds(), renderer, operation);
+    });
 }
 
 fn probe_child<Message>(
@@ -762,6 +766,16 @@ pub fn motion_layout_route(
 }
 
 impl<Message> AppShellWidget<'_, Message> {
+    fn end_page_handoff_frame(tree: &Tree, event: &Event, shell: &mut Shell<'_, Message>) {
+        if let Event::Window(iced::window::Event::RedrawRequested(at)) = event {
+            let motion = shell.redraw_request() == iced::window::RedrawRequest::NextFrame;
+            let signal = &tree.state.downcast_ref::<AppShellState>().page_handoff;
+            if signal.end_frame(*at, motion) {
+                shell.invalidate_layout();
+            }
+        }
+    }
+
     fn docked_presentation_enabled() -> bool {
         false
     }
@@ -1009,6 +1023,9 @@ impl<'a, Message: Clone + 'a> Widget<Message, iced::Theme, iced::Renderer>
                     ],
                 )
             });
+        self.shell.page_handoff = Some(std::rc::Rc::clone(
+            &tree.state.downcast_ref::<AppShellState>().page_handoff,
+        ));
         let custody = super::seam::ContentTree::new(retained_content);
         let titlebar_content_custody = super::seam::ContentTree::new(retained_titlebar_content);
         let titlebar_custody = super::seam::ContentTree::new(retained_titlebar);
@@ -1250,6 +1267,7 @@ impl<'a, Message: Clone + 'a> Widget<Message, iced::Theme, iced::Renderer>
         {
             let _ = capture.publish(shell);
         }
+        let previous_messages = shell.message_count();
         self.content.as_widget_mut().update(
             &mut tree.children[0],
             event,
@@ -1259,6 +1277,15 @@ impl<'a, Message: Clone + 'a> Widget<Message, iced::Theme, iced::Renderer>
             shell,
             viewport,
         );
+        if tree
+            .state
+            .downcast_ref::<AppShellState>()
+            .page_handoff
+            .observe_input(event, cursor, shell.message_count() > previous_messages)
+        {
+            shell.request_redraw();
+        }
+        Self::end_page_handoff_frame(tree, event, shell);
         if !event_cannot_mutate_focus_state::<Message>(event) {
             tree.state
                 .downcast_mut::<AppShellState>()
@@ -1306,6 +1333,7 @@ impl<'a, Message: Clone + 'a> Widget<Message, iced::Theme, iced::Renderer>
             shell,
             viewport,
         );
+        Self::end_page_handoff_frame(tree, event, shell);
     }
 
     fn mouse_interaction(

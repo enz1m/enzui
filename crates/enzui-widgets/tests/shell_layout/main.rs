@@ -28,6 +28,7 @@
 
 mod app_shell_content_identity;
 mod app_shell_geometry;
+mod app_shell_page_handoff;
 #[path = "../common/corner_probe.rs"]
 pub mod corner_probe;
 
