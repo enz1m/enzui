@@ -11,7 +11,7 @@ the foundation revisions recorded in their own dependency guides.
 
 | Source | Revision |
 | --- | --- |
-| [iced](https://github.com/enz1m/enzim-iced) | `e36b07b591661fdb666088fc943cc0b927a2367b` |
+| [iced](https://github.com/enz1m/enzim-iced) | `94eb56df238b88391b375b34672b9373e3ed8e8f` |
 | [wgpu family](https://github.com/enz1m/enzim-wgpu) | `c62972c9be1326882c4b4f1939d8a2713e42d210` |
 | [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `ad474131e52c0fde5979f8def2889489b50a0480` |
 | [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `0617a49e7b8a5c5c4cc572a3e98cda70ff1be89f` |
@@ -39,7 +39,7 @@ its older foundation pins must remain together.
 enzui-core = { git = "https://github.com/enz1m/enzui.git", tag = "v0.3.0-alpha.1", features = ["accesskit"] }
 enzui-theme = { git = "https://github.com/enz1m/enzui.git", tag = "v0.3.0-alpha.1" }
 enzui-widgets = { git = "https://github.com/enz1m/enzui.git", tag = "v0.3.0-alpha.1" }
-iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "a6483d7eb2f98bd568dfd4a6d5ab0228ace287d6", default-features = false, features = ["wgpu", "tokio", "advanced", "a11y", "wayland", "wayland-dlopen", "wayland-decorations"] }
+iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", default-features = false, features = ["wgpu", "tokio", "advanced", "a11y", "wayland", "wayland-dlopen", "wayland-decorations"] }
 ```
 
 A local application can instead use paths such as

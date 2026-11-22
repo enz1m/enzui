@@ -139,7 +139,7 @@ enzui-activity = { version = "0.3.0-alpha.1", path = "crates/enzui-activity" }
 # detection reaches zbus from iced's executor; selecting another default would
 # panic before the first frame. `thread-pool` remains available because focused
 # executor tests name it directly, but iced prefers Tokio when both are present.
-iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev", default-features = false, features = [
+iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev", default-features = false, features = [
     "wgpu",
     "tiny-skia",
     "crisp",
@@ -151,23 +151,23 @@ iced = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fd
     "svg",
     "a11y",
 ] }
-iced_core = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev" }
+iced_core = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev" }
 # Renderer-neutral runtime pieces, used by `enzui-theme`'s optional
 # `system-theme` feature so the token crate does not need the full facade.
-iced_runtime = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev" }
-iced_futures = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev" }
-iced_test = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev" }
+iced_runtime = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev" }
+iced_futures = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev" }
+iced_test = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev" }
 # The terminal view draws through its own wgpu pipeline and rasterises with the
 # shared cosmic-text font system.
-iced_graphics = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev" }
-iced_tiny_skia = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev" }
-iced_wgpu = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev", default-features = false }
+iced_graphics = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev" }
+iced_tiny_skia = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev" }
+iced_wgpu = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev", default-features = false }
 # The `image` feature on `iced_winit` gates clipboard image support
 # (`Kind::Image` / `Content::Image` + `arboard/image-data`) and is independent
 # of the image codec stack. `iced/image-without-codecs` alone does not enable
 # it, so iced_winit is listed here for the widgets crate to enable clipboard
 # images without `image/default`.
-iced_winit = { git = "https://github.com/enz1m/enzim-iced.git", rev = "e36b07b591661fdb666088fc943cc0b927a2367b", version = "0.15.0-dev", default-features = false }
+iced_winit = { git = "https://github.com/enz1m/enzim-iced.git", rev = "94eb56df238b88391b375b34672b9373e3ed8e8f", version = "0.15.0-dev", default-features = false }
 enzui-center-protocol = { version = "0.3.0-alpha.1", path = "crates/enzui-center-protocol" }
 enzui-agent = { version = "0.3.0-alpha.1", path = "crates/enzui-agent" }
 enzui-agent-app = { version = "0.3.0-alpha.1", path = "crates/enzui-agent-app" }

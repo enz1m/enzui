@@ -10,6 +10,15 @@
 //! install the offered handle, leaving upload-on-draw behavior to the renderer.
 //! [`FramePresenter::clear`] rejects results offered before the clear. Tokens use
 //! a wrapping counter with ordinary ordering; recreate the presenter before wrap.
+//!
+//! Each window has its own renderer and image cache. A presenter targeted with
+//! [`FramePresenter::for_window`] allocates in the renderer of the window that
+//! draws its frames, so an accepted frame is resident there; an untargeted
+//! presenter allocates in an unspecified window's renderer. A large frame
+//! allocated in another renderer is uploaded off the render thread on first
+//! draw and shows nothing until it lands. A targeted allocation fails, and so
+//! still completes, when its window is missing or closes or its renderer is
+//! replaced first.
 
 mod latest;
 pub use latest::{FrameHandover, LatestFramePresenter};
@@ -43,6 +52,7 @@ pub struct FramePresenter {
     shown: Option<Shown>,
     latest: u64,
     shown_token: u64,
+    window: Option<iced::window::Id>,
 }
 
 impl FramePresenter {
@@ -50,6 +60,15 @@ impl FramePresenter {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// A presenter showing nothing that allocates in `window`'s renderer.
+    #[must_use]
+    pub fn for_window(window: iced::window::Id) -> Self {
+        Self {
+            window: Some(window),
+            ..Self::default()
+        }
     }
 
     /// Creates an allocation task that returns a `ReadyFrame` on success or failure.
@@ -61,7 +80,11 @@ impl FramePresenter {
         let (width, height) = (frame.width(), frame.height());
         let handle = Handle::from_rgba(width, height, frame.into_pixels());
         let uploaded = handle.clone();
-        iced::widget::image::allocate(handle).map(move |allocation| ReadyFrame {
+        let allocation = match self.window {
+            Some(window) => iced::widget::image::allocate_in(window, handle),
+            None => iced::widget::image::allocate(handle),
+        };
+        allocation.map(move |allocation| ReadyFrame {
             token,
             handle: uploaded.clone(),
             width,

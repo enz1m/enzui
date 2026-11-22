@@ -30,6 +30,16 @@ impl LatestFramePresenter {
         Self::default()
     }
 
+    /// Start empty and allocate in `window`'s renderer, the one that draws the
+    /// frames; see [`FramePresenter::for_window`].
+    #[must_use]
+    pub fn for_window(window: iced::window::Id) -> Self {
+        Self {
+            presenter: FramePresenter::for_window(window),
+            ..Self::default()
+        }
+    }
+
     /// Start one allocation or replace the pending pixel buffer.
     /// Run any returned task and deliver its completion to [`Self::ready`].
     pub fn offer(&mut self, frame: Rgba8Frame) -> Option<Task<ReadyFrame>> {
@@ -116,17 +126,30 @@ mod tests {
 
     impl Upload {
         fn dispatch(task: Task<ReadyFrame>) -> Self {
+            let (window, upload) = Self::dispatch_in(task);
+            assert!(window.is_none(), "untargeted frame named a window");
+            upload
+        }
+
+        fn dispatch_in(task: Task<ReadyFrame>) -> (Option<iced::window::Id>, Self) {
             let mut stream = iced_test::runtime::task::into_stream(task).unwrap();
-            let Some(Action::Image(image::Action::Allocate(handle, response))) =
-                block_on(stream.next())
-            else {
-                panic!("offered frame did not reach the image allocator");
+            let (window, handle, response) = match block_on(stream.next()) {
+                Some(Action::Image(image::Action::Allocate(handle, response))) => {
+                    (None, handle, response)
+                }
+                Some(Action::Image(image::Action::AllocateIn(window, handle, response))) => {
+                    (Some(window), handle, response)
+                }
+                _ => panic!("offered frame did not reach the image allocator"),
             };
-            Self {
-                handle,
-                response,
-                stream,
-            }
+            (
+                window,
+                Self {
+                    handle,
+                    response,
+                    stream,
+                },
+            )
         }
 
         fn pixel(&self) -> u8 {
@@ -179,5 +202,30 @@ mod tests {
         let handover = presenter.ready(newest.complete());
         assert!(handover.accepted && handover.next_upload.is_none());
         assert_eq!(presenter.pixels().unwrap()[0], 5);
+    }
+
+    #[test]
+    fn a_window_presenter_keeps_its_frame_until_the_next_lands_in_that_window() {
+        let window = iced::window::Id::unique();
+        let mut presenter = LatestFramePresenter::for_window(window);
+        let (target, first) = Upload::dispatch_in(presenter.offer(frame(1)).unwrap());
+        assert_eq!(target, Some(window));
+        assert!(presenter.ready(first.complete()).accepted);
+        let (target, second) = Upload::dispatch_in(presenter.offer(frame(2)).unwrap());
+        assert_eq!(
+            target,
+            Some(window),
+            "every frame goes to the drawing window"
+        );
+        assert!(presenter.offer(frame(3)).is_none());
+        assert_eq!(
+            presenter.pixels().unwrap()[0],
+            1,
+            "the shown frame stays until its successor's allocation completes"
+        );
+        let handover = presenter.ready(second.complete());
+        assert_eq!(presenter.pixels().unwrap()[0], 2);
+        let (target, pending) = Upload::dispatch_in(handover.next_upload.unwrap());
+        assert_eq!((target, pending.pixel()), (Some(window), 3));
     }
 }
