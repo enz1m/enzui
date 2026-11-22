@@ -26,6 +26,7 @@ pub(crate) struct ExpanderAnimState {
     pre_frame_endpoint: bool,
     // A queued reversal retains presented progress until the next compositor timestamp.
     pending_from: Option<f32>,
+    laid_out: Option<f32>,
 }
 
 /// `MotionScale::default().normal_ms` — the raw duration used before any
@@ -48,6 +49,7 @@ impl ExpanderAnimState {
             frame_at: std::cell::Cell::new(None),
             pre_frame_endpoint: expanded,
             pending_from: None,
+            laid_out: None,
         }
     }
 
@@ -275,8 +277,9 @@ impl<'a, Message: Clone + 'a> Widget<Message, iced::Theme, iced::Renderer>
         renderer: &iced::Renderer,
         limits: &layout::Limits,
     ) {
-        let state = tree.state.downcast_ref::<ExpanderAnimState>();
+        let state = tree.state.downcast_mut::<ExpanderAnimState>();
         let progress = state.sampled_progress();
+        state.laid_out = Some(progress);
 
         // Publish the settled-collapsed verdict before recursing so the
         // body's `BodyGate` (reached via `inner.layout`) can skip its own full
@@ -344,41 +347,13 @@ impl<'a, Message: Clone + 'a> Widget<Message, iced::Theme, iced::Renderer>
             state.note_frame(*now, self.reduced_motion_override);
         }
 
-        // Keep the open/close transition *driven* for as long as it is
-        // running, on every event rather than only on `RedrawRequested`.
-        //
-        // Two distinct things are needed:
-        //
-        // 1. `request_redraw` — ask for the next frame. The transition is
-        //    started by `diff` (the view rebuild that follows the toggle
-        //    message), and `Widget::diff` is handed no `Shell` at all — its
-        //    whole signature is `fn diff(&mut self, tree: &mut Tree)`. `update`
-        //    is the only `Widget` hook that receives a `Shell`, so the request
-        //    physically cannot be issued from the pass that starts the
-        //    animation; it has to be issued from the next event to arrive.
-        //    Gating it on `RedrawRequested` would make it reachable only from a
-        //    frame that already exists, never true when a transition begins.
-        //
-        // 2. `invalidate_layout` — and this is the half that actually keeps the
-        //    body at 0 px. This animation interpolates a height, but
-        //    `UserInterface` lays the tree out once in `build` and thereafter
-        //    re-runs `layout` only when a widget marks the layout invalid
-        //    (`user_interface.rs`, `shell.revalidate_layout`). A plain
-        //    `RedrawRequested` re-`draw`s the cached `base` node, so asking for
-        //    frames without invalidating animates a height that is never
-        //    recomputed.
-        //
-        // Both are strictly gated on `is_animating`, so a settled expander asks
-        // for nothing and invalidates nothing — an unconditional request here
-        // is a compositor spin, and an unconditional invalidation would
-        // relayout the whole window on every event forever.
+        // The rebuild cannot request the first frame because `diff` has no shell.
         {
             let state = tree.state.downcast_ref::<ExpanderAnimState>();
             if state.sampled_animating() {
                 shell.request_redraw();
-                // `Diff::Skip`: the widget tree itself is unchanged — only this
-                // node's animated height moved — so a relayout is enough and a
-                // full `diff` pass would be wasted work.
+            }
+            if state.laid_out != Some(state.sampled_progress()) {
                 shell.invalidate_layout();
             }
         }

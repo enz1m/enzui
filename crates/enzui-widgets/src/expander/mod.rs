@@ -86,6 +86,9 @@ pub use tokens::{ExpanderTokens, ExpanderVariant, HoverScope};
 #[cfg(test)]
 mod body_gate_bounds;
 
+#[cfg(test)]
+mod layout_progress;
+
 // ---------------------------------------------------------------------------
 // Title colour, focus ring independence, and gate label localization
 // ---------------------------------------------------------------------------
