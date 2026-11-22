@@ -26,7 +26,7 @@ use iced::advanced::widget::operation::{Focusable, Outcome, TextInput};
 use iced::advanced::widget::{Id, Operation, Tree};
 use iced::advanced::{Layout, Shell, Widget, layout, mouse, overlay, renderer};
 use iced::{Element, Event, Length, Point, Rectangle, Size, Task, Vector, window};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
@@ -139,6 +139,7 @@ struct Shared {
     connecting: bool,
     surfaces: HashMap<u32, window::Id>,
     offers: HashMap<DragId, Offer>,
+    highlighted: HashMap<window::Id, HashSet<crate::file_drop::Binding>>,
     source: Option<Source>,
     file_source_active: bool,
     /// Set by the drag hook; the host records the source on its next turn.
@@ -158,6 +159,13 @@ fn shared() -> MutexGuard<'static, Shared> {
         .get_or_init(Mutex::default)
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+pub(crate) fn highlights(binding: crate::file_drop::Binding) -> bool {
+    shared()
+        .highlighted
+        .values()
+        .any(|targets| targets.contains(&binding))
 }
 
 fn send(message: Message) {
@@ -239,6 +247,7 @@ pub(crate) fn update(message: &ServiceMessage) -> Task<ServiceMessage> {
         }
         Message::Closed(window) => {
             let mut state = shared();
+            let _ = state.highlighted.remove(&window);
             let surfaces: Vec<_> = state
                 .surfaces
                 .iter()
@@ -1388,7 +1397,7 @@ impl<Message, Theme, Renderer: iced::advanced::Renderer> Host<'_, Message, Theme
                 .map(|(id, offer)| (*id, offer.position, offer.mimes.clone(), offer.actions))
                 .collect()
         };
-        let mut active = Vec::new();
+        let mut active = HashSet::new();
         for (id, position, mimes, actions) in offers {
             let mut locate = crate::file_drop::Locate::for_offer(position, mimes.clone(), actions);
             self.operate_at(tree, layout, renderer, viewport, position, &mut locate);
@@ -1398,7 +1407,7 @@ impl<Message, Theme, Renderer: iced::advanced::Renderer> Host<'_, Message, Theme
                     .iter()
                     .any(|wanted| mimes.iter().any(|mime| wanted.matches(mime)))
             }) {
-                active.push(policy.binding);
+                let _ = active.insert(policy.binding);
                 Route::Target(policy)
             } else {
                 let mut text = TextAt {
@@ -1429,12 +1438,16 @@ impl<Message, Theme, Renderer: iced::advanced::Renderer> Host<'_, Message, Theme
                 send(crate::text_drag::Message::Route(id, route));
             }
         }
-        let mut hover = crate::file_drop::Hover {
-            active,
-            changed: false,
+        let mut state = shared();
+        let changed = if active.is_empty() {
+            state.highlighted.remove(&self.window).is_some()
+        } else if state.highlighted.get(&self.window) == Some(&active) {
+            false
+        } else {
+            let _ = state.highlighted.insert(self.window, active);
+            true
         };
-        self.operate_everywhere(tree, layout, renderer, viewport, &mut hover);
-        if hover.changed {
+        if changed {
             shell.request_redraw();
         }
     }

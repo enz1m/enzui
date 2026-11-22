@@ -345,7 +345,6 @@ pub(crate) struct State {
     copy_only: bool,
     preferences: Vec<MimeType>,
     preferred: DragAction,
-    hovered: bool,
     /// This mounted target, distinct from every other ever mounted.
     instance: u64,
     /// The key of the view that built it last.
@@ -367,7 +366,6 @@ impl State {
             copy_only,
             preferences,
             preferred,
-            hovered: false,
             instance: NEXT.fetch_add(1, Ordering::Relaxed),
             key,
         }
@@ -521,7 +519,14 @@ where
             cursor,
             viewport,
         );
-        if self.enabled && self.highlight && tree.state.downcast_ref::<State>().hovered {
+        let state = tree.state.downcast_ref::<State>();
+        if self.enabled
+            && self.highlight
+            && crate::text_drag::highlights(Binding {
+                instance: state.instance,
+                key: state.key,
+            })
+        {
             let style = theme.drop_style();
             if let Some(clip) = layout.bounds().intersection(viewport) {
                 renderer.with_layer(clip, |renderer| {
@@ -589,7 +594,7 @@ where
 
 /// The target a drop was released over: which mounted target, and its key
 /// at that moment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Binding {
     instance: u64,
     key: u64,
@@ -648,31 +653,6 @@ impl Locate {
 
     pub(crate) fn policy(&self) -> Option<Policy> {
         self.policy.clone()
-    }
-}
-
-pub(crate) struct Hover {
-    pub(crate) active: Vec<Binding>,
-    pub(crate) changed: bool,
-}
-impl Operation for Hover {
-    fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn Operation)) {
-        operate(self);
-    }
-    fn custom(
-        &mut self,
-        _id: Option<&iced::widget::Id>,
-        _bounds: Rectangle,
-        state: &mut dyn std::any::Any,
-    ) {
-        if let Some(target) = state.downcast_mut::<State>() {
-            let hovered = self.active.contains(&Binding {
-                instance: target.instance,
-                key: target.key,
-            });
-            self.changed |= hovered != target.hovered;
-            target.hovered = hovered;
-        }
     }
 }
 
