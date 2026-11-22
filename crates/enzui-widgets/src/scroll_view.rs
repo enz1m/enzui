@@ -104,6 +104,7 @@ where
         height: Length::Fill,
         id: None,
         on_scroll: None,
+        vertical_scroll_only: false,
         hide_scrollbar: false,
         keyboard_scroll: true,
         wheel_chaining: false,
@@ -130,6 +131,7 @@ pub struct EnzScrollView<'a, Message> {
     height: Length,
     id: Option<Id>,
     on_scroll: Option<Box<dyn Fn(Viewport) -> Message + 'a>>,
+    vertical_scroll_only: bool,
     hide_scrollbar: bool,
     keyboard_scroll: bool,
     wheel_chaining: bool,
@@ -235,6 +237,14 @@ where
     /// is the Elm-native equivalent of the two-way `scroll-x`/`scroll-y`.
     pub fn on_scroll(mut self, f: impl Fn(Viewport) -> Message + 'a) -> Self {
         self.on_scroll = Some(Box::new(f));
+        self.vertical_scroll_only = false;
+        self
+    }
+
+    /// Observes changes to the vertical offset, viewport height or content height.
+    pub fn on_vertical_scroll(mut self, f: impl Fn(Viewport) -> Message + 'a) -> Self {
+        self.on_scroll = Some(Box::new(f));
+        self.vertical_scroll_only = true;
         self
     }
 
@@ -1655,7 +1665,12 @@ where
             sv = sv.id(id);
         }
         if let Some(cb) = w.on_scroll {
-            sv = sv.on_scroll(move |scroll: iced::widget::scrollable::Scroll| cb(scroll.viewport));
+            let cb = move |scroll: iced::widget::scrollable::Scroll| cb(scroll.viewport);
+            sv = if w.vertical_scroll_only {
+                sv.on_vertical_scroll(cb)
+            } else {
+                sv.on_scroll(cb)
+            };
         }
         if let Some(anchor) = w.anchor {
             sv = sv.anchor(anchor);

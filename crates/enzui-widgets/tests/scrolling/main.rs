@@ -32,6 +32,7 @@ mod scroll_anchor_reflow;
 
 mod scrollbar_drag_loss;
 
+mod vertical_scroll_observer;
 mod virtual_grid_bounded;
 mod virtual_keyboard_scroll;
 
