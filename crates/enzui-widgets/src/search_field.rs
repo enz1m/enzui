@@ -88,10 +88,10 @@ pub enum SearchPresentation {
 /// space or gating on that declaration reads the same number.
 pub const TITLEBAR_SEARCH_MAX_WIDTH: f32 = 340.0;
 
-/// Titlebar search preset: small (26 px), measured collapse,
-/// viewport-centred popover activation, and the native `Ctrl+F`
-/// shortcut. Fills the space the titlebar assigns up to
-/// [`TITLEBAR_SEARCH_MAX_WIDTH`].
+/// Search with the titlebar control height as its minimum.
+///
+/// Fills the available width up to [`TITLEBAR_SEARCH_MAX_WIDTH`], collapsing
+/// into a popover trigger when space is tight. Carries the `Ctrl+F` shortcut.
 pub fn enz_titlebar_search<'a, Message>(
     value: &'a str,
     on_input: impl Fn(String) -> Message + 'a,
@@ -99,12 +99,15 @@ pub fn enz_titlebar_search<'a, Message>(
 where
     Message: Clone + 'a,
 {
-    enz_search_field(value, on_input)
-        .size(TextFieldSize::Sm)
-        .presentation(SearchPresentation::Popover)
-        .shortcut(DEFAULT_SHORTCUT)
-        .width(Length::Fill)
-        .max_width(TITLEBAR_SEARCH_MAX_WIDTH)
+    EnzSearchField {
+        titlebar: true,
+        ..enz_search_field(value, on_input)
+    }
+    .size(TextFieldSize::Sm)
+    .presentation(SearchPresentation::Popover)
+    .shortcut(DEFAULT_SHORTCUT)
+    .width(Length::Fill)
+    .max_width(TITLEBAR_SEARCH_MAX_WIDTH)
 }
 
 /// Minimum useful visible query span before responsive search
@@ -226,6 +229,7 @@ where
     EnzSearchField {
         material: None,
         chrome: SearchFieldChrome::Filled,
+        titlebar: false,
         value,
         placeholder: enzui_core::localization::text("enzui-search-field-search"),
         identity_placeholder: "Search…".to_owned(),
@@ -272,6 +276,7 @@ pub enum SearchFieldChrome {
 pub struct EnzSearchField<'a, Message> {
     material: Option<enzui_theme::MaterialStyle>,
     chrome: SearchFieldChrome,
+    titlebar: bool,
     value: &'a str,
     placeholder: String,
     identity_placeholder: String,
@@ -731,7 +736,12 @@ where
     Message: Clone + 'a,
 {
     fn from(w: EnzSearchField<'a, Message>) -> Self {
-        let tokens = size_tokens(w.size);
+        let mut tokens = size_tokens(w.size);
+        if w.titlebar {
+            tokens.height = tokens
+                .height
+                .max(responsive::ResponsiveSearch::<Message>::compact_control_size());
+        }
         let pinned_input = w.palette.clone();
         let pinned_outer = w.palette.clone();
 

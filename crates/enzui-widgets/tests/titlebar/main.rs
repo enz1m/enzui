@@ -30,6 +30,7 @@ pub mod honest_frame_driver;
 #[path = "../common/scratch.rs"]
 pub mod scratch;
 
+mod search_height;
 mod titlebar_actions_dismissal;
 mod titlebar_drag_press_serial;
 
