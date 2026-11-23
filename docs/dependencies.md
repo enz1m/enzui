@@ -11,7 +11,7 @@ the foundation revisions recorded in their own dependency guides.
 
 | Source | Revision |
 | --- | --- |
-| [iced](https://github.com/enz1m/enzim-iced) | `8cabe557ce42e96b4b3fb245f69488521fe6eacb` |
+| [iced](https://github.com/enz1m/enzim-iced) | `22ea94fc775a3de8d1c1a1905b51d09b236e4c3b` |
 | [wgpu family](https://github.com/enz1m/enzim-wgpu) | `c62972c9be1326882c4b4f1939d8a2713e42d210` |
 | [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `ad474131e52c0fde5979f8def2889489b50a0480` |
 | [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `0617a49e7b8a5c5c4cc572a3e98cda70ff1be89f` |
