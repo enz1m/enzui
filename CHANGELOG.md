@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Reduce redraw and GPU upload work for live terminal output.
 - Keep the outgoing page visible through sidebar motion before laying out its replacement.
 - Settle expanding and collapsing sections at their final height.
 - Let scroll observers subscribe to vertical changes without reacting to width-only relayouts.

@@ -16,6 +16,7 @@ struct Uniforms {
     grid: vec2<u32>,
     default_bg: u32,
     // Bit 0: extend edge cells' backgrounds right and down to the edge.
+    // Bit 1: every background resolves to the default colour.
     flags: u32,
     // The fade over the rows above the view: top and bottom y in framebuffer
     // pixels, and the strength at the top (0: none).
@@ -68,6 +69,9 @@ fn bg_vs(@builtin(vertex_index) vertex: u32) -> @builtin(position) vec4<f32> {
 
 @fragment
 fn bg_fs(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
+    if ((u.flags & 2u) != 0u) {
+        return unpack(u.default_bg);
+    }
     var cell = floor((frag.xy - u.grid_origin) / u.cell);
     // Past the grid's edge, the edge cell's own colour: not the cursor or a
     // selection drawn on it.

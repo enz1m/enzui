@@ -385,7 +385,6 @@ struct TerminalGpu {
     /// Each row's first instance in the uploaded buffer, then the total;
     /// empty until the first upload.
     instance_starts: Vec<usize>,
-    flat: Vec<Instance>,
     snapshot: Snapshot,
     grid: (u16, u16),
     metrics: Option<CellMetrics>,
@@ -399,6 +398,17 @@ struct TerminalGpu {
     prepared_in: Option<u64>,
     /// How many prepares in a row the buffers have been oversized.
     oversized_for: u32,
+}
+
+const FLAT_BACKGROUND: u32 = 1 << 1;
+
+impl TerminalGpu {
+    fn set_uniforms(&mut self, queue: &wgpu::Queue, uniforms: Uniforms) {
+        if self.uniforms != uniforms {
+            self.uniforms = uniforms;
+            queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
+        }
+    }
 }
 
 /// Prepares in a row a buffer must stay more than four times larger than its
@@ -798,7 +808,6 @@ impl TerminalPipeline {
             bg: Vec::new(),
             rows: Vec::new(),
             instance_starts: Vec::new(),
-            flat: Vec::new(),
             snapshot: Snapshot::default(),
             grid: (0, 0),
             metrics: None,
@@ -940,7 +949,7 @@ impl Primitive for TerminalPrimitive {
         let padding = (self.style.padding * scale).round();
         self.screen.paint_state().rows = Some((metrics.height as f32 / scale, padding / scale));
         let viewport_rect = *bounds * scale;
-        let uniforms = Uniforms {
+        let mut uniforms = Uniforms {
             viewport_origin: [viewport_rect.x, viewport_rect.y],
             viewport_size: [viewport_rect.width.max(1.0), viewport_rect.height.max(1.0)],
             grid_origin: [
@@ -967,15 +976,12 @@ impl Primitive for TerminalPrimitive {
         );
         terminal.prepared_in = Some(frame);
         terminal.used_frame = frame;
-        if terminal.uniforms != uniforms {
-            terminal.uniforms = uniforms;
-            queue.write_buffer(&terminal.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
-        }
         let same_style = terminal
             .style
             .as_ref()
             .is_some_and(|style| Arc::ptr_eq(style, &self.style) || **style == *self.style);
-        let full = terminal.grid != grid
+        let grid_changed = terminal.grid != grid;
+        let full = grid_changed
             || terminal.metrics != Some(metrics)
             || !same_style
             || terminal.epoch != Some(epoch);
@@ -987,6 +993,8 @@ impl Primitive for TerminalPrimitive {
             state.damage_row(row);
         }
         let Some(damaged) = state.take_damage() else {
+            uniforms.flags |= terminal.uniforms.flags & FLAT_BACKGROUND;
+            terminal.set_uniforms(queue, uniforms);
             return;
         };
         let mut snapshot = std::mem::take(&mut terminal.snapshot);
@@ -1008,6 +1016,7 @@ impl Primitive for TerminalPrimitive {
         // of the map so the pipeline's atlases can be borrowed while it is.
         let mut terminal = pipeline.terminals.remove(&id).expect("inserted above");
         let mut atlas_grew = false;
+        let mut background_changed = grid_changed;
         let mut pending_rows = Vec::new();
         let deadline = std::time::Instant::now() + RASTER_BUDGET;
         // A second pass runs only when the atlases filled up and were reset:
@@ -1033,6 +1042,7 @@ impl Primitive for TerminalPrimitive {
                     },
                     index,
                     &mut terminal.bg,
+                    &mut background_changed,
                     &mut row,
                     deadline,
                     &mut atlas_full,
@@ -1079,6 +1089,19 @@ impl Primitive for TerminalPrimitive {
             );
         }
 
+        if background_changed || terminal.uniforms.default_bg != uniforms.default_bg {
+            if terminal
+                .bg
+                .iter()
+                .all(|&color| color >> 24 == 0 || color == uniforms.default_bg)
+            {
+                uniforms.flags |= FLAT_BACKGROUND;
+            }
+        } else {
+            uniforms.flags |= terminal.uniforms.flags & FLAT_BACKGROUND;
+        }
+        terminal.set_uniforms(queue, uniforms);
+
         // Backgrounds: upload the damaged rows, or everything after a resize.
         let bg_bytes = (cells * 8) as u64;
         let count: usize = terminal.rows.iter().map(Vec::len).sum();
@@ -1098,7 +1121,9 @@ impl Primitive for TerminalPrimitive {
             terminal.bind_group =
                 pipeline.terminal_bind_group(device, &terminal.uniform_buffer, &terminal.bg_buffer);
             queue.write_buffer(&terminal.bg_buffer, 0, bytemuck::cast_slice(&terminal.bg));
-        } else if let (Some(&first), Some(&last)) = (damaged.first(), damaged.last()) {
+        } else if background_changed
+            && let (Some(&first), Some(&last)) = (damaged.first(), damaged.last())
+        {
             // One write over the damaged span: each `write_buffer` stages its
             // own copy, so a call per row cost more than the bytes it saved.
             let cols = usize::from(grid.0);
@@ -1124,9 +1149,7 @@ impl Primitive for TerminalPrimitive {
             rewrite_all = true;
         }
         if oversized_for >= SHRINK_AFTER {
-            // The CPU staging copies give their high-water room back too.
             terminal.oversized_for = 0;
-            terminal.flat.shrink_to(count);
             terminal.bg.shrink_to(cells * 2);
         }
         let span = if rewrite_all {
@@ -1143,19 +1166,22 @@ impl Primitive for TerminalPrimitive {
                 at += row.len();
             }
             starts[terminal.rows.len()] = at;
-            let mut flat = std::mem::take(&mut terminal.flat);
-            flat.clear();
-            for row in &terminal.rows[span.clone()] {
-                flat.extend_from_slice(row);
+            let instance_size = std::mem::size_of::<Instance>();
+            let offset = starts[span.start] * instance_size;
+            let bytes = (starts[span.end] - starts[span.start]) * instance_size;
+            if let Some(size) = std::num::NonZeroU64::new(bytes as u64)
+                && let Some(mut staging) =
+                    queue.write_buffer_with(&terminal.instance_buffer, offset as u64, size)
+            {
+                let mut offset = 0;
+                for row in &terminal.rows[span] {
+                    let bytes = bytemuck::cast_slice(row);
+                    staging
+                        .slice(offset..offset + bytes.len())
+                        .copy_from_slice(bytes);
+                    offset += bytes.len();
+                }
             }
-            if !flat.is_empty() {
-                queue.write_buffer(
-                    &terminal.instance_buffer,
-                    (starts[span.start] * std::mem::size_of::<Instance>()) as u64,
-                    bytemuck::cast_slice(&flat),
-                );
-            }
-            terminal.flat = flat;
         }
         terminal.instance_count = count as u32;
         pipeline.terminals.insert(id, terminal);
@@ -1206,7 +1232,7 @@ impl Primitive for TerminalPrimitive {
             for y in 0..rows {
                 let mut row = std::collections::hash_map::DefaultHasher::new();
                 (global, y, state.row_revision(y)).hash(&mut row);
-                if cursor.row == y {
+                if cursor.visible && cursor.row == y {
                     (cursor, self.focused, self.cursor_on).hash(&mut row);
                 }
                 if let Some(selection) = selection.filter(|s| s.rows().contains(&y)) {
@@ -1253,6 +1279,10 @@ impl Primitive for TerminalPrimitive {
         }
         true
     }
+
+    fn blends_source_over(&self) -> bool {
+        true
+    }
 }
 
 /// Lays out row `y`: writes its background colours into `bg` (per cell, the
@@ -1270,6 +1300,7 @@ fn build_row(
     input: &RowInput<'_>,
     index: usize,
     bg: &mut [u32],
+    background_changed: &mut bool,
     out: &mut Vec<Instance>,
     deadline: std::time::Instant,
     atlas_full: &mut bool,
@@ -1299,8 +1330,10 @@ fn build_row(
         let x = x as u16;
         let look = frame.look(cell, x, y);
         let at = (usize::from(y) * usize::from(cols) + usize::from(x)) * 2;
-        bg[at] = look.background.packed();
-        bg[at + 1] = cell.bg.packed();
+        let colors = [look.background.packed(), cell.bg.packed()];
+        let background = &mut bg[at..at + 2];
+        *background_changed |= background != colors;
+        background.copy_from_slice(&colors);
         if cell.has_glyph() {
             let Some(glyphs) = pipeline.glyph(
                 device, queue, font_index, cell, look.span, deadline, atlas_full, atlas_grew,

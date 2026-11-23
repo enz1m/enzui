@@ -525,8 +525,12 @@ impl ScreenWriter<'_> {
         let old = self.state.cursor;
         if old != cursor {
             self.state.cursor = cursor;
-            self.state.touch(old.row);
-            self.state.touch(cursor.row);
+            if old.visible {
+                self.state.touch(old.row);
+            }
+            if cursor.visible && (!old.visible || old.row != cursor.row) {
+                self.state.touch(cursor.row);
+            }
         }
     }
 
@@ -688,7 +692,7 @@ impl TerminalScreen {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .as_ref()
         {
-            window.wake();
+            window.request_content_redraw();
         }
         let mut wake = self
             .shared
@@ -802,6 +806,21 @@ mod tests {
             screen.lock().take_damage(),
             Some(vec![0, 2]),
             "the cursor's old and new rows"
+        );
+
+        screen.update(|w| w.set_cursor(Cursor::default()));
+        assert_eq!(screen.lock().take_damage(), Some(vec![2]));
+        screen.update(|w| {
+            w.set_cursor(Cursor {
+                col: 3,
+                row: 1,
+                ..Cursor::default()
+            });
+        });
+        assert_eq!(screen.lock().take_damage(), None);
+        assert_eq!(
+            screen.read(|state| (state.cursor().col, state.cursor().row)),
+            (3, 1)
         );
     }
 
