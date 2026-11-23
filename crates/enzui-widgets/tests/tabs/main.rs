@@ -34,6 +34,7 @@ mod document_tabs_keyed_identity;
 
 mod responsive_focus_handoff;
 
+mod view_switcher_height;
 mod view_switcher_routed_tab_activation;
 
 #[path = "../common/corner_probe.rs"]

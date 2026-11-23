@@ -173,12 +173,11 @@ impl SwitcherTokens {
         }
     }
 
-    /// Set strip height to the field-size tier and cell height to that height
-    /// minus twice the current track padding, clamped at zero. Other fields remain
-    /// unchanged; this helper does not sanitize them.
+    /// Set the base strip height from the field-size tier. The base cell
+    /// height excludes the track padding and is clamped at zero.
     #[must_use]
     pub fn for_size(&self, size: crate::text_field::TextFieldSize) -> Self {
-        let height = size.tokens().height;
+        let height = size.base_tokens().height;
         Self {
             strip_height: height,
             tab_height: (height - 2.0 * self.padding).max(0.0),
@@ -233,18 +232,16 @@ impl SwitcherTokens {
         }
     }
 
-    /// Express per-tab geometry for [`crate::tab_pill::enz_tab_list`], preserving
-    /// live colours. Joined switcher cells have no inter-pill gap. Height,
-    /// label size and icon size follow the desktop text scale; radii, padding,
-    /// icon gap and focus metrics remain unscaled. Raw token values are not
-    /// sanitized here.
+    /// Build geometry for [`crate::tab_pill::enz_tab_list`]. Desktop text scaling
+    /// applies to labels and icons and can grow cells beyond their base height.
+    /// Joined cells have zero gap.
     #[must_use]
     pub fn tab_pill_geometry(&self) -> TabPillGeometry {
         let b = self.tab_button_tokens().at_text_scale();
         TabPillGeometry {
             focus_ring_width: self.focus_ring_width,
             focus_ring_outset: self.focus_ring_outset,
-            pill_height: b.height,
+            pill_height: self.tab_height.max(b.height),
             pill_radius: b.radius,
             pill_padding_x: b.padding_x,
             label_size: b.text_size,
@@ -813,7 +810,8 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
             })
         };
 
-        let mut compact_geo = t.tab_pill_geometry();
+        let wide_geo = t.tab_pill_geometry();
+        let mut compact_geo = wide_geo;
         if has_icons {
             compact_geo.icon_gap = 2.0;
             compact_geo.pill_height =
@@ -822,6 +820,7 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
         }
 
         let squeezed_tokens = t.compressed();
+        let squeezed_geo = squeezed_tokens.tab_pill_geometry();
 
         let squeezed_cells: f32 = self
             .pages
@@ -849,12 +848,13 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
                          on_select: Option<Box<dyn Fn(usize) -> Message + 'a>>|
          -> Element<'a, Message> {
             let compact = matches!(rung, Rung::Compact);
+            let geometry = match rung {
+                Rung::Compact => compact_geo,
+                Rung::Squeezed => squeezed_geo,
+                Rung::Wide => wide_geo,
+            };
             let mut list = enz_tab_list_maybe(items.clone(), self.selected_index, on_select)
-                .geometry(match rung {
-                    Rung::Compact => compact_geo,
-                    Rung::Squeezed => squeezed_tokens.tab_pill_geometry(),
-                    Rung::Wide => t.tab_pill_geometry(),
-                })
+                .geometry(geometry)
                 .selection_indicator(self.selection_indicator)
                 .cell_fill(policy.cell_fill)
                 .hover_shape(self.hover_shape)
@@ -889,11 +889,9 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
                 list = list.cell_min_width(cell_floor);
             }
             if self.scrollable {
-                list = list.scrollable(true).scroll_strip_height(if compact {
-                    compact_geo.pill_height
-                } else {
-                    t.tab_height
-                });
+                list = list
+                    .scrollable(true)
+                    .scroll_strip_height(geometry.pill_height);
                 if let Some(id) = self.scroll_id.clone() {
                     list = list.scroll_id(id);
                 }
@@ -955,7 +953,7 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
         let wide = make_strip(
             make_list(Rung::Wide, false, callback(&on_select)),
             wide_width,
-            t.tab_height,
+            wide_geo.pill_height,
         );
         if !policy.compact_fallback {
             return wide;
@@ -971,7 +969,7 @@ impl<'a, Message: Clone + 'a> EnzViewSwitcher<'a, Message> {
                 } else {
                     wide_width
                 },
-                t.tab_height,
+                squeezed_geo.pill_height,
             )
         } else {
             make_strip(

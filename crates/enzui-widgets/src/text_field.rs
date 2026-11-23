@@ -53,17 +53,21 @@ impl TextFieldSize {
     /// measures every member's painted height, not its builder field.
     #[must_use]
     pub fn tokens(self) -> crate::tokens::FieldSizeTokens {
-        let tokens = match self {
-            Self::Sm => crate::tokens::FieldSizeTokens::SM,
-            Self::Md => crate::tokens::FieldSizeTokens::MD,
-            Self::Lg => crate::tokens::FieldSizeTokens::LG,
-        };
+        let tokens = self.base_tokens();
         // The text and the slot holding it follow the desktop text size.
         let ui = enzui_theme::text_scale::ui_px;
         crate::tokens::FieldSizeTokens {
             height: ui(tokens.height),
             text_size: ui(tokens.text_size),
             ..tokens
+        }
+    }
+
+    pub(crate) const fn base_tokens(self) -> crate::tokens::FieldSizeTokens {
+        match self {
+            Self::Sm => crate::tokens::FieldSizeTokens::SM,
+            Self::Md => crate::tokens::FieldSizeTokens::MD,
+            Self::Lg => crate::tokens::FieldSizeTokens::LG,
         }
     }
 
