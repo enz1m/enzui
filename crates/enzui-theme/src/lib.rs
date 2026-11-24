@@ -167,7 +167,7 @@ impl EnzThemeMode {
 
 /// Complete enzUI theme tokens: palette, typography, spacing, radius, sizing,
 /// stroke, breakpoints, motion, elevation, opacity, scrollbars, and font roles.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[must_use]
 pub struct EnzTheme {
     /// Color palette.
@@ -421,7 +421,34 @@ impl EnzTheme {
     /// generated colours with additional enzUI roles carried for recovery.
     /// The extension preserves the full theme for [`Self::from_iced`]. This
     /// creates a snapshot; later edits to this value do not update that snapshot.
+    ///
+    /// Equal token sets projected on the same thread share one iced theme, so
+    /// caches keyed by theme identity survive an application rebuilding its
+    /// tokens on every update.
     pub fn iced_theme(&self) -> Theme {
+        // One entry per distinct token set a frame projects: windows, glass
+        // inks and per-window motion variants.
+        const SLOTS: usize = 8;
+        thread_local! {
+            static PROJECTED: std::cell::RefCell<Vec<(EnzTheme, Theme)>> =
+                const { std::cell::RefCell::new(Vec::new()) };
+        }
+        PROJECTED.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            if let Some(at) = cache.iter().position(|(tokens, _)| tokens == self) {
+                let entry = cache.remove(at);
+                let theme = entry.1.clone();
+                cache.insert(0, entry);
+                return theme;
+            }
+            let theme = self.project();
+            cache.insert(0, (self.clone(), theme.clone()));
+            cache.truncate(SLOTS);
+            theme
+        })
+    }
+
+    fn project(&self) -> Theme {
         let p = self.palette.clone();
         let name = self.mode().theme_name();
         let seed = Seed {
@@ -469,7 +496,14 @@ impl EnzTheme {
 }
 
 fn enzui_extended_palette(p: &Palette, seed: Seed) -> IcedPalette {
-    let generated = IcedPalette::generate(seed);
+    // Only the secondary and status swatches keep generated colours; the
+    // background and primary tiers are replaced by enzUI roles below.
+    let generated = GeneratedSwatches {
+        secondary: Swatch::derive(seed.background, seed.text),
+        success: Swatch::generate(seed.success, seed.background, seed.text),
+        warning: Swatch::generate(seed.warning, seed.background, seed.text),
+        danger: Swatch::generate(seed.danger, seed.background, seed.text),
+    };
     // Extra foreground roles share palette text slots for extension-free recovery.
     let carry = |color, text| Pair { color, text };
     let pair = |color| Pair {
@@ -514,6 +548,13 @@ fn enzui_extended_palette(p: &Palette, seed: Seed) -> IcedPalette {
         danger: status(p.danger_soft, p.tone_error_fg, generated.danger),
         is_dark: p_is_dark(p),
     }
+}
+
+struct GeneratedSwatches {
+    secondary: Swatch,
+    success: Swatch,
+    warning: Swatch,
+    danger: Swatch,
 }
 
 // Mark carried foregrounds so extension-free recovery can distinguish stock colours.

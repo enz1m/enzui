@@ -101,7 +101,7 @@ impl SurfaceRole {
 }
 
 /// Core colour palette: all semantic colours used across the design system.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Palette {
     /// Page background behind all surfaces.
     pub background: Color,
