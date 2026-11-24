@@ -60,6 +60,7 @@ pub struct EnzEditableShortcuts<'a, Message, Command, Context> {
     feedback: Option<(&'a str, &'a str)>,
     on_event: Rc<dyn Fn(EditableShortcutsEvent) -> Message + 'a>,
     heading: bool,
+    group_label: Option<String>,
 }
 
 /// Build an editable shortcut pane from the application's authoritative model.
@@ -79,6 +80,7 @@ pub fn enz_editable_shortcuts<'a, Message, Command, Context>(
         feedback: None,
         on_event: Rc::new(on_event),
         heading: true,
+        group_label: None,
     }
 }
 
@@ -101,6 +103,14 @@ impl<'a, Message: Clone + 'a, Command: Clone, Context>
     #[must_use]
     pub fn heading(mut self, show: bool) -> Self {
         self.heading = show;
+        self
+    }
+
+    /// Name the rows' accessible group, "Keyboard shortcuts" by default. Panes
+    /// shown together need distinct names: the group's id derives from it.
+    #[must_use]
+    pub fn group_label(mut self, label: impl Into<String>) -> Self {
+        self.group_label = Some(label.into());
         self
     }
 
@@ -179,9 +189,10 @@ impl<'a, Message: Clone + 'a, Command: Clone, Context>
             ));
         }
 
-        let group = enz_preferences_group(rows).aria_label(enzui_core::localization::text(
-            "enzui-editable-shortcuts-keyboard-shortcuts",
-        ));
+        let label = self.group_label.unwrap_or_else(|| {
+            enzui_core::localization::text("enzui-editable-shortcuts-keyboard-shortcuts")
+        });
+        let group = enz_preferences_group(rows).aria_label(label);
         if !self.heading {
             return group.into();
         }
