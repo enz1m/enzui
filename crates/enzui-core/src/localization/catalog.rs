@@ -377,6 +377,15 @@ impl Localizer {
     /// even when a fallback succeeds; no partially formatted text is returned.
     #[must_use]
     pub fn resolve(&self, key: &str, arguments: Option<&Arguments<'_>>) -> LocalizedMessage {
+        self.resolve_as(key, arguments, true)
+    }
+
+    fn resolve_as(
+        &self,
+        key: &str,
+        arguments: Option<&Arguments<'_>>,
+        name_locale: bool,
+    ) -> LocalizedMessage {
         if arguments.is_some_and(|arguments| {
             arguments
                 .iter()
@@ -440,7 +449,7 @@ impl Localizer {
                 };
                 return LocalizedMessage {
                     value,
-                    locale: Some(locale.to_string()),
+                    locale: name_locale.then(|| locale.to_string()),
                     errors,
                 };
             }
@@ -475,13 +484,13 @@ impl Localizer {
     /// Formats a message with safe fallback; use [`Self::resolve`] for diagnostics.
     #[must_use]
     pub fn text(&self, key: &str) -> String {
-        self.resolve(key, None).value
+        self.resolve_as(key, None, false).value
     }
 
     /// Formats a parameterized message with safe fallback.
     #[must_use]
     pub fn text_with(&self, key: &str, arguments: &Arguments<'_>) -> String {
-        self.resolve(key, Some(arguments)).value
+        self.resolve_as(key, Some(arguments), false).value
     }
 }
 

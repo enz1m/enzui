@@ -47,14 +47,22 @@ pub(crate) fn scoped_locale() -> Option<super::Locale> {
     CURRENT.with(|current| current.borrow().as_ref().map(Localizer::locale))
 }
 
+// `read` must not enter a new scope on this thread.
+fn with_current<R>(read: impl FnOnce(&Localizer) -> R) -> R {
+    CURRENT.with(|current| match current.borrow().as_ref() {
+        Some(localizer) => read(localizer),
+        None => DEFAULT.with(read),
+    })
+}
+
 /// Resolves framework or app text through the current thread's localizer.
 #[must_use]
 pub fn text(key: &str) -> String {
-    current().text(key)
+    with_current(|localizer| localizer.text(key))
 }
 
 /// Resolves parameterized text through the current thread's localizer.
 #[must_use]
 pub fn text_with(key: &str, arguments: &Arguments<'_>) -> String {
-    current().text_with(key, arguments)
+    with_current(|localizer| localizer.text_with(key, arguments))
 }
