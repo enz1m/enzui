@@ -36,6 +36,13 @@ thread_local! {
         const { std::cell::RefCell::new(Vec::new()) };
     static FULL_DATES: Kept<Locale, FixedCalendarDateTimeFormatter<Gregorian, fieldsets::YMDE>> =
         const { std::cell::RefCell::new(Vec::new()) };
+    static MONTH_DAYS: Kept<Locale, FixedCalendarDateTimeFormatter<Gregorian, fieldsets::MD>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+    static TIMES: Kept<(icu_locale::Locale, bool), NoCalendarFormatter<fieldsets::T>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+    static HOUR_CYCLES: Kept<icu_locale::Locale, crate::time_of_day::HourCycle> =
+        const { std::cell::RefCell::new(Vec::new()) };
+    static FIRST_WEEKDAYS: Kept<Locale, Weekday> = const { std::cell::RefCell::new(Vec::new()) };
 }
 
 /// The formatter for `key` from this thread's few most recent, made by `make`
@@ -147,31 +154,7 @@ impl Locale {
                 _ => {}
             }
         }
-        let formatter = NoCalendarFormatter::try_new(clock.into(), fieldsets::T::short())
-            .map_err(format_error)?;
-        let time = icu_datetime::input::Time::start_of_day();
-        let pattern = formatter
-            .format(&time)
-            .pattern()
-            .write_to_string()
-            .into_owned();
-        let mut quoted = false;
-        for symbol in pattern.chars() {
-            if symbol == '\'' {
-                quoted = !quoted;
-            } else if !quoted {
-                match symbol {
-                    'K' => return Ok(HourCycle::H11),
-                    'h' => return Ok(HourCycle::H12),
-                    'H' => return Ok(HourCycle::H23),
-                    'k' => return Ok(HourCycle::H24),
-                    _ => {}
-                }
-            }
-        }
-        Err(LocalizationError::Format(
-            "the resolved UTS 35 time pattern has no hour field".to_owned(),
-        ))
+        kept(&HOUR_CYCLES, clock.clone(), || cldr_hour_cycle(clock)).map(|cycle| *cycle)
     }
 
     /// Formats a Gregorian month and day without a year, using abbreviated month names.
@@ -180,11 +163,13 @@ impl Locale {
     /// Returns an error for a date outside ICU's range or unavailable locale data.
     pub fn format_month_day(&self, date: Date) -> Result<String, LocalizationError> {
         let date = icu_date(date)?;
-        let formatter = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
-            self.0.clone().into(),
-            fieldsets::MD::medium(),
-        )
-        .map_err(format_error)?;
+        let formatter = kept(&MONTH_DAYS, self.clone(), || {
+            FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
+                self.0.clone().into(),
+                fieldsets::MD::medium(),
+            )
+            .map_err(format_error)
+        })?;
         Ok(formatter.format(&date).write_to_string().into_owned())
     }
 
@@ -251,12 +236,10 @@ impl Locale {
         } else {
             icu_datetime::options::TimePrecision::Minute
         });
-        let formatter = NoCalendarFormatter::try_new(
-            self.clock_locale(crate::desktop_settings::clock_24h())
-                .into(),
-            fields,
-        )
-        .map_err(format_error)?;
+        let clock = self.clock_locale(crate::desktop_settings::clock_24h());
+        let formatter = kept(&TIMES, (clock.clone(), seconds), || {
+            NoCalendarFormatter::try_new(clock.into(), fields).map_err(format_error)
+        })?;
         let time = icu_datetime::input::Time::try_new(
             time.hour() as u8,
             time.minute() as u8,
@@ -273,18 +256,52 @@ impl Locale {
     /// Returns an error if CLDR week data is unavailable.
     pub fn first_weekday(&self) -> Result<Weekday, LocalizationError> {
         use icu_calendar::types::Weekday as IcuWeekday;
-        let information = icu_calendar::week::WeekInformation::try_new(self.0.clone().into())
-            .map_err(format_error)?;
-        Ok(match information.first_weekday {
-            IcuWeekday::Monday => Weekday::Monday,
-            IcuWeekday::Tuesday => Weekday::Tuesday,
-            IcuWeekday::Wednesday => Weekday::Wednesday,
-            IcuWeekday::Thursday => Weekday::Thursday,
-            IcuWeekday::Friday => Weekday::Friday,
-            IcuWeekday::Saturday => Weekday::Saturday,
-            IcuWeekday::Sunday => Weekday::Sunday,
+        kept(&FIRST_WEEKDAYS, self.clone(), || {
+            let information = icu_calendar::week::WeekInformation::try_new(self.0.clone().into())
+                .map_err(format_error)?;
+            Ok(match information.first_weekday {
+                IcuWeekday::Monday => Weekday::Monday,
+                IcuWeekday::Tuesday => Weekday::Tuesday,
+                IcuWeekday::Wednesday => Weekday::Wednesday,
+                IcuWeekday::Thursday => Weekday::Thursday,
+                IcuWeekday::Friday => Weekday::Friday,
+                IcuWeekday::Saturday => Weekday::Saturday,
+                IcuWeekday::Sunday => Weekday::Sunday,
+            })
         })
+        .map(|weekday| *weekday)
     }
+}
+
+fn cldr_hour_cycle(
+    clock: icu_locale::Locale,
+) -> Result<crate::time_of_day::HourCycle, LocalizationError> {
+    use crate::time_of_day::HourCycle;
+    let formatter =
+        NoCalendarFormatter::try_new(clock.into(), fieldsets::T::short()).map_err(format_error)?;
+    let time = icu_datetime::input::Time::start_of_day();
+    let pattern = formatter
+        .format(&time)
+        .pattern()
+        .write_to_string()
+        .into_owned();
+    let mut quoted = false;
+    for symbol in pattern.chars() {
+        if symbol == '\'' {
+            quoted = !quoted;
+        } else if !quoted {
+            match symbol {
+                'K' => return Ok(HourCycle::H11),
+                'h' => return Ok(HourCycle::H12),
+                'H' => return Ok(HourCycle::H23),
+                'k' => return Ok(HourCycle::H24),
+                _ => {}
+            }
+        }
+    }
+    Err(LocalizationError::Format(
+        "the resolved UTS 35 time pattern has no hour field".to_owned(),
+    ))
 }
 
 struct NumberFormatter(DecimalFormatter);
