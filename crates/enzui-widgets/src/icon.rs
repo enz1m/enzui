@@ -132,38 +132,57 @@ fn fallback_handle() -> svg::Handle {
 /// If `name` is not registered, returns the fallback glyph and emits a
 /// one-time warning per name (bounded, deduplicated, panic-free).
 fn resolve_handle(name: &str) -> svg::Handle {
+    // Only bundled names and aliases enter, which bounds the map by the catalog.
+    static BY_REQUEST: OnceLock<std::sync::Mutex<HashMap<Box<str>, svg::Handle>>> = OnceLock::new();
+    let by_request = BY_REQUEST.get_or_init(Default::default);
+    if let Some(handle) = by_request
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(name)
+    {
+        return handle.clone();
+    }
+    let Some(handle) = resolve_bundled(name) else {
+        warn_unknown_once(name);
+        return fallback_handle();
+    };
+    by_request
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .insert(name.into(), handle.clone());
+    handle
+}
+
+fn resolve_bundled(name: &str) -> Option<svg::Handle> {
     if let Some(base) = name.strip_suffix(FILLED_SUFFIX)
         && let Some((canonical, bytes)) = bundled_icon_svg(base)
     {
         let mut cache = filled_cache()
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        return cache
-            .entry(canonical)
-            .or_insert_with(|| {
-                HANDLE_CONSTRUCTIONS.fetch_add(1, Ordering::Relaxed);
-                svg::Handle::from_memory(Cow::Owned(filled_svg(bytes)))
-            })
-            .clone();
-    }
-    match bundled_icon_svg(name) {
-        Some((canonical, bytes)) => {
-            let mut cache = handle_cache()
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
+        return Some(
             cache
                 .entry(canonical)
                 .or_insert_with(|| {
                     HANDLE_CONSTRUCTIONS.fetch_add(1, Ordering::Relaxed);
-                    svg::Handle::from_memory(Cow::Borrowed(bytes))
+                    svg::Handle::from_memory(Cow::Owned(filled_svg(bytes)))
                 })
-                .clone()
-        }
-        None => {
-            warn_unknown_once(name);
-            fallback_handle()
-        }
+                .clone(),
+        );
     }
+    let (canonical, bytes) = bundled_icon_svg(name)?;
+    let mut cache = handle_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    Some(
+        cache
+            .entry(canonical)
+            .or_insert_with(|| {
+                HANDLE_CONSTRUCTIONS.fetch_add(1, Ordering::Relaxed);
+                svg::Handle::from_memory(Cow::Borrowed(bytes))
+            })
+            .clone(),
+    )
 }
 
 /// Crate-internal: the [`svg::Handle`] that [`enz_icon`] would render for
