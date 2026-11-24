@@ -560,3 +560,34 @@ fn theme_file_layers_validated_app_and_desktop_preferences_without_losing_unknow
         );
     }
 }
+
+#[test]
+fn apply_follows_overrides_changed_after_an_apply() {
+    let red = iced_core::Color::from_rgb(1.0, 0.0, 0.0);
+    let blue = iced_core::Color::from_rgb(0.0, 0.0, 1.0);
+    let mut doc = ThemeDocument::empty();
+    assert!(doc.set("palette.accent", EnzThemeMode::Dark, TokenValue::Color(red)));
+    assert_eq!(doc.resolve(EnzThemeMode::Dark).palette.accent, red);
+
+    assert!(doc.set(
+        "palette.accent",
+        EnzThemeMode::Dark,
+        TokenValue::Color(blue)
+    ));
+    assert_eq!(doc.resolve(EnzThemeMode::Dark).palette.accent, blue);
+    let light_default = enzui_theme::EnzTheme::light().palette.accent;
+    assert_eq!(
+        doc.resolve(EnzThemeMode::Light).palette.accent,
+        light_default
+    );
+
+    let app = ThemeDocument::parse("[dark.palette]\naccent = \"#ff0000\"\n").unwrap();
+    assert_eq!(
+        doc.layered(&app).resolve(EnzThemeMode::Dark).palette.accent,
+        red
+    );
+
+    assert!(doc.clear("palette.accent", EnzThemeMode::Dark));
+    let dark_default = enzui_theme::EnzTheme::dark().palette.accent;
+    assert_eq!(doc.resolve(EnzThemeMode::Dark).palette.accent, dark_default);
+}

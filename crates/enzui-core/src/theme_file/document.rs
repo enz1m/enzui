@@ -341,6 +341,20 @@ pub struct ThemeDocument {
     /// an app's theme decide the mode over the system theme it is layered on.
     mode_declared: bool,
     application_fonts: BTreeSet<String>,
+    plans: ApplyPlans,
+}
+
+// The light and dark overrides in registry order, built on the first apply
+// after a change. Boxed to keep the document small.
+#[derive(Debug, Clone, Default)]
+struct ApplyPlans(std::sync::OnceLock<Box<[ApplyPlan; 2]>>);
+
+type ApplyPlan = Vec<(usize, TokenValue)>;
+
+impl PartialEq for ApplyPlans {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
 }
 
 /// The parsed text, which two documents with the same overrides may differ in.
@@ -517,6 +531,7 @@ impl ThemeDocument {
                     Some(EnzThemeMode::Dark) => &mut self.dark,
                 };
                 map.insert(token_path.to_owned(), v);
+                self.plans = ApplyPlans::default();
             }
             Err((kind, detail)) => self.diagnostics.push(Diagnostic {
                 key: path.to_owned(),
@@ -583,6 +598,7 @@ impl ThemeDocument {
         out.common.extend(app.common.clone());
         out.light.extend(app.light.clone());
         out.dark.extend(app.dark.clone());
+        out.plans = ApplyPlans::default();
         if app.mode_declared {
             out.mode = app.mode;
             out.mode_declared = true;
@@ -649,6 +665,7 @@ impl ThemeDocument {
             return false;
         }
         let _ = self.cleared.remove(&file_path(desc.scope(), path, mode));
+        self.plans = ApplyPlans::default();
         match (desc.scope(), mode) {
             (TokenScope::Common, _) => self.common.insert(path.to_owned(), value),
             (TokenScope::Mode, EnzThemeMode::Light) => self.light.insert(path.to_owned(), value),
@@ -664,6 +681,7 @@ impl ThemeDocument {
             return false;
         };
         let _ = self.cleared.insert(file_path(desc.scope(), path, mode));
+        self.plans = ApplyPlans::default();
         match (desc.scope(), mode) {
             (TokenScope::Common, _) => self.common.remove(path).is_some(),
             (TokenScope::Mode, EnzThemeMode::Light) => self.light.remove(path).is_some(),
@@ -686,20 +704,31 @@ impl ThemeDocument {
     ///
     /// Existing values remain unchanged for tokens the document omits.
     pub fn apply(&self, theme: &mut EnzTheme, mode: EnzThemeMode) {
-        let branch = match mode {
-            EnzThemeMode::Light => &self.light,
-            EnzThemeMode::Dark => &self.dark,
-        };
+        let tokens = registry::tokens();
         // Registry order, not map order: `breakpoints.*` normalises on every
         // write, so the applied order has to be deterministic.
-        for desc in registry::tokens() {
-            let source = match desc.scope() {
-                TokenScope::Common => &self.common,
-                TokenScope::Mode => branch,
+        let plans = self.plans.0.get_or_init(|| {
+            let plan = |branch: &BTreeMap<String, TokenValue>| {
+                tokens
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, desc)| {
+                        let source = match desc.scope() {
+                            TokenScope::Common => &self.common,
+                            TokenScope::Mode => branch,
+                        };
+                        source.get(desc.path()).map(|value| (index, value.clone()))
+                    })
+                    .collect()
             };
-            if let Some(value) = source.get(desc.path()) {
-                desc.write(theme, value);
-            }
+            Box::new([plan(&self.light), plan(&self.dark)])
+        });
+        let plan = match mode {
+            EnzThemeMode::Light => &plans[0],
+            EnzThemeMode::Dark => &plans[1],
+        };
+        for (index, value) in plan {
+            tokens[*index].write(theme, value);
         }
     }
 
