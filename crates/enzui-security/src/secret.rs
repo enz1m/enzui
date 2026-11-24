@@ -259,6 +259,9 @@ fn wipe_volatile(buf: &mut [u8]) -> usize {
 
 impl Drop for Secret {
     fn drop(&mut self) {
+        // Spare capacity can still hold plaintext from before a truncation, so
+        // the whole allocation is wiped. Growing to capacity never reallocates.
+        self.bytes.resize(self.bytes.capacity(), 0);
         let _ = wipe_bytes(&mut self.bytes);
     }
 }
@@ -716,8 +719,8 @@ mod tests {
         reset_wiped();
         let s = load_secret(&path).expect("0600 file must load");
         let _ = std::fs::remove_file(&path);
-        let expected = s.len();
-        assert!(expected >= 28, "sanity: known payload length");
+        assert!(s.len() >= 28, "sanity: known payload length");
+        let expected = s.bytes.capacity();
         drop(s);
         assert_eq!(
             wiped_total(),
@@ -746,6 +749,18 @@ mod tests {
             5,
             "growth path wipes all five plaintext bytes"
         );
+    }
+
+    #[test]
+    fn secret_text_wipes_spare_capacity() {
+        let mut text = String::with_capacity(64);
+        text.push_str("correct horse battery staple");
+        text.truncate(7);
+        let capacity = text.capacity();
+        reset_wiped();
+        drop(SecretText::new(text));
+        assert_eq!(wiped_total(), capacity);
+        assert_eq!(zeroed_total(), capacity);
     }
 
     // ---- Stage 2: redaction ----------------------------------------------
