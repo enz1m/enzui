@@ -74,7 +74,22 @@ impl RawFontDescription {
     /// family; an integer `wght` axis selects the nearest supported weight.
     /// Other axes and OpenType features are not applied by this parser.
     pub fn parse(&self) -> Option<ParsedFontDescription> {
-        parse_pango(&self.0)
+        // A theme rebuild parses the same few desktop descriptions repeatedly.
+        const RECENT: usize = 4;
+        thread_local! {
+            static PARSED: std::cell::RefCell<Vec<(String, Option<ParsedFontDescription>)>> =
+                const { std::cell::RefCell::new(Vec::new()) };
+        }
+        PARSED.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            if let Some((_, parsed)) = cache.iter().find(|(raw, _)| *raw == self.0) {
+                return parsed.clone();
+            }
+            let parsed = parse_pango(&self.0);
+            cache.insert(0, (self.0.clone(), parsed.clone()));
+            cache.truncate(RECENT);
+            parsed
+        })
     }
 }
 
