@@ -269,6 +269,14 @@ where
             self.localized(|| self.program.title(state, window))
         }
 
+        fn title_cow<'a>(
+            &'a self,
+            state: &'a Self::State,
+            window: iced::window::Id,
+        ) -> std::borrow::Cow<'a, str> {
+            self.localized(|| self.program.title_cow(state, window))
+        }
+
         fn subscription(&self, state: &Self::State) -> iced::Subscription<Self::Message> {
             let subscription = focus_traversal::wrap_subscription(
                 self.localized(|| self.program.subscription(state)),
