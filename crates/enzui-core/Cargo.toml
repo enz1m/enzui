@@ -137,7 +137,7 @@ enzui-test-support = { workspace = true }
 # compile staged sync/rename and parent sync to their plain filesystem
 # operations with no test hook.
 enzui-security = { workspace = true, features = ["fault-injection", "secret-observer"] }
-iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "986a8faaf730d29939cf92f9c2bf188fef8ef264", version = "0.15.0-dev", default-features = false, features = [
+iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "523c1755479c55ba4030dafb2be9c05bf8a1def4", version = "0.15.0-dev", default-features = false, features = [
     "tiny-skia",
     "x11",
     "wayland",
@@ -145,7 +145,7 @@ iced_renderer = { git = "https://github.com/enz1m/enzim-iced.git", rev = "986a8f
 # `collect::frame`'s unit tests build a `responsive` view to prove the
 # size argument reaches layout. `iced_widget` does not depend on this crate, so
 # there is no dependency cycle.
-iced_widget = { git = "https://github.com/enz1m/enzim-iced.git", rev = "986a8faaf730d29939cf92f9c2bf188fef8ef264", version = "0.15.0-dev" }
+iced_widget = { git = "https://github.com/enz1m/enzim-iced.git", rev = "523c1755479c55ba4030dafb2be9c05bf8a1def4", version = "0.15.0-dev" }
 
 [[test]]
 name = "desktop_notification_portal"
