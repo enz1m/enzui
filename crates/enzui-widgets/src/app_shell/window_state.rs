@@ -229,12 +229,7 @@ impl ShellWindowState {
 
     /// The global window-event subscription, without a state instance.
     pub fn events() -> Subscription<ShellWindowEvent> {
-        iced::event::listen_with(|event, _status, id| match event {
-            iced::Event::Window(window_event) => {
-                ShellWindowEvent::from_window_event(&window_event, id)
-            }
-            _ => None,
-        })
+        window::events().filter_map(|(id, event)| ShellWindowEvent::from_window_event(&event, id))
     }
 
     /// Apply matching window events and issue tagged maximize/fullscreen queries.
