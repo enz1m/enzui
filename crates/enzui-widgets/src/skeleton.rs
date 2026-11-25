@@ -41,15 +41,26 @@ struct ThemeResolution {
     base: Color,
     reduced: bool,
 }
-#[derive(Clone, Copy, PartialEq)]
+// Holding the payload `Arc` keeps its address from being reused, so a pointer
+// match is a payload match.
 enum ThemeKey {
-    Enz(*const enzui_theme::EnzTheme),
+    Enz(std::sync::Arc<enzui_theme::EnzTheme>),
     Stock(bool),
+}
+
+impl ThemeKey {
+    fn same(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Enz(a), Self::Enz(b)) => std::sync::Arc::ptr_eq(a, b),
+            (Self::Stock(a), Self::Stock(b)) => a == b,
+            _ => false,
+        }
+    }
 }
 
 fn theme_key(theme: &iced::Theme) -> ThemeKey {
     match theme.extension::<enzui_theme::EnzTheme>() {
-        Some(arc) => ThemeKey::Enz(std::sync::Arc::as_ptr(&arc)),
+        Some(arc) => ThemeKey::Enz(arc),
         None => ThemeKey::Stock(theme.palette().is_dark),
     }
 }
@@ -62,10 +73,10 @@ fn resolve_shared(
     reduced_override: Option<bool>,
 ) -> ThemeResolution {
     let key = theme_key(theme);
-    if let Some((cached_key, cached)) = *memo.borrow()
-        && cached_key == key
+    if let Some((cached_key, cached)) = &*memo.borrow()
+        && cached_key.same(&key)
     {
-        return cached;
+        return *cached;
     }
     #[cfg(test)]
     THEME_RESOLVE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
