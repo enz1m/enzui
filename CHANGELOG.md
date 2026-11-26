@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Respect the desktop middle-click paste preference when offering PRIMARY on Wayland.
+
 - Bundle the enzim AI and AI chat icons. Use `ai.assistant` for the assistant glyph.
 
 - Reduce redraw and GPU upload work for live terminal output.

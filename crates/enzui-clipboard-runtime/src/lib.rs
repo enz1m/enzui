@@ -510,6 +510,10 @@ impl AdoptedConnection {
         // flattening HTML never runs on the caller's (event loop's) thread,
         // nor for a copy the full queue refuses.
         self.worker().submit(Box::new(move |transport| {
+            if primary && !iced_core::clipboard::primary_paste_enabled() {
+                callback(Err(iced_core::clipboard::Error::ClipboardUnavailable));
+                return;
+            }
             let result = transport
                 .map_err(|error| adapter::translate(&error))
                 .and_then(|transport| {
