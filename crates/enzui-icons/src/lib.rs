@@ -6,12 +6,11 @@
     reason = "this crate parses untrusted bytes; an `as` that loses data hides a bug"
 )]
 #![deny(missing_docs)]
-//! Bundled Lucide icon assets and registry for enzUI-ICED.
+//! Bundled icon assets and registry for enzUI.
 //!
-//! enzUI-ICED ships a pinned Lucide catalog so framework components render
-//! with a consistent icon language instead of depending on the host Linux
-//! icon theme. Use Lucide names directly (`search`, `panel-left`) or the
-//! stable enzUI semantic aliases (`action.search`, `navigation.sidebar_left`).
+//! The catalog contains pinned Lucide icons and original enzUI artwork.
+//! Use canonical names (`search`, `enzim-ai`) or semantic aliases
+//! (`action.search`, `ai.assistant`).
 //!
 //! # Example
 //! ```
@@ -44,27 +43,23 @@ pub mod resolver;
 pub mod sniff;
 pub mod theme_index;
 
-/// Metadata for a single bundled Lucide icon asset.
+/// Metadata for a single bundled icon asset.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BundledIcon {
-    /// Canonical Lucide icon name, for example `search` or `panel-left`.
+    /// Canonical icon name, for example `search` or `panel-left`.
     pub name: &'static str,
     /// Path of the SVG asset within the bundled catalog, unique across the
     /// registry.
     pub asset_path: &'static str,
-    /// Source filename in the pinned upstream Lucide checkout. Kept distinct
-    /// from [`name`](Self::name) so a future upstream rename is a change of
-    /// provenance rather than a change of the name callers write.
+    /// Source filename in the upstream checkout, or empty for original enzUI artwork.
     pub upstream_name: &'static str,
-    /// SPDX licence expression for the asset, uniformly `"ISC AND MIT"` across
-    /// the bundled catalog. Carried per icon so a differently-licensed asset
-    /// cannot be added without the field disagreeing.
+    /// SPDX license expression for the asset.
     pub license: &'static str,
 }
 
-/// An icon reference resolved against the bundled Lucide catalog.
+/// An icon reference resolved against the bundled catalog.
 ///
-/// Construction accepts either a canonical Lucide name (`"save"`) or an enzUI
+/// Construction accepts either a canonical name (`"save"`) or an enzUI
 /// semantic alias (`"action.save"`).
 ///
 /// The icon retains the name it was constructed with ([`requested_name`]) even
@@ -83,7 +78,7 @@ pub struct BundledIcon {
 pub struct Icon {
     /// The name the caller asked for (canonical, alias, or unknown).
     requested_name: &'static str,
-    /// The canonical Lucide name if `requested_name` resolved, else `None`
+    /// The canonical name if `requested_name` resolved, else `None`
     /// (unknown — renders the fallback glyph; retained for diagnostics only).
     canonical_name: Option<&'static str>,
 }
@@ -123,7 +118,7 @@ impl Icon {
         self.requested_name
     }
 
-    /// Returns the canonical Lucide name accepted by the widget icon resolver.
+    /// Returns the canonical name accepted by the widget icon resolver.
     ///
     /// For an unresolved (unknown/custom) name this returns `"fallback"`, so
     /// the widget resolver always has a bundled glyph to draw. Use
@@ -133,7 +128,7 @@ impl Icon {
         self.canonical_name.unwrap_or("fallback")
     }
 
-    /// Returns whether the requested name resolved to a bundled Lucide icon.
+    /// Returns whether the requested name resolved to a bundled icon.
     /// `false` means the icon is an unknown typo or an app-defined custom name
     /// that will render as the fallback glyph.
     pub fn is_resolved(self) -> bool {
@@ -195,6 +190,7 @@ fn build_registry_index() -> RegistryIndex {
             upstream_name: file,
             license: LICENSE,
         })
+        .chain(embedded::ENZUI_ICONS.iter().copied())
         .collect();
 
     let mut name_to_idx = HashMap::with_capacity(icons.len());
@@ -218,7 +214,7 @@ fn registry() -> &'static RegistryIndex {
     REGISTRY.get_or_init(build_registry_index)
 }
 
-/// Return the canonical Lucide name for a supported icon name or alias.
+/// Return the canonical name for a supported icon name or alias.
 ///
 /// Lookups are O(1) via a `HashMap` index over canonical names and aliases.
 pub fn canonical_icon_name(name: &str) -> Option<&'static str> {
@@ -230,7 +226,7 @@ pub fn canonical_icon_name(name: &str) -> Option<&'static str> {
     reg.alias_to_canonical.get(name).copied()
 }
 
-/// Look up a bundled icon by Lucide name or stable enzUI semantic alias.
+/// Look up a bundled icon by canonical name or stable enzUI semantic alias.
 ///
 /// Uses indexed resolution — O(1) via the name/alias `HashMap`.
 pub fn bundled_icon(name: &str) -> Option<&'static BundledIcon> {
@@ -261,7 +257,7 @@ pub fn rtl_icon_name(name: &str) -> Option<&'static str> {
         .map(|&(_, canonical)| canonical)
 }
 
-/// Return all canonical bundled Lucide icons. Aliases are intentionally omitted
+/// Return all canonical bundled icons. Aliases are intentionally omitted
 /// so catalogs and pickers do not show duplicate entries.
 pub fn bundled_icons() -> &'static [BundledIcon] {
     registry().icons.as_slice()
@@ -288,6 +284,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn enzim_ai_icons_resolve_to_mit_assets() {
+        for (requested, canonical) in [
+            ("ai.assistant", "enzim-ai"),
+            ("enzim-ai", "enzim-ai"),
+            ("enzim-ai-chat", "enzim-ai-chat"),
+        ] {
+            let icon = bundled_icon(requested).expect("bundled AI icon");
+            let (name, bytes) = bundled_icon_svg(requested).expect("embedded AI SVG");
+            assert_eq!(name, canonical);
+            assert_eq!(icon.name, canonical);
+            assert_eq!(icon.license, "MIT");
+            assert_eq!(
+                bytes,
+                std::fs::read(
+                    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(icon.asset_path)
+                )
+                .expect("AI artwork is readable"),
+            );
+        }
+    }
+
+    #[test]
     fn rtl_mirrors_name_bundled_glyphs_of_directional_aliases() {
         for &(semantic, rtl) in aliases::RTL_MIRRORS {
             let ltr = canonical_icon_name(semantic).expect("a mirrored name is an alias");
@@ -299,16 +317,14 @@ mod tests {
     }
     use sha2::{Digest, Sha256};
 
-    // Subjects in the exact order the payload ships: the fallback glyph first,
-    // then every bundled icon in registry order, paired with its on-disk bytes.
-    fn bundled_payload_subjects() -> Vec<(&'static str, Vec<u8>)> {
+    fn lucide_payload_subjects() -> Vec<(&'static str, Vec<u8>)> {
         let crate_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
         let read = |rel: &str| std::fs::read(crate_dir.join(rel)).expect("bundled asset readable");
-        let mut subjects = Vec::with_capacity(bundled_icons().len() + 1);
-        subjects.push(("fallback", read("assets/fallback.svg")));
-        for icon in bundled_icons() {
-            subjects.push((icon.name, read(icon.asset_path)));
-        }
+        let lucide_icons = bundled_icons()
+            .iter()
+            .filter(|icon| icon.asset_path.starts_with("assets/lucide/"));
+        let mut subjects = vec![("fallback", read("assets/fallback.svg"))];
+        subjects.extend(lucide_icons.map(|icon| (icon.name, read(icon.asset_path))));
         subjects
     }
 
@@ -343,17 +359,8 @@ mod tests {
 
     #[test]
     fn payload_digest_matches_pinned_source() {
-        let subjects = bundled_payload_subjects();
-        assert_eq!(
-            subjects.len(),
-            bundled_icons().len() + 1,
-            "payload must cover every bundled icon plus the fallback"
-        );
-        assert!(
-            bundled_icons().len() >= 1_714,
-            "catalog shrank below the pinned Lucide import ({} icons)",
-            bundled_icons().len()
-        );
+        let subjects = lucide_payload_subjects();
+        assert!(subjects.len() > 1_714, "catalog lost pinned Lucide icons");
         assert_eq!(
             payload_digest(&subjects),
             manifest_payload_sha256(),

@@ -1,12 +1,5 @@
-//! enzUI semantic aliases mapped to canonical Lucide icon names.
-//!
-//! Second resolution stage for `canonical_icon_name`: a name that is not
-//! itself a bundled Lucide icon resolves through the flat `ALIASES` table.
+//! enzUI semantic aliases mapped to canonical icon names.
 
-/// Flat `(alias, canonical)` data table.
-///
-/// A row pointing at a name that is not bundled renders a blank icon slot with
-/// no other signal; the alias-resolution test in `lib.rs` iterates this slice.
 pub(crate) const ALIASES: &[(&str, &str)] = &[
     ("action.add", "plus"),
     ("action.close", "x"),
@@ -31,6 +24,7 @@ pub(crate) const ALIASES: &[(&str, &str)] = &[
     ("action.undo", "undo-2"),
     ("account", "user"),
     ("add", "plus"),
+    ("ai.assistant", "enzim-ai"),
     ("align-center", "text-align-center"),
     ("align-justify", "text-align-justify"),
     ("align-left", "text-align-start"),

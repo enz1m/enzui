@@ -1,15 +1,13 @@
 # enzui-icons
 
-The bundled icon catalog. enzUI ships a **pinned Lucide set** so framework
-components render with one consistent icon language instead of depending on
-whatever icon theme the host Linux desktop happens to provide.
+The bundled icon catalog contains a pinned Lucide set and original enzUI artwork.
 
 ## What to reach for first
 
 - `bundled_icon(name)` / `bundled_icons()` - look up a single glyph or enumerate
   the catalog.
-- Reference an icon by its **Lucide name** (`search`, `panel-left`) or by a stable
-  **semantic alias** (`action.search`, `navigation.sidebar_left`). Prefer the
+- Reference an icon by its **canonical name** (`search`, `enzim-ai`) or by a stable
+  **semantic alias** (`action.search`, `ai.assistant`). Prefer the
   semantic alias in framework code: it survives a Lucide rename.
 
 ## What this crate is **not** for

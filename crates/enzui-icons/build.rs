@@ -1,5 +1,4 @@
-//! Packs the bundled Lucide SVGs into one blob and generates the name table
-//! that indexes it.
+//! Packs bundled SVGs and generates the index and enzUI icon metadata.
 
 #![allow(
     clippy::unwrap_used,
@@ -16,7 +15,6 @@ use std::path::{Path, PathBuf};
 fn main() {
     let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    let lucide_dir = manifest_dir.join("assets/lucide");
     let fallback_path = manifest_dir.join("assets/fallback.svg");
     let icon_manifest_path = manifest_dir.join("icon-manifest.toml");
 
@@ -24,15 +22,18 @@ fn main() {
     println!("cargo:rerun-if-changed={}", fallback_path.display());
 
     let manifest = fs::read_to_string(&icon_manifest_path).unwrap();
-    let assets = required_assets(&manifest, &lucide_dir);
+    let lucide = required_assets(&manifest, "icons");
+    let enzui = required_assets(&manifest, "enzui");
 
     let mut packed = Vec::new();
-    let mut index = Vec::with_capacity(assets.len() + 1);
+    let mut index = Vec::with_capacity(lucide.len() + enzui.len() + 1);
     append_asset("fallback", &fallback_path, &mut packed, &mut index);
-    for path in assets {
-        println!("cargo:rerun-if-changed={}", path.display());
-        let name = path.file_stem().unwrap().to_str().unwrap();
-        append_asset(name, &path, &mut packed, &mut index);
+    for (directory, entries) in [("lucide", &lucide), ("enzui", &enzui)] {
+        for &(name, file) in entries {
+            let path = manifest_dir.join("assets").join(directory).join(file);
+            println!("cargo:rerun-if-changed={}", path.display());
+            append_asset(name, &path, &mut packed, &mut index);
+        }
     }
     index.sort_by_key(|entry| entry.0.clone());
 
@@ -53,24 +54,33 @@ fn main() {
              Some(&ICON_BYTES[start..end])\n\
          }\n",
     );
+    generated.push_str("pub(super) const ENZUI_ICONS: &[super::BundledIcon] = &[\n");
+    for (name, file) in enzui {
+        let path = format!("assets/enzui/{file}");
+        let _ = writeln!(
+            generated,
+            "    super::BundledIcon {{ name: {name:?}, asset_path: {path:?}, upstream_name: \"\", license: \"MIT\" }},",
+        );
+    }
+    generated.push_str("];\n");
     fs::write(out_dir.join("embedded_icons.rs"), generated).unwrap();
 }
 
-fn required_assets(manifest: &str, lucide_dir: &Path) -> Vec<PathBuf> {
-    let icons = manifest
-        .split_once("[icons]")
-        .and_then(|(_, rest)| rest.split_once("[aliases]"))
-        .map(|(icons, _)| icons)
-        .expect("icon-manifest.toml must contain [icons] followed by [aliases]");
-
-    icons
-        .lines()
-        .filter(|line| !line.trim().is_empty())
+fn required_assets<'a>(manifest: &'a str, section: &str) -> Vec<(&'a str, &'a str)> {
+    let header = format!("[{section}]");
+    let mut lines = manifest.lines().map(str::trim);
+    assert!(
+        lines.any(|line| line == header),
+        "missing [{section}] in icon-manifest.toml"
+    );
+    lines
+        .take_while(|line| !line.starts_with('['))
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
         .map(|line| {
-            let (_, file) = line
+            let (name, file) = line
                 .split_once('=')
                 .unwrap_or_else(|| panic!("invalid icon manifest entry: {line}"));
-            lucide_dir.join(file.trim().trim_matches('"'))
+            (name.trim().trim_matches('"'), file.trim().trim_matches('"'))
         })
         .collect()
 }

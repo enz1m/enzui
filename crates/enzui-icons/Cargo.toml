@@ -1,6 +1,6 @@
 [package]
 name = "enzui-icons"
-description = "Bundled Lucide icon assets and registry for enzUI."
+description = "Bundled icon assets and registry for enzUI."
 edition.workspace = true
 rust-version.workspace = true
 # Framework code is MIT (matches the workspace license); bundled Lucide

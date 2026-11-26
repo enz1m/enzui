@@ -1725,7 +1725,12 @@ payload_sha256 = "70ad09c5b4a7e85236de8eaa815ddeb6ad61bd783d310faef675ff83aa5494
 "zoom-in" = "zoom-in.svg"
 "zoom-out" = "zoom-out.svg"
 
+[enzui]
+"enzim-ai" = "enzim-ai.svg"
+"enzim-ai-chat" = "enzim-ai-chat.svg"
+
 [aliases]
+"ai.assistant" = "enzim-ai"
 "action.add" = "plus"
 "action.close" = "x"
 "action.confirm" = "check"
