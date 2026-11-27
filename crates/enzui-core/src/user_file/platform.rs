@@ -142,7 +142,13 @@ impl Parent {
             .map_err(io::Error::from);
         match empty_path {
             Ok(()) => Ok(()),
-            Err(error) if error.kind() == io::ErrorKind::PermissionDenied => {
+            // Older kernels can report ENOENT for AT_EMPTY_PATH without CAP_DAC_READ_SEARCH.
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::PermissionDenied | io::ErrorKind::NotFound
+                ) =>
+            {
                 let source = PathBuf::from(format!("/proc/self/fd/{}", file.as_raw_fd()));
                 rustix::fs::linkat(
                     rustix::fs::CWD,
@@ -956,6 +962,10 @@ pub(crate) mod fault {
     pub(super) fn take_tmpfile() -> Option<io::Error> {
         TMPFILE.with(|s| s.take().map(|k| make(k, "O_TMPFILE")))
     }
+    pub(super) fn fail_empty_link(kind: io::ErrorKind) {
+        EMPTY_LINK.with(|slot| slot.set(Some(kind)));
+    }
+
     pub(super) fn take_empty_link() -> Option<io::Error> {
         EMPTY_LINK.with(|s| s.take().map(|k| make(k, "AT_EMPTY_PATH")))
     }
@@ -1044,5 +1054,26 @@ pub(crate) mod fault {
                 a();
             }
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn user_file_links_unnamed_stage_when_empty_path_returns_enoent() {
+        let directory = tempfile::tempdir().unwrap();
+        let parent = Parent::open_from(None, directory.path()).unwrap();
+        let mut stage = parent.create_unnamed().unwrap();
+        stage.write_all(b"replacement").unwrap();
+
+        fault::fail_empty_link(io::ErrorKind::NotFound);
+        parent.link_file(&stage, OsStr::new("document")).unwrap();
+
+        assert_eq!(
+            std::fs::read(directory.path().join("document")).unwrap(),
+            b"replacement"
+        );
     }
 }
