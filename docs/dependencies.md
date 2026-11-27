@@ -11,10 +11,10 @@ the foundation revisions recorded in their own dependency guides.
 
 | Source | Revision |
 | --- | --- |
-| [iced](https://github.com/enz1m/enzim-iced) | `838066d2e7373e87cfb42e62cca5a1dc9625b5f9` |
+| [iced](https://github.com/enz1m/enzim-iced) | `288409128d7cd60018ffde80b653311e166613c7` |
 | [wgpu family](https://github.com/enz1m/enzim-wgpu) | `798421e7ac9091704835a8a733adfa2d7134dafb` |
-| [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `739e9d9e469e6f943a3eea233b6dc77ae3832ab5` |
-| [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `bd2494fbd903f9cfac4c5b3065ff216850c0c5d3` |
+| [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `eeaa0eb774c4757a9e001cc748fcb79044fa8722` |
+| [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `cd11d9961d86a4caa32e8b69311ee2d7982e6bcf` |
 | [winit](https://github.com/enz1m/enzim-winit) | `405e1caca89357f6da20eafe7ed8abc686567092` |
 | [AccessKit family](https://github.com/enz1m/enzim-accesskit) | `7da7ac7b800fabf0bd2ba62eef23fa9117a684f4` |
 | [zbus family](https://github.com/enz1m/enzim-zbus) | `e182645b56d15e637bb6c8144f99ebfa7f900716` |
