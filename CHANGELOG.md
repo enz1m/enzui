@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Activate switches and switch rows when a touch tap completes.
+- Publish atomic saves on kernels that report ENOENT for unnamed file links.
+
 - Respect the desktop middle-click paste preference when offering PRIMARY on Wayland.
 
 - Bundle the enzim AI and AI chat icons. Use `ai.assistant` for the assistant glyph.

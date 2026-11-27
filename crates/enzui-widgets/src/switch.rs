@@ -26,10 +26,12 @@ use iced::advanced::{Shell, Widget, renderer};
 use iced::animation::Animation;
 use iced::time::Instant;
 use iced::{
-    Background, Border, Color, Element, Event, Length, Rectangle, Shadow, Size, Vector, keyboard,
-    mouse, touch, window,
+    Background, Border, Color, Element, Event, Length, Point, Rectangle, Shadow, Size, Vector,
+    keyboard, mouse, touch, window,
 };
 use std::cell::Cell;
+
+pub(crate) const TOUCH_TAP_SLOP: f32 = 8.0;
 
 /// Exact track + thumb geometry for one switch size .
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -129,6 +131,7 @@ pub struct SwitchState {
 struct WidgetState {
     focus: FocusState,
     space_held: bool,
+    touch_armed: Option<(touch::Finger, Point)>,
     /// The thumb slide. `false` = thumb left (off), `true` = thumb right (on).
     anim: Animation<bool>,
     /// Previous `on` value — edge-detect for `go_mut` in `diff`.
@@ -170,6 +173,7 @@ impl WidgetState {
         Self {
             focus: FocusState::default(),
             space_held: false,
+            touch_armed: None,
             anim: Self::make_anim(on, DEFAULT_NORMAL_MS, enzui_theme::MotionEasing::default()),
             prev_on: on,
             pending_transition: false,
@@ -525,7 +529,7 @@ where
         cursor: mouse::Cursor,
         _renderer: &iced::Renderer,
         shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
 
@@ -604,6 +608,7 @@ where
             // A disabled switch drops focus and any held Space or drag, so
             // re-enabling it cannot replay a stale press.
             let state = tree.state.downcast_mut::<WidgetState>();
+            state.touch_armed = None;
             if state.focus.is_focused() || state.space_held {
                 state.focus.unfocus();
                 state.space_held = false;
@@ -615,6 +620,7 @@ where
         // Read-only: focusable and announced, but every mutating path is
         // refused; the input is still consumed so it does not fall through.
         if self.read_only {
+            tree.state.downcast_mut::<WidgetState>().touch_armed = None;
             match event {
                 Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
                     if cursor.is_over(bounds) =>
@@ -638,6 +644,7 @@ where
             return;
         }
 
+        let touch_bounds = bounds.intersection(viewport);
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 let handles_event = cursor.is_over(bounds);
@@ -648,13 +655,42 @@ where
                     shell.request_redraw();
                 }
             }
-            // Touch carries its own position — use it, not the cursor.
-            Event::Touch(touch::Event::FingerPressed { position, .. }) => {
-                let handles_event = bounds.contains(*position);
-                if handles_event {
-                    shell.publish(on_toggle(!self.on));
-                    shell.capture_event();
-                    shell.request_redraw();
+            Event::Touch(touch::Event::FingerPressed { id, position })
+                if touch_bounds.is_some_and(|clip| clip.contains(*position)) =>
+            {
+                let state = tree.state.downcast_mut::<WidgetState>();
+                if state.touch_armed.is_none() {
+                    state.touch_armed = Some((*id, *position));
+                }
+                shell.capture_event();
+            }
+            Event::Touch(touch::Event::FingerMoved { id, position }) => {
+                let state = tree.state.downcast_mut::<WidgetState>();
+                if state.touch_armed.is_some_and(|(finger, start)| {
+                    finger == *id && start.distance(*position) > TOUCH_TAP_SLOP
+                }) {
+                    state.touch_armed = None;
+                }
+            }
+            Event::Touch(touch::Event::FingerLifted { id, position }) => {
+                let state = tree.state.downcast_mut::<WidgetState>();
+                if let Some((finger, start)) = state.touch_armed
+                    && finger == *id
+                {
+                    state.touch_armed = None;
+                    if touch_bounds.is_some_and(|clip| clip.contains(*position))
+                        && start.distance(*position) <= TOUCH_TAP_SLOP
+                    {
+                        shell.publish(on_toggle(!self.on));
+                        shell.capture_event();
+                        shell.request_redraw();
+                    }
+                }
+            }
+            Event::Touch(touch::Event::FingerLost { id, .. }) => {
+                let state = tree.state.downcast_mut::<WidgetState>();
+                if state.touch_armed.is_some_and(|(finger, _)| finger == *id) {
+                    state.touch_armed = None;
                 }
             }
             Event::Keyboard(kb) if activation_from_key(kb) => {

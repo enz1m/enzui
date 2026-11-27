@@ -24,7 +24,10 @@ struct SwitchPress<'a, Message> {
 }
 
 #[derive(Default)]
-struct Hover(bool);
+struct SwitchPressState {
+    hover: bool,
+    touch_press: Option<(touch::Finger, Point)>,
+}
 
 /// The row's last focusable: the switch, which trails any suffix controls.
 #[derive(Default)]
@@ -70,11 +73,11 @@ impl<Message> SwitchPress<'_, Message> {
 
 impl<Message> Widget<Message, iced::Theme, iced::Renderer> for SwitchPress<'_, Message> {
     fn tag(&self) -> widget_advanced::tree::Tag {
-        widget_advanced::tree::Tag::of::<Hover>()
+        widget_advanced::tree::Tag::of::<SwitchPressState>()
     }
 
     fn state(&self) -> widget_advanced::tree::State {
-        widget_advanced::tree::State::new(Hover::default())
+        widget_advanced::tree::State::new(SwitchPressState::default())
     }
 
     fn diff(&mut self, tree: &mut widget_advanced::Tree) {
@@ -108,7 +111,7 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for SwitchPress<'_, M
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        if self.paint_hover && tree.state.downcast_ref::<Hover>().0 {
+        if self.paint_hover && tree.state.downcast_ref::<SwitchPressState>().hover {
             use iced::advanced::Renderer as _;
             renderer.fill_quad(
                 renderer::Quad {
@@ -231,6 +234,52 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for SwitchPress<'_, M
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        if let Event::Touch(
+            touch::Event::FingerMoved { id, position }
+            | touch::Event::FingerLifted { id, position }
+            | touch::Event::FingerLost { id, position },
+        ) = event
+            && let Some((finger, start)) = tree.state.downcast_ref::<SwitchPressState>().touch_press
+            && finger == *id
+        {
+            let within_slop = start.distance(*position) <= crate::switch::TOUCH_TAP_SLOP;
+            if within_slop && matches!(event, Event::Touch(touch::Event::FingerMoved { .. })) {
+                return;
+            }
+            tree.state.downcast_mut::<SwitchPressState>().touch_press = None;
+            if let Some(switch) = self.switch_bounds(tree, layout, viewport, renderer) {
+                let centre = Point::new(switch.center_x(), switch.center_y());
+                let lifted_on_row =
+                    matches!(event, Event::Touch(touch::Event::FingerLifted { .. }))
+                        && within_slop
+                        && layout
+                            .bounds()
+                            .intersection(viewport)
+                            .is_some_and(|clip| clip.contains(*position));
+                let replayed = Event::Touch(if lifted_on_row {
+                    touch::Event::FingerLifted {
+                        id: *id,
+                        position: centre,
+                    }
+                } else {
+                    touch::Event::FingerLost {
+                        id: *id,
+                        position: centre,
+                    }
+                });
+                let child = row_layout(layout, tree);
+                self.row.as_widget_mut().update(
+                    &mut tree.children[0],
+                    &replayed,
+                    child,
+                    mouse::Cursor::Available(centre),
+                    renderer,
+                    shell,
+                    viewport,
+                );
+            }
+            return;
+        }
         let child = row_layout(layout, tree);
         // Give the toggle first refusal so a direct track press activates only once.
         self.row.as_widget_mut().update(
@@ -245,9 +294,9 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for SwitchPress<'_, M
         let bounds = layout.bounds();
         if let Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft) = event {
             let over = cursor.is_over(bounds);
-            let hover = tree.state.downcast_mut::<Hover>();
-            if hover.0 != over {
-                hover.0 = over;
+            let hover = tree.state.downcast_mut::<SwitchPressState>();
+            if hover.hover != over {
+                hover.hover = over;
                 if self.paint_hover {
                     shell.request_redraw();
                 }
@@ -260,9 +309,10 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for SwitchPress<'_, M
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 cursor.position_over(bounds)
             }
-            Event::Touch(touch::Event::FingerPressed { position, .. }) => {
-                bounds.contains(*position).then_some(*position)
-            }
+            Event::Touch(touch::Event::FingerPressed { position, .. }) => bounds
+                .intersection(viewport)
+                .filter(|clip| clip.contains(*position))
+                .map(|_| *position),
             _ => None,
         };
         if pressed_at.is_none() {
@@ -281,6 +331,13 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for SwitchPress<'_, M
             }
             other => other.clone(),
         };
+        if let Event::Touch(touch::Event::FingerPressed { id, position }) = event {
+            let _ = tree
+                .state
+                .downcast_mut::<SwitchPressState>()
+                .touch_press
+                .get_or_insert((*id, *position));
+        }
         let child = row_layout(layout, tree);
         self.row.as_widget_mut().update(
             &mut tree.children[0],
