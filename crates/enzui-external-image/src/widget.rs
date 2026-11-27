@@ -38,7 +38,7 @@ fn image(shown: Shown) -> ExternalImage {
 #[derive(Debug)]
 pub struct ExternalImage {
     shown: Shown,
-    fallback: Option<iced::advanced::image::Handle>,
+    fallback: Option<(iced::advanced::image::Handle, f32)>,
     fit: ContentFit,
     alignment: (alignment::Horizontal, alignment::Vertical),
     opacity: f32,
@@ -51,8 +51,18 @@ impl ExternalImage {
     /// renderer, a device without DMA-BUF import, a refused layout): usually
     /// the producer's copy of the same frame in CPU memory.
     #[must_use]
-    pub fn fallback(mut self, image: iced::advanced::image::Handle) -> Self {
-        self.fallback = Some(image);
+    pub fn fallback(self, image: iced::advanced::image::Handle) -> Self {
+        self.fallback_scaled(image, 1.0)
+    }
+
+    /// Use a fallback whose pixel density follows its own producer.
+    #[must_use]
+    pub fn fallback_scaled(
+        mut self,
+        image: iced::advanced::image::Handle,
+        pixel_scale: f32,
+    ) -> Self {
+        self.fallback = Some((image, crate::valid_pixel_scale(pixel_scale)));
         self
     }
 
@@ -253,7 +263,7 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ExternalImage {
         instance
             .drawn_refused
             .set(matches!(status, Some(Status::Refused(_))));
-        if !on_screen && let Some(fallback) = &self.fallback {
+        if !on_screen && let Some((fallback, pixel_scale)) = &self.fallback {
             let image = iced::advanced::image::Image {
                 handle: fallback.clone(),
                 filter_method: iced::advanced::image::FilterMethod::Linear,
@@ -265,7 +275,10 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ExternalImage {
             let placement = crate::pipeline::placement(
                 self.fit,
                 self.alignment,
-                Size::new(size.width as f32, size.height as f32),
+                Size::new(
+                    size.width as f32 / pixel_scale,
+                    size.height as f32 / pixel_scale,
+                ),
                 bounds.size(),
             );
             let placed = placement + iced::Vector::new(bounds.x, bounds.y);
@@ -296,10 +309,7 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ExternalImage {
 
 /// The size of `frame`'s buffer, or nothing for no frame.
 fn image_size(frame: Option<&ExternalFrame>) -> Size {
-    frame.map_or(Size::ZERO, |frame| {
-        let buffer = frame.buffer();
-        Size::new(buffer.width as f32, buffer.height as f32)
-    })
+    frame.map_or(Size::ZERO, ExternalFrame::logical_size)
 }
 
 impl<'a, Message: 'a> From<ExternalImage> for Element<'a, Message> {

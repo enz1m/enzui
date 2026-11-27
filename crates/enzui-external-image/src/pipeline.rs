@@ -417,11 +417,10 @@ impl Primitive {
         let Some(instance) = pipeline.instances.get_mut(&self.instance) else {
             return;
         };
-        let buffer = instance.frame.buffer();
         let rect = quad(
             self.fit,
             self.alignment,
-            Size::new(buffer.width as f32, buffer.height as f32),
+            instance.frame.logical_size(),
             bounds,
         );
         let opacity = if self.opacity.is_finite() {
@@ -1413,10 +1412,11 @@ mod tests {
                 .expect("old buffer"),
             Lease::none(),
         );
-        let next = ExternalFrame::new(
+        let next = ExternalFrame::new_scaled(
             gbm.buffer(48, 24, None, 992, |_, _| GREEN)
                 .expect("next buffer"),
             Lease::none(),
+            1.5,
         );
         source.publish(Arc::clone(&old));
         let mut show =
@@ -1475,8 +1475,8 @@ mod tests {
         force(Some(Readiness::Ready));
         assert_eq!(
             colored_box(&show(96, 64, 1.0, None), 96, [0, 255, 0]),
-            Some((0, 0, 48, 24)),
-            "new source uses its actual buffer geometry"
+            Some((0, 0, 32, 16)),
+            "new source uses its producer density"
         );
         assert_eq!(
             colored_box(&show(24, 16, 1.0, None), 24, [0, 255, 0]),
@@ -1485,7 +1485,7 @@ mod tests {
         );
         assert_eq!(
             colored_box(&show(96, 64, 2.0, None), 192, [0, 255, 0]),
-            Some((0, 0, 96, 48)),
+            Some((0, 0, 64, 32)),
             "native logical size follows output scale"
         );
         let before = crate::stats();

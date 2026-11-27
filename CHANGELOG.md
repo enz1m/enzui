@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Place external images and their software fallbacks at the frame producer’s pixel density.
 - Activate switches and switch rows when a touch tap completes.
 - Publish atomic saves on kernels that report ENOENT for unnamed file links.
 

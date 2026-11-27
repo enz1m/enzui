@@ -218,6 +218,7 @@ impl std::fmt::Debug for Lease {
 #[derive(Debug)]
 pub struct ExternalFrame {
     buffer: DmaBuf,
+    pixel_scale: f32,
     lease: Lease,
     status: Mutex<Status>,
     /// When the renderer first found its producer still writing it.
@@ -241,8 +242,16 @@ impl std::fmt::Debug for OnEncoded {
 impl ExternalFrame {
     /// A frame to show; hand the same [`Arc`] to every view that shows it.
     pub fn new(buffer: DmaBuf, lease: Lease) -> Arc<Self> {
+        Self::new_scaled(buffer, lease, 1.0)
+    }
+
+    /// A frame with a producer density in buffer pixels per logical pixel.
+    ///
+    /// Scales outside the supported range use 1.0.
+    pub fn new_scaled(buffer: DmaBuf, lease: Lease, pixel_scale: f32) -> Arc<Self> {
         Arc::new(Self {
             buffer,
+            pixel_scale: valid_pixel_scale(pixel_scale),
             lease,
             status: Mutex::new(Status::Pending),
             writing_since: Mutex::new(None),
@@ -268,7 +277,17 @@ impl ExternalFrame {
         lease: Lease,
         on_encoded: impl FnOnce() + Send + 'static,
     ) -> Arc<Self> {
-        let frame = Self::new(buffer, lease);
+        Self::with_on_encoded_scaled(buffer, lease, 1.0, on_encoded)
+    }
+
+    /// A scaled frame with the first-encoding callback from [`Self::with_on_encoded`].
+    pub fn with_on_encoded_scaled(
+        buffer: DmaBuf,
+        lease: Lease,
+        pixel_scale: f32,
+        on_encoded: impl FnOnce() + Send + 'static,
+    ) -> Arc<Self> {
+        let frame = Self::new_scaled(buffer, lease, pixel_scale);
         if let Ok(mut slot) = frame.on_encoded.0.lock() {
             *slot = Some(Box::new(on_encoded));
         }
@@ -294,6 +313,19 @@ impl ExternalFrame {
         &self.buffer
     }
 
+    /// The producer density in buffer pixels per logical pixel.
+    pub fn pixel_scale(&self) -> f32 {
+        self.pixel_scale
+    }
+
+    /// The buffer extent in logical pixels at its producer density.
+    pub fn logical_size(&self) -> iced::Size {
+        iced::Size::new(
+            self.buffer.width as f32 / self.pixel_scale,
+            self.buffer.height as f32 / self.pixel_scale,
+        )
+    }
+
     /// How the import went, as of the last frame drawn.
     pub fn status(&self) -> Status {
         self.status
@@ -315,6 +347,14 @@ impl ExternalFrame {
         if let Ok(mut current) = self.status.lock() {
             *current = status;
         }
+    }
+}
+
+fn valid_pixel_scale(scale: f32) -> f32 {
+    if scale.is_finite() && scale > 0.0 && ((u32::MAX as f32) / scale).is_finite() {
+        scale
+    } else {
+        1.0
     }
 }
 
@@ -402,11 +442,8 @@ impl ExternalFrameSource {
     }
 
     fn replace(&self, frame: Option<Arc<ExternalFrame>>) {
-        let size = |frame: &Option<Arc<ExternalFrame>>| {
-            frame
-                .as_ref()
-                .map(|frame| (frame.buffer().width, frame.buffer().height))
-        };
+        let size =
+            |frame: &Option<Arc<ExternalFrame>>| frame.as_ref().map(|frame| frame.logical_size());
         let new_size = size(&frame);
         // The replaced frame drops outside the lock: its lease may call back.
         let replaced = match self.shared.latest.lock() {
