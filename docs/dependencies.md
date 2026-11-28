@@ -12,9 +12,9 @@ the foundation revisions recorded in their own dependency guides.
 | Source | Revision |
 | --- | --- |
 | [iced](https://github.com/enz1m/enzim-iced) | `288409128d7cd60018ffde80b653311e166613c7` |
-| [wgpu family](https://github.com/enz1m/enzim-wgpu) | `798421e7ac9091704835a8a733adfa2d7134dafb` |
+| [wgpu family](https://github.com/enz1m/enzim-wgpu) | `369c5fb5bf66d670efba7f9237d424b1ec4197b4` |
 | [cosmic-text](https://github.com/enz1m/enzim-cosmic-text) | `eeaa0eb774c4757a9e001cc748fcb79044fa8722` |
-| [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `cd11d9961d86a4caa32e8b69311ee2d7982e6bcf` |
+| [cryoglyph](https://github.com/enz1m/enzim-cryoglyph) | `73041979b79165552efe25a50462f5e488623bfc` |
 | [winit](https://github.com/enz1m/enzim-winit) | `405e1caca89357f6da20eafe7ed8abc686567092` |
 | [AccessKit family](https://github.com/enz1m/enzim-accesskit) | `7da7ac7b800fabf0bd2ba62eef23fa9117a684f4` |
 | [zbus family](https://github.com/enz1m/enzim-zbus) | `e182645b56d15e637bb6c8144f99ebfa7f900716` |
@@ -88,3 +88,11 @@ its development APIs differ from the framework's requirements.
 A default-feature, renderer-neutral `enzui-core` localization consumer needs
 none of these windowing/accessibility overrides. Enable services explicitly;
 `--all-features` is a development check, not a shipping configuration.
+
+## Partial presentation on Wayland
+
+With the Vulkan backend, iced copies only the damage needed to update a reused
+swapchain image on Intel Mesa and NVIDIA proprietary drivers. Surfaces that
+cannot accept copies and other drivers use the renderer's normal presentation path.
+
+Set `ICED_DISABLE_PARTIAL_PRESENT=1` before launching an app to force full copies.
